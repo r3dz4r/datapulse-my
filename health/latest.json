@@ -1,28 +1,28 @@
 {
   "schema": "datapulse/v0.4/dataset-health",
-  "checked_at": "2026-11-08T20:02:31Z",
+  "checked_at": "2026-11-08T20:26:38Z",
   "_trust_summary": {
-    "checked_at": "2026-11-08T20:02:31Z",
+    "checked_at": "2026-11-08T20:26:38Z",
     "datasets_total": 447,
     "by_status": {
-      "fresh": 140,
-      "aging": 153,
-      "stale": 92,
+      "fresh": 141,
+      "aging": 162,
+      "stale": 88,
       "discontinued": 1,
-      "degraded": 3,
+      "degraded": 2,
       "browser_dependent": 0,
-      "unreachable": 8,
+      "unreachable": 3,
       "unknown": 0,
       "unknown_freshness": 7,
       "reference": 43
     },
     "datasets_health_signal_source": {
       "last_modified_header": 161,
-      "content_date_parse": 230,
-      "neither": 56
+      "content_date_parse": 235,
+      "neither": 51
     },
     "datasets_with_no_last_modified_header": 283,
-    "datasets_with_no_record_count_extracted": 19,
+    "datasets_with_no_record_count_extracted": 14,
     "oldest_last_modified": "2024-01-02T01:00:56Z",
     "newest_last_modified": "2026-11-08T08:03:13Z",
     "stale_datasets": [
@@ -47,7 +47,27 @@
         "days_since_modified": 2285
       },
       {
+        "dataset_id": "st_consumers",
+        "days_since_modified": 2137
+      },
+      {
+        "dataset_id": "st_sales_value_rm_million",
+        "days_since_modified": 2137
+      },
+      {
+        "dataset_id": "st_sales_unit_gwh",
+        "days_since_modified": 2137
+      },
+      {
         "dataset_id": "st_generation_mix_gwh",
+        "days_since_modified": 2137
+      },
+      {
+        "dataset_id": "st_max_demand_mw",
+        "days_since_modified": 2137
+      },
+      {
+        "dataset_id": "st_installed_capacity_mw",
         "days_since_modified": 2137
       },
       {
@@ -343,59 +363,23 @@
         "days_since_modified": 5
       },
       {
-        "dataset_id": "gtfs_realtime_mybas_kuching",
-        "days_since_modified": 0.26511574074074074
-      },
-      {
-        "dataset_id": "gtfs_realtime_mybas_kangar",
-        "days_since_modified": 0.001724537037037037
-      },
-      {
-        "dataset_id": "gtfs_realtime_mybas_johor",
-        "days_since_modified": 0.0015393518518518519
-      },
-      {
-        "dataset_id": "gtfs_realtime_mybas_melaka",
-        "days_since_modified": 0.0015393518518518519
-      },
-      {
-        "dataset_id": "gtfs_realtime_mybas_kota_bharu",
-        "days_since_modified": 0.0014467592592592592
-      },
-      {
-        "dataset_id": "gtfs_realtime_mybas_alor_setar",
-        "days_since_modified": 0.001400462962962963
-      },
-      {
         "dataset_id": "gtfs_realtime_mybas_kuala_terengganu",
-        "days_since_modified": 0.001388888888888889
-      },
-      {
-        "dataset_id": "gtfs_realtime_prasarana_bus_penang",
-        "days_since_modified": 0.0013541666666666667
-      },
-      {
-        "dataset_id": "gtfs_realtime_prasarana_bus_kl",
-        "days_since_modified": 0.0013541666666666667
-      },
-      {
-        "dataset_id": "gtfs_realtime_ktmb",
-        "days_since_modified": 0.0013310185185185185
+        "days_since_modified": 0.006446759259259259
       },
       {
         "dataset_id": "gtfs_realtime_mybas_seremban_b",
-        "days_since_modified": 0.0011805555555555556
+        "days_since_modified": 0.0009606481481481482
       },
       {
-        "dataset_id": "gtfs_realtime_mybas_seremban_a",
-        "days_since_modified": 0.0011805555555555556
+        "dataset_id": "gtfs_realtime_mybas_johor",
+        "days_since_modified": 0.000925925925925926
       },
       {
-        "dataset_id": "gtfs_realtime_mybas_ipoh",
-        "days_since_modified": 0.0011574074074074073
+        "dataset_id": "gtfs_realtime_mybas_melaka",
+        "days_since_modified": 0.000925925925925926
       }
     ],
-    "pipeline_heartbeat_at": "2026-11-08T20:23:07Z"
+    "pipeline_heartbeat_at": "2026-11-08T20:48:09Z"
   },
   "datasets": [
     {
@@ -1228,7 +1212,7 @@
     },
     {
       "dataset_id": "eperolehan-diklankan",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "other",
       "url": "https://www.eperolehan.gov.my/quotation-tender-notice",
       "status": "fresh",
@@ -1237,7 +1221,7 @@
       "request_url": "https://www.eperolehan.gov.my/quotation-tender-notice",
       "access_method": "direct curl GET",
       "http_status": 200,
-      "content_length": 162683,
+      "content_length": 162878,
       "last_modified": null,
       "content_freshness_date": "2026-11-08",
       "first_record_timestamp": null,
@@ -2872,7 +2856,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_0900",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T19:32:11Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_0900",
       "status": "aging",
@@ -3700,7 +3684,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_1130",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T19:32:11Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1130",
       "status": "aging",
@@ -4528,7 +4512,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_1200",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T19:32:11Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200",
       "status": "aging",
@@ -5356,7 +5340,7 @@
     },
     {
       "dataset_id": "exchangerates_daily_1700",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T19:32:11Z",
       "namespace": "other",
       "url": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700",
       "status": "aging",
@@ -7019,7 +7003,7 @@
     },
     {
       "dataset_id": "mbpp_weather_stations",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "weather",
       "url": "https://vip.mbpp.gov.my/vipserver/rest/services/Weather_Station/FeatureServer/50",
       "status": "stale",
@@ -7845,7 +7829,7 @@
     },
     {
       "dataset_id": "doe_apims",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "environment",
       "url": "https://eqms.doe.gov.my/APIMS/main",
       "status": "fresh",
@@ -7866,8 +7850,8 @@
       "appendix_resource_count": null,
       "wait_seconds": 30,
       "stations": 8,
-      "timestamp": "09/11/2026, 03:00",
-      "snapshot_chars": 10331,
+      "timestamp": "09/11/2026, 04:00",
+      "snapshot_chars": 10199,
       "record_count": null,
       "estimated_record_count": null,
       "record_count_estimated": false,
@@ -8667,7 +8651,7 @@
     },
     {
       "dataset_id": "doe_rqims",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "environment",
       "url": "https://eqms.doe.gov.my/RQIMS/conti_river",
       "status": "stale",
@@ -8689,7 +8673,7 @@
       "wait_seconds": 30,
       "stations": 6,
       "timestamp": "09/11/2026, 01:00",
-      "snapshot_chars": 40504,
+      "snapshot_chars": 40460,
       "record_count": null,
       "estimated_record_count": null,
       "record_count_estimated": false,
@@ -73333,7 +73317,7 @@
     },
     {
       "dataset_id": "gtfs_static_prasarana_rail_kl",
-      "last_checked": "2026-11-08T17:51:46Z",
+      "last_checked": "2026-11-08T17:16:50Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-static/prasarana?category=rapid-rail-kl",
       "status": "degraded",
@@ -85702,10 +85686,10 @@
     },
     {
       "dataset_id": "gtfs_realtime_ktmb",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/ktmb",
-      "status": "stale",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (0 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/ktmb",
@@ -85751,16 +85735,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 0,
-      "header_timestamp": 1794168036,
+      "header_timestamp": 1794169534,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0013310185185185185,
-      "staleness_status": "stale",
+      "staleness_days": 0.0007407407407407407,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -85768,7 +85752,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0013310185185185185,
+        "latest_days": 0.0007407407407407407,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -86524,10 +86508,10 @@
     },
     {
       "dataset_id": "gtfs_realtime_prasarana_bus_kl",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-kl",
-      "status": "stale",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (0 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-kl",
@@ -86573,16 +86557,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 0,
-      "header_timestamp": 1794168034,
+      "header_timestamp": 1794169534,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0013541666666666667,
-      "staleness_status": "stale",
+      "staleness_days": 0.0007407407407407407,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -86590,7 +86574,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0013541666666666667,
+        "latest_days": 0.0007407407407407407,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -87346,10 +87330,10 @@
     },
     {
       "dataset_id": "gtfs_realtime_prasarana_bus_penang",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-penang",
-      "status": "stale",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (0 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-penang",
@@ -87395,16 +87379,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 0,
-      "header_timestamp": 1794168034,
+      "header_timestamp": 1794169534,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0013541666666666667,
-      "staleness_status": "stale",
+      "staleness_days": 0.0007407407407407407,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -87412,7 +87396,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0013541666666666667,
+        "latest_days": 0.0007407407407407407,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -88168,7 +88152,7 @@
     },
     {
       "dataset_id": "gtfs_realtime_prasarana_bus_mrtfeeder",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/prasarana?category=rapid-bus-mrtfeeder",
       "status": "fresh",
@@ -88217,7 +88201,7 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 1,
-      "header_timestamp": 1794168034,
+      "header_timestamp": 1794169534,
       "newest_vehicle_timestamp": 1886017556,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
@@ -88990,10 +88974,10 @@
     },
     {
       "dataset_id": "gtfs_realtime_mybas_kangar",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kangar",
-      "status": "stale",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (1 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kangar",
@@ -89039,16 +89023,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 1,
-      "header_timestamp": 1794168013,
-      "newest_vehicle_timestamp": 1794168002,
+      "header_timestamp": 1794169532,
+      "newest_vehicle_timestamp": 1794169522,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.001724537037037037,
-      "staleness_status": "stale",
+      "staleness_days": 0.0008796296296296296,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -89056,7 +89040,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.001724537037037037,
+        "latest_days": 0.0008796296296296296,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -89812,10 +89796,10 @@
     },
     {
       "dataset_id": "gtfs_realtime_mybas_alor_setar",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-alor-setar",
-      "status": "stale",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (10 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-alor-setar",
@@ -89861,16 +89845,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 10,
-      "header_timestamp": 1794168033,
-      "newest_vehicle_timestamp": 1794168030,
+      "header_timestamp": 1794169534,
+      "newest_vehicle_timestamp": 1794169530,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.001400462962962963,
-      "staleness_status": "stale",
+      "staleness_days": 0.000787037037037037,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -89878,7 +89862,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.001400462962962963,
+        "latest_days": 0.000787037037037037,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -90634,10 +90618,10 @@
     },
     {
       "dataset_id": "gtfs_realtime_mybas_kota_bharu",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kota-bharu",
-      "status": "stale",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (2 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kota-bharu",
@@ -90683,16 +90667,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 2,
-      "header_timestamp": 1794168032,
-      "newest_vehicle_timestamp": 1794168026,
+      "header_timestamp": 1794169532,
+      "newest_vehicle_timestamp": 1794169526,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0014467592592592592,
-      "staleness_status": "stale",
+      "staleness_days": 0.0008333333333333334,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -90700,7 +90684,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0014467592592592592,
+        "latest_days": 0.0008333333333333334,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -91456,7 +91440,7 @@
     },
     {
       "dataset_id": "gtfs_realtime_mybas_kuala_terengganu",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuala-terengganu",
       "status": "stale",
@@ -91505,11 +91489,11 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 1,
-      "header_timestamp": 1794168034,
-      "newest_vehicle_timestamp": 1794168031,
+      "header_timestamp": 1794169534,
+      "newest_vehicle_timestamp": 1794169041,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.001388888888888889,
+      "staleness_days": 0.006446759259259259,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
@@ -91522,7 +91506,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.001388888888888889,
+        "latest_days": 0.006446759259259259,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -92278,10 +92262,10 @@
     },
     {
       "dataset_id": "gtfs_realtime_mybas_ipoh",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-ipoh",
-      "status": "stale",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (0 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-ipoh",
@@ -92327,16 +92311,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 0,
-      "header_timestamp": 1794168051,
+      "header_timestamp": 1794169536,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0011574074074074073,
-      "staleness_status": "stale",
+      "staleness_days": 0.0007175925925925926,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -92344,7 +92328,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0011574074074074073,
+        "latest_days": 0.0007175925925925926,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -93100,10 +93084,10 @@
     },
     {
       "dataset_id": "gtfs_realtime_mybas_seremban_a",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-seremban-a",
-      "status": "stale",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (0 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-seremban-a",
@@ -93149,16 +93133,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 0,
-      "header_timestamp": 1794168049,
+      "header_timestamp": 1794169538,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0011805555555555556,
-      "staleness_status": "stale",
+      "staleness_days": 0.0006944444444444445,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -93166,7 +93150,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0011805555555555556,
+        "latest_days": 0.0006944444444444445,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -93922,7 +93906,7 @@
     },
     {
       "dataset_id": "gtfs_realtime_mybas_seremban_b",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-seremban-b",
       "status": "stale",
@@ -93971,16 +93955,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 0,
-      "header_timestamp": 1794168049,
+      "header_timestamp": 1794169515,
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0011805555555555556,
+      "staleness_days": 0.0009606481481481482,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -93988,7 +93972,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0011805555555555556,
+        "latest_days": 0.0009606481481481482,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -94744,7 +94728,7 @@
     },
     {
       "dataset_id": "gtfs_realtime_mybas_melaka",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-melaka",
       "status": "stale",
@@ -94793,16 +94777,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 1,
-      "header_timestamp": 1794168018,
-      "newest_vehicle_timestamp": 1794168018,
+      "header_timestamp": 1794169518,
+      "newest_vehicle_timestamp": 1794169518,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0015393518518518519,
+      "staleness_days": 0.000925925925925926,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -94810,7 +94794,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0015393518518518519,
+        "latest_days": 0.000925925925925926,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -95566,16 +95550,16 @@
     },
     {
       "dataset_id": "gtfs_realtime_mybas_johor",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-johor",
       "status": "stale",
       "status_reason": null,
-      "message": "HTTP 200; valid GTFS realtime protobuf (8 vehicles)",
+      "message": "HTTP 200; valid GTFS realtime protobuf (13 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-johor",
       "access_method": "direct curl",
       "http_status": 200,
-      "content_length": 1292,
+      "content_length": 2064,
       "last_modified": null,
       "content_freshness_date": "2026-11-08",
       "first_record_timestamp": null,
@@ -95589,8 +95573,8 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": 8,
-      "estimated_record_count": 10.766666666666667,
+      "record_count": 13,
+      "estimated_record_count": 17.2,
       "record_count_estimated": false,
       "incomplete": false,
       "column_count": null,
@@ -95614,17 +95598,17 @@
       "trips": null,
       "stop_times": null,
       "calendar": null,
-      "vehicle_count": 8,
-      "header_timestamp": 1794168018,
-      "newest_vehicle_timestamp": 1794168018,
+      "vehicle_count": 13,
+      "header_timestamp": 1794169518,
+      "newest_vehicle_timestamp": 1794169518,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.0015393518518518519,
+      "staleness_days": 0.000925925925925926,
       "staleness_status": "stale",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -95632,7 +95616,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.0015393518518518519,
+        "latest_days": 0.000925925925925926,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -96388,16 +96372,16 @@
     },
     {
       "dataset_id": "gtfs_realtime_mybas_kuching",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "transport",
       "url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuching",
-      "status": "stale",
+      "status": "aging",
       "status_reason": null,
       "message": "HTTP 200; valid GTFS realtime protobuf (1 vehicles)",
       "request_url": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuching",
       "access_method": "direct curl",
       "http_status": 200,
-      "content_length": 92,
+      "content_length": 106,
       "last_modified": null,
       "content_freshness_date": "2026-11-08",
       "first_record_timestamp": null,
@@ -96412,7 +96396,7 @@
       "timestamp": null,
       "snapshot_chars": null,
       "record_count": 1,
-      "estimated_record_count": 0.7666666666666667,
+      "estimated_record_count": 0.8833333333333333,
       "record_count_estimated": false,
       "incomplete": false,
       "column_count": null,
@@ -96437,16 +96421,16 @@
       "stop_times": null,
       "calendar": null,
       "vehicle_count": 1,
-      "header_timestamp": 1794168008,
-      "newest_vehicle_timestamp": 1794145245,
+      "header_timestamp": 1794169531,
+      "newest_vehicle_timestamp": 1794169529,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": 0.26511574074074074,
-      "staleness_status": "stale",
+      "staleness_days": 0.0007986111111111112,
+      "staleness_status": "aging",
       "access_dependency": "direct",
       "freshness_signal": "content-date-parse",
       "freshness_signal_source": "content_date_parse",
-      "anomaly_detected": true,
+      "anomaly_detected": false,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
@@ -96454,7 +96438,7 @@
         "mean_days": null,
         "stdev_days": null,
         "threshold_days": 0.0010416666666666667,
-        "latest_days": 0.26511574074074074,
+        "latest_days": 0.0007986111111111112,
         "mode": "cadence_fallback"
       },
       "quality_profile": {
@@ -292736,7 +292720,7 @@
     },
     {
       "dataset_id": "bnm_kl_usd_myr",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T19:32:11Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/kl-usd-reference-rate",
       "status": "aging",
@@ -293558,10 +293542,10 @@
     },
     {
       "dataset_id": "bnm_interest_rate",
-      "last_checked": "2026-11-08T16:36:56Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/interest-rate",
-      "status": "degraded",
+      "status": "fresh",
       "status_reason": null,
       "message": "HTTP 200",
       "request_url": "https://api.bnm.gov.my/public/interest-rate",
@@ -293591,7 +293575,7 @@
       "schema_fingerprint": null,
       "sample_rows": null,
       "active_rows": null,
-      "content_shape_changed": true,
+      "content_shape_changed": false,
       "locations": null,
       "date_range": null,
       "newest_date": "2026-11-06",
@@ -294386,7 +294370,7 @@
     },
     {
       "dataset_id": "bnm_interest_volume",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/interest-volume",
       "status": "degraded",
@@ -295214,7 +295198,7 @@
     },
     {
       "dataset_id": "bnm_interbank_swap",
-      "last_checked": "2026-11-08T20:02:31Z",
+      "last_checked": "2026-11-08T19:32:11Z",
       "namespace": "government_open_data",
       "url": "https://api.bnm.gov.my/public/interbank-swap",
       "status": "aging",
@@ -330743,18 +330727,18 @@
     },
     {
       "dataset_id": "st_installed_capacity_mw",
-      "last_checked": "2026-10-31T13:12:59Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "unreachable",
+      "status": "stale",
       "status_reason": null,
-      "message": "ST detail request failed",
-      "request_url": "https://meih.st.gov.my/statistics;jsessionid=58213B2787E50C4EF35DC61EF6F77038?p_auth=Tld1iyOC&p_p_id=Eng_Statistic_WAR_STOASPublicPortlet&p_p_lifecycle=1&p_p_state=maximized&p_p_mode=view&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&_Eng_Statistic_WAR_STOASPublicPortlet_execution=e1s1&_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatisticELC3&categoryId=10&flowId=38",
-      "access_method": "ST MyEnergyStats protocol GET",
-      "http_status": null,
-      "content_length": null,
+      "message": "ST report table returned a valid year",
+      "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
+      "access_method": "ST MyEnergyStats protocol POST",
+      "http_status": 200,
+      "content_length": 33558,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2021-01-01",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -330766,11 +330750,11 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
+      "record_count": 33,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
-      "column_count": null,
+      "column_count": 3,
       "first_row_hash": null,
       "shape_basis": null,
       "schema_fingerprint": null,
@@ -330796,28 +330780,28 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 2137,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
-      "anomaly_detected": false,
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
         "sample_days": 5,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 90,
+        "latest_days": 2137.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -330845,9 +330829,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -330865,9 +330849,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -330910,16 +330894,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
-              "unknown": 1,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
-              "shape_metadata_missing",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -331262,13 +331246,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -331306,9 +331290,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -331347,16 +331331,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_observed",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -331557,7 +331541,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "indeterminate",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -331565,18 +331549,18 @@
     },
     {
       "dataset_id": "st_max_demand_mw",
-      "last_checked": "2026-10-31T13:12:59Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "unreachable",
+      "status": "stale",
       "status_reason": null,
-      "message": "ST detail request failed",
-      "request_url": "https://meih.st.gov.my/statistics;jsessionid=3B735EAD7D0C7D8B58BBEC778DA2E088?p_auth=P9Bf2WPE&p_p_id=Eng_Statistic_WAR_STOASPublicPortlet&p_p_lifecycle=1&p_p_state=maximized&p_p_mode=view&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&_Eng_Statistic_WAR_STOASPublicPortlet_execution=e1s1&_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatisticELC2&categoryId=10&flowId=39",
-      "access_method": "ST MyEnergyStats protocol GET",
-      "http_status": null,
-      "content_length": null,
+      "message": "ST report table returned a valid year",
+      "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
+      "access_method": "ST MyEnergyStats protocol POST",
+      "http_status": 200,
+      "content_length": 61288,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2021-01-01",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -331588,11 +331572,11 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
+      "record_count": 33,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
-      "column_count": null,
+      "column_count": 5,
       "first_row_hash": null,
       "shape_basis": null,
       "schema_fingerprint": null,
@@ -331618,28 +331602,28 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 2137,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
-      "anomaly_detected": false,
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
         "sample_days": 5,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 90,
+        "latest_days": 2137.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -331667,9 +331651,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -331687,9 +331671,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -331732,16 +331716,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
-              "unknown": 1,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
-              "shape_metadata_missing",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -332084,13 +332068,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -332128,9 +332112,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -332169,16 +332153,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_observed",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -332379,7 +332363,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "indeterminate",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -333209,18 +333193,18 @@
     },
     {
       "dataset_id": "st_sales_unit_gwh",
-      "last_checked": "2026-10-31T13:12:59Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "unreachable",
+      "status": "stale",
       "status_reason": null,
-      "message": "ST detail request failed",
-      "request_url": "https://meih.st.gov.my/statistics;jsessionid=1FB896FC2B31F2B692C3677B79CC0F8D?p_auth=96kCK0Gv&p_p_id=Eng_Statistic_WAR_STOASPublicPortlet&p_p_lifecycle=1&p_p_state=maximized&p_p_mode=view&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&_Eng_Statistic_WAR_STOASPublicPortlet_execution=e1s1&_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatisticELC6&categoryId=10&flowId=41",
-      "access_method": "ST MyEnergyStats protocol GET",
-      "http_status": null,
-      "content_length": null,
+      "message": "ST report table returned a valid year",
+      "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
+      "access_method": "ST MyEnergyStats protocol POST",
+      "http_status": 200,
+      "content_length": 113247,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2021-01-01",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -333232,11 +333216,11 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
+      "record_count": 33,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
-      "column_count": null,
+      "column_count": 9,
       "first_row_hash": null,
       "shape_basis": null,
       "schema_fingerprint": null,
@@ -333262,28 +333246,28 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 2137,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
-      "anomaly_detected": false,
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
         "sample_days": 5,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 90,
+        "latest_days": 2137.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -333311,9 +333295,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -333331,9 +333315,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -333376,16 +333360,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
-              "unknown": 1,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
-              "shape_metadata_missing",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -333728,13 +333712,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -333772,9 +333756,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -333813,16 +333797,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_observed",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -334023,7 +334007,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "indeterminate",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -334031,18 +334015,18 @@
     },
     {
       "dataset_id": "st_sales_value_rm_million",
-      "last_checked": "2026-10-31T13:12:59Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "unreachable",
+      "status": "stale",
       "status_reason": null,
-      "message": "ST detail request failed",
-      "request_url": "https://meih.st.gov.my/statistics;jsessionid=7329849312666F810E6EF72F19AF00BF?p_auth=0UthBkae&p_p_id=Eng_Statistic_WAR_STOASPublicPortlet&p_p_lifecycle=1&p_p_state=maximized&p_p_mode=view&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&_Eng_Statistic_WAR_STOASPublicPortlet_execution=e1s1&_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatisticELC2&categoryId=10&flowId=42",
-      "access_method": "ST MyEnergyStats protocol GET",
-      "http_status": null,
-      "content_length": null,
+      "message": "ST report table returned a valid year",
+      "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
+      "access_method": "ST MyEnergyStats protocol POST",
+      "http_status": 200,
+      "content_length": 61155,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2021-01-01",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -334054,11 +334038,11 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
+      "record_count": 33,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
-      "column_count": null,
+      "column_count": 5,
       "first_row_hash": null,
       "shape_basis": null,
       "schema_fingerprint": null,
@@ -334084,28 +334068,28 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 2137,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
-      "anomaly_detected": false,
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
         "sample_days": 5,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 90,
+        "latest_days": 2137.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -334133,9 +334117,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -334153,9 +334137,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -334198,16 +334182,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
-              "unknown": 1,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
-              "shape_metadata_missing",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -334550,13 +334534,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -334594,9 +334578,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -334635,16 +334619,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_observed",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -334845,7 +334829,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "indeterminate",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -334853,18 +334837,18 @@
     },
     {
       "dataset_id": "st_consumers",
-      "last_checked": "2026-10-31T13:12:59Z",
+      "last_checked": "2026-11-08T20:26:38Z",
       "namespace": "other",
       "url": "https://meih.st.gov.my/statistics",
-      "status": "unreachable",
+      "status": "stale",
       "status_reason": null,
-      "message": "ST detail request failed",
-      "request_url": "https://meih.st.gov.my/statistics;jsessionid=C0203F9F332127552210608F8F2CC569?p_auth=6ZZYtEmY&p_p_id=Eng_Statistic_WAR_STOASPublicPortlet&p_p_lifecycle=1&p_p_state=maximized&p_p_mode=view&p_p_col_id=column-1&p_p_col_pos=1&p_p_col_count=2&_Eng_Statistic_WAR_STOASPublicPortlet_execution=e1s1&_Eng_Statistic_WAR_STOASPublicPortlet__eventId=ViewStatisticELC6&categoryId=10&flowId=43",
-      "access_method": "ST MyEnergyStats protocol GET",
-      "http_status": null,
-      "content_length": null,
+      "message": "ST report table returned a valid year",
+      "request_url": "https://meih.st.gov.my/STOASPublicPortlet/energystatistic/searchStatistic.oas",
+      "access_method": "ST MyEnergyStats protocol POST",
+      "http_status": 200,
+      "content_length": 116818,
       "last_modified": null,
-      "content_freshness_date": null,
+      "content_freshness_date": "2021-01-01",
       "first_record_timestamp": null,
       "registration_format_compatible": null,
       "legacy_registration_count": null,
@@ -334876,11 +334860,11 @@
       "stations": null,
       "timestamp": null,
       "snapshot_chars": null,
-      "record_count": null,
+      "record_count": 33,
       "estimated_record_count": null,
       "record_count_estimated": false,
       "incomplete": false,
-      "column_count": null,
+      "column_count": 10,
       "first_row_hash": null,
       "shape_basis": null,
       "schema_fingerprint": null,
@@ -334906,28 +334890,28 @@
       "newest_vehicle_timestamp": null,
       "expected_record_count": null,
       "record_count_within_tolerance": null,
-      "staleness_days": null,
-      "staleness_status": "unknown-freshness",
+      "staleness_days": 2137,
+      "staleness_status": "stale",
       "access_dependency": "direct",
-      "freshness_signal": "no-header",
-      "freshness_signal_source": "none",
-      "anomaly_detected": false,
+      "freshness_signal": "content-date-parse",
+      "freshness_signal_source": "content_date_parse",
+      "anomaly_detected": true,
       "anomaly_detection": {
         "metric": "freshness_delta_days",
         "window_days": 14,
         "sample_days": 5,
         "mean_days": null,
         "stdev_days": null,
-        "threshold_days": null,
-        "latest_days": null,
-        "mode": "not_evaluated"
+        "threshold_days": 90,
+        "latest_days": 2137.0,
+        "mode": "cadence_fallback"
       },
       "quality_profile": {
         "profile_version": "datapulse-quality-profile/v1",
         "policy_id": "datapulse-quality-readiness/v1",
         "dimensions": {
           "fair": {
-            "state": "fail",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "fair.catalogue_metadata",
@@ -334955,9 +334939,9 @@
               },
               {
                 "check_id": "fair.observed_access",
-                "state": "fail",
+                "state": "pass",
                 "reason_codes": [
-                  "observed_access_unreachable"
+                  "observed_access_signal_present"
                 ],
                 "evidence_refs": [
                   {
@@ -334975,9 +334959,9 @@
               },
               {
                 "check_id": "fair.shape_metadata",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_metadata_missing"
+                  "shape_metadata_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -335020,16 +335004,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 3,
-              "passed": 2,
-              "failed": 1,
-              "unknown": 1,
+              "evaluated": 4,
+              "passed": 4,
+              "failed": 0,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
               "catalogue_metadata_declared",
-              "observed_access_unreachable",
-              "shape_metadata_missing",
+              "observed_access_signal_present",
+              "shape_metadata_observed",
               "reuse_metadata_declared"
             ],
             "evidence_refs": [
@@ -335372,13 +335356,13 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           },
           "reproducibility": {
-            "state": "unknown",
+            "state": "pass",
             "checks": [
               {
                 "check_id": "reproducibility.shape_fingerprint",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "shape_fingerprint_missing"
+                  "shape_fingerprint_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -335416,9 +335400,9 @@
               },
               {
                 "check_id": "reproducibility.record_count",
-                "state": "unknown",
+                "state": "pass",
                 "reason_codes": [
-                  "record_count_missing"
+                  "record_count_observed"
                 ],
                 "evidence_refs": [
                   {
@@ -335457,16 +335441,16 @@
             ],
             "coverage": {
               "applicable": 4,
-              "evaluated": 2,
-              "passed": 2,
+              "evaluated": 4,
+              "passed": 4,
               "failed": 0,
-              "unknown": 2,
+              "unknown": 0,
               "not_applicable": 0
             },
             "reason_codes": [
-              "shape_fingerprint_missing",
+              "shape_fingerprint_observed",
               "last_checked_declared",
-              "record_count_missing",
+              "record_count_observed",
               "attestation_ref_declared"
             ],
             "evidence_refs": [
@@ -335667,7 +335651,7 @@
             "policy_basis": "datapulse-quality-readiness/v1"
           }
         },
-        "overall": "not_ready",
+        "overall": "indeterminate",
         "limitations": [
           "This is an evidence/readiness profile, not a universal quality score, semantic truth claim, certification, or admission decision."
         ]
@@ -364593,7 +364577,7 @@
     },
     {
       "dataset_id": "odin_editions",
-      "last_checked": "2026-11-08T16:36:56Z",
+      "last_checked": "2026-11-08T15:32:06Z",
       "namespace": "government_open_data",
       "url": "https://odin-aim.akroninc.net/api/api/client/GetLiveYears",
       "status": "reference",
@@ -365422,7 +365406,7 @@
     },
     {
       "dataset_id": "odin_countries",
-      "last_checked": "2026-11-08T16:36:56Z",
+      "last_checked": "2026-11-08T15:32:06Z",
       "namespace": "government_open_data",
       "url": "https://odin-aim.akroninc.net/api/api/client/GetCountries",
       "status": "reference",
@@ -366247,7 +366231,7 @@
     },
     {
       "dataset_id": "odin_regions",
-      "last_checked": "2026-11-08T16:36:56Z",
+      "last_checked": "2026-11-08T15:32:06Z",
       "namespace": "government_open_data",
       "url": "https://odin-aim.akroninc.net/api/api/client/GetRegions",
       "status": "reference",
@@ -367073,7 +367057,7 @@
     },
     {
       "dataset_id": "odin_income_groups",
-      "last_checked": "2026-11-08T16:36:56Z",
+      "last_checked": "2026-11-08T15:32:06Z",
       "namespace": "government_open_data",
       "url": "https://odin-aim.akroninc.net/api/api/client/GetIncomeGroups",
       "status": "reference",
@@ -367898,7 +367882,7 @@
     },
     {
       "dataset_id": "odin_continents",
-      "last_checked": "2026-11-08T16:36:56Z",
+      "last_checked": "2026-11-08T15:32:06Z",
       "namespace": "government_open_data",
       "url": "https://odin-aim.akroninc.net/api/api/client/GetContinents",
       "status": "reference",
@@ -368723,7 +368707,7 @@
     },
     {
       "dataset_id": "odin_categories",
-      "last_checked": "2026-11-08T16:36:56Z",
+      "last_checked": "2026-11-08T15:32:06Z",
       "namespace": "government_open_data",
       "url": "https://odin-aim.akroninc.net/api/api/client/GetLatestsCategories",
       "status": "reference",
@@ -369549,7 +369533,7 @@
     },
     {
       "dataset_id": "odin_default_weights",
-      "last_checked": "2026-11-08T16:36:56Z",
+      "last_checked": "2026-11-08T15:32:06Z",
       "namespace": "government_open_data",
       "url": "https://odin-aim.akroninc.net/api/api/client/GetDefaultWeights",
       "status": "reference",
