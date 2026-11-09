@@ -103,12 +103,13 @@ jobs:
     # A skipped required check satisfies branch protection, so only main pushes may skip.
     if: always() && !(github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.classify.result == 'success' && needs.classify.outputs.health_only == 'true')
     runs-on: ubuntu-latest
-    # 40, not 25: the suite grew past the old ceiling. The append-fork regression file alone
-    # walks the 65k-file attestation chain and takes ~8 minutes, so two runs were killed at the
-    # boundary and GitHub reports a timed-out job as 'cancelled' — indistinguishable from an
-    # external cancel. If this creeps toward the new ceiling, cut the suite's runtime rather
-    # than raising it again.
-    timeout-minutes: 40
+    # 60, not 40: step 15 now regenerates the derived artefacts before validation (measured
+    # 4m56s on PR #3165), on top of a test suite that already runs ~30 minutes. The first run
+    # with regeneration hit the old 40-minute cap at step 16 and GitHub reports a timed-out job
+    # as 'cancelled' — indistinguishable from an external cancel. The headroom is deliberate:
+    # the append-fork regression file alone walks the 65k-file attestation chain (~8 minutes).
+    # If this creeps toward 60, cut the suite's runtime — do not raise it a third time.
+    timeout-minutes: 60
     env:
       ARTIFACT_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.health_only == 'true' }}
       APPEND_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.append_only == 'true' }}
@@ -209,6 +210,40 @@ jobs:
       - name: Generate README from canonical inputs
         if: env.FULL_VERIFICATION == 'true'
         run: python3 scripts/gen_readme.py
+
+      # Trade, stated plainly: from this step on, the job validates generator self-consistency —
+      # that this checkout's sources, run through its own generators, yield artefacts every later
+      # test and invariant accepts. It no longer proves the committed copies are current; committed
+      # artefacts are kept current by the health pipeline, not by this check. That is what lets a
+      # source-only change go green without carrying the regenerated files that conflict with
+      # main's next health merge. The gates above (schema validation, documentation counts,
+      # chain-head monotonicity, README --check) still judge committed bytes and stay active.
+      # health/history.jsonl is gitignored and absent here, and nothing is fetched to supply it:
+      # gen_trends and gen_drift read an empty raw history and derive from the committed
+      # health/history_daily.json, so their output here is coarser than production's. None skipped.
+      # gen_trends would clock itself at the daily history's end; --now pins it to the snapshot's
+      # checked_at, the clock gen_drift and the pipeline's own trends run already carry.
+      # Fast paths never regenerate: there the committed artefacts are the change under test.
+      - name: Regenerate derived artefacts before validation (trends and drift from history_daily.json; history.jsonl absent in CI)
+        if: env.FULL_VERIFICATION == 'true'
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/gen_health_trust_summary.py
+          python3 scripts/gen_quality_profile.py
+          checked_at=$(python3 -c 'import json; print(json.load(open("health/latest.json"))["checked_at"])')
+          python3 scripts/gen_trends.py --history /dev/null --daily health/history_daily.json --now "$checked_at"
+          python3 scripts/gen_drift.py --history /dev/null --daily health/history_daily.json
+          python3 scripts/gen_reconciliation.py
+          python3 scripts/gen_public_summary.py
+          python3 scripts/gen_catalog_snapshot.py
+          python3 scripts/gen_catalog_graph.py
+          python3 scripts/gen_public_discovery.py
+          python3 scripts/gen_readme.py
+          python3 scripts/gen_llms_summary.py
+          python3 scripts/gen_mcp_reference.py
+          python3 scripts/gen_ai_catalog.py
+          python3 scripts/gen_json_envelope.py --force
+          python3 scripts/gen_changelog.py
 
       - name: Run repository-contract and MCP tests
         if: env.FULL_VERIFICATION == 'true'

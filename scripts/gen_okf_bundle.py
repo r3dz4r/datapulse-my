@@ -134,7 +134,7 @@ def _slug(value: str) -> str:
 def _frontmatter(values: list[tuple[str, object]]) -> str:
     lines = ["---"]
     for key, value in values:
-        if isinstance(value, list) and key in {"sources", "verified", "parameters"}:
+        if isinstance(value, list) and value and key in {"sources", "verified", "parameters"}:
             lines.append(f"{key}:")
             for item in value:
                 lines.append(f"  - {_scalar(item)}")
@@ -144,7 +144,18 @@ def _frontmatter(values: list[tuple[str, object]]) -> str:
     return "\n".join(lines)
 
 
+def _is_unprobed(row: dict[str, Any]) -> bool:
+    """Return whether a health row is the schema's explicitly unprobed onboarding row.
+
+    Both conditions are required, matching scripts/gen_per_dataset_receipt.py: a
+    row that merely lacks ``last_checked`` is a defect, not an onboarding row.
+    """
+    return "last_checked" in row and row["last_checked"] is None and row.get("status") == "unknown-freshness"
+
+
 def _health_schema_text(row: dict[str, Any]) -> str:
+    if _is_unprobed(row):
+        return "No probe has run yet, so no structural fingerprint has been recorded."
     fields: list[str] = []
     for name in ("schema_fingerprint", "column_count", "first_row_hash", "record_count"):
         value = row.get(name)
@@ -153,11 +164,21 @@ def _health_schema_text(row: dict[str, Any]) -> str:
     return "\n".join(fields) if fields else "No structural fingerprint was recorded by the latest probe."
 
 
-def _dataset_document(entry: dict[str, Any], row: dict[str, Any], family: str) -> str:
+def _dataset_document(entry: dict[str, Any], row: dict[str, Any], family: str, snapshot_checked_at: str) -> str:
     identifier = entry["id"]
     status = row["status"]
-    verified_at = _iso(str(entry.get("verified_at") or row["last_checked"]), f"manifest verified_at for {identifier}")
-    checked_at = _iso(row["last_checked"], f"health last_checked for {identifier}")
+    if "last_checked" not in row:
+        raise OkfBundleError(f"health dataset {identifier} is missing last_checked")
+    unprobed = _is_unprobed(row)
+    if unprobed:
+        # No probe observed this dataset: the only honest timestamps are the
+        # manifest's lifecycle verification or the snapshot that onboarded it.
+        verified_at = _iso(str(entry["verified_at"]), f"manifest verified_at for {identifier}") if entry.get("verified_at") else snapshot_checked_at
+        verified: list[dict[str, object]] = []
+    else:
+        verified_at = _iso(str(entry.get("verified_at") or row["last_checked"]), f"manifest verified_at for {identifier}")
+        checked_at = _iso(row["last_checked"], f"health last_checked for {identifier}")
+        verified = [{"by": HEALTH_ACTOR, "at": checked_at}]
     source: dict[str, object] = {"id": entry["custodian"], "resource": entry["url"], "title": entry["steward"]}
     if isinstance(row.get("header_timestamp"), str) and row["header_timestamp"]:
         source["last_modified"] = _iso(row["header_timestamp"], f"header timestamp for {identifier}")
@@ -169,7 +190,7 @@ def _dataset_document(entry: dict[str, Any], row: dict[str, Any], family: str) -
         ("tags", [entry["source"], "vertical" if entry.get("vertical") else "non-vertical", entry["refresh_frequency"]]),
         ("sources", [source]),
         ("generated", {"by": PIPELINE_ACTOR, "at": verified_at}),
-        ("verified", [{"by": HEALTH_ACTOR, "at": checked_at}]),
+        ("verified", verified),
         ("status", "deprecated" if status == "discontinued" else "stable"),
         ("datapulse:licence", entry["licence"]),
         ("datapulse:attribution", entry["attribution"]),
@@ -178,16 +199,31 @@ def _dataset_document(entry: dict[str, Any], row: dict[str, Any], family: str) -
         ("datapulse:methodology_version", entry.get("methodology_version")),
         ("datapulse:expected_record_count", entry.get("expected_record_count")),
     ]
-    stale_after, basis = cadence_stale_after(entry.get("refresh_frequency"), row.get("content_freshness_date"), row.get("last_checked"))
-    if status not in NO_STALE_STATUSES and stale_after is not None and basis is not None:
-        values.extend([("stale_after", stale_after), ("datapulse:stale_after_basis", basis)])
+    if unprobed:
+        # Never derive stale_after for an unobserved dataset: any date here
+        # would be a freshness claim no probe made.
+        values.append(("datapulse:probe_state", "unprobed"))
+    else:
+        stale_after, basis = cadence_stale_after(entry.get("refresh_frequency"), row.get("content_freshness_date"), row.get("last_checked"))
+        if status not in NO_STALE_STATUSES and stale_after is not None and basis is not None:
+            values.extend([("stale_after", stale_after), ("datapulse:stale_after_basis", basis)])
     frontmatter = _frontmatter(values)
     quirks = entry.get("probe_note") or row.get("status_reason")
     quirks_text = str(quirks) if quirks else "No probe quirks were recorded."
+    if unprobed:
+        classification = "It is onboarded but not yet probed, so it carries the provisional status `unknown-freshness`."
+        health_text = (
+            f"{identifier} is onboarded but not yet probed. The health snapshot records no probe timestamp, so this concept "
+            "carries no probe verification and no `stale_after`; no freshness has been observed."
+        )
+    else:
+        classification = f"The latest published probe classifies it as `{status}`."
+        health_text = ""
     return (
         f"{frontmatter}\n\n# Summary\n\n{entry['name']} is published by {entry['steward']} and tracked by DataPulse. "
-        f"The latest published probe classifies it as `{status}`.\n\n# Schema\n\n{_health_schema_text(row)}\n\n"
-        f"# Quirks\n\n{quirks_text}\n\n# Health\n\nSee the [published health report](/{str(entry['health_report']).lstrip('/')}). "
+        f"{classification}\n\n# Schema\n\n{_health_schema_text(row)}\n\n"
+        f"# Quirks\n\n{quirks_text}\n\n# Health\n\n{health_text + ' ' if health_text else ''}"
+        f"See the [published health report](/{str(entry['health_report']).lstrip('/')}). "
         f"The probe is described by [the {family} attested computation](/computations/{_slug(family)}.md).\n"
     )
 
@@ -263,7 +299,7 @@ def render_bundle(manifest: dict[str, Any], health: dict[str, Any], changelog: d
     agencies: dict[str, list[dict[str, Any]]] = {}
     for entry, row in selected:
         family = str(entry.get("freshness_policy", {}).get("family") or "unclassified")
-        outputs[Path("datasets") / f"{entry['id']}.md"] = _dataset_document(entry, row, family)
+        outputs[Path("datasets") / f"{entry['id']}.md"] = _dataset_document(entry, row, family, checked_at)
         agencies.setdefault(str(entry["custodian"]), []).append(entry)
     for family in families:
         outputs[Path("computations") / f"{_slug(family)}.md"] = _computation_document(family, checked_at)

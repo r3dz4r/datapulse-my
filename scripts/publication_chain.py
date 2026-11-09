@@ -34,14 +34,18 @@ def _depth(value: object) -> int | None:
 
 
 def decide(inputs: object) -> Decision:
-    """Advance only a successful, identified publication within its depth budget."""
+    """Advance only a successful, identified publication within its depth budget.
+
+    A selection refusal published nothing, so a successor re-classifies on a newer
+    main under the same depth budget; every other failure class stops.
+    """
     try:
         if not isinstance(inputs, dict):
             return _stop("invalid_input")
         result = inputs.get("publication_result")
-        if result not in ("success", "failure", "cancelled", "skipped"):
+        if result not in ("success", "selection_refused", "failure", "cancelled", "skipped"):
             return _stop("invalid_publication_result")
-        if result != "success":
+        if result not in ("success", "selection_refused"):
             return _stop("not_succeeded")
         for field in ("published_sha", "main_sha"):
             if not _valid_sha(inputs.get(field)):
@@ -56,7 +60,9 @@ def decide(inputs: object) -> Decision:
             return _stop("equal_shas")
         if depth >= maximum:
             return _stop("depth_exhausted")
-        return {"decision": "chain", "reason": "newer_main", "next_depth": depth + 1}
+        # The refused SHA stays refused; only a newer main can be re-classified.
+        reason = "newer_main" if result == "success" else "selection_refused"
+        return {"decision": "chain", "reason": reason, "next_depth": depth + 1}
     except Exception:
         # An unexpected reader/validation error must never authorize a dispatch.
         return _stop("decision_error")

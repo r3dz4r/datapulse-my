@@ -44,7 +44,8 @@ def test_selection_failure_is_diagnosed_without_claiming_acceptance(
     assert result.returncode != 0
     assert "REFUSED:" in result.stdout + result.stderr
     assert diagnostic in result.stdout + result.stderr
-    assert not Path(env["GITHUB_OUTPUT"]).exists()
+    # Only the refusal is named, for the bounded successor; nothing is accepted.
+    assert Path(env["GITHUB_OUTPUT"]).read_text() == "state=selection_refused\n"
     assert "state=accepted" not in result.stdout
 
 

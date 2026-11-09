@@ -17,7 +17,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from scripts.verify_mcp_deployment import RepositoryHistoryError, newest_mcp_sha
+from scripts.verify_mcp_deployment import RepositoryHistoryError, resolve_source_identity
 
 
 LOGGER = logging.getLogger(__name__)
@@ -76,12 +76,19 @@ def _read_object(path: Path) -> dict[str, Any]:
     return value
 
 
-def _source_commit_sha(root: Path) -> str:
-    """Use the deployment check's default-branch MCP revision derivation."""
+def _source_commit_sha(
+    root: Path,
+    sha: str | None = None,
+    date: str | None = None,
+    *,
+    branch: str | None = None,
+) -> str:
+    """Use the stamp derivation shared with mcp.json and agent.json."""
     try:
-        return newest_mcp_sha(root)
+        resolved_sha, _ = resolve_source_identity(root, sha, date, branch=branch)
     except RepositoryHistoryError as error:
         raise ValueError(f"could not derive source commit SHA for {root}: {error}") from error
+    return resolved_sha
 
 
 def _tools(mcp: dict[str, Any]) -> list[dict[str, Any]]:
@@ -156,7 +163,13 @@ def _verification() -> dict[str, str]:
     }
 
 
-def build_outputs(root: Path) -> tuple[bytes, dict[str, bytes]]:
+def build_outputs(
+    root: Path,
+    *,
+    source_sha: str | None = None,
+    source_date: str | None = None,
+    source_branch: str | None = None,
+) -> tuple[bytes, dict[str, bytes]]:
     """Return canonical catalog and card bytes without writing public artifacts."""
     mcp = _read_object(root / "mcp.json")
     manifest = _read_object(root / "datapulse.json")
@@ -165,7 +178,7 @@ def build_outputs(root: Path) -> tuple[bytes, dict[str, bytes]]:
         raise ValueError("datapulse.json must contain a datasets array")
     tools = _tools(mcp)
     representative_query_corpus = _representative_query_corpus(root, tools)
-    source_commit_sha = _source_commit_sha(root)
+    source_commit_sha = _source_commit_sha(root, source_sha, source_date, branch=source_branch)
     entries: list[dict[str, Any]] = []
     cards: dict[str, bytes] = {}
     for tool in tools:
@@ -231,8 +244,16 @@ def _atomic_write(path: Path, content: bytes) -> None:
             temporary.unlink()
 
 
-def generate(root: Path) -> list[Path]:
-    catalog, cards = build_outputs(root)
+def generate(
+    root: Path,
+    *,
+    source_sha: str | None = None,
+    source_date: str | None = None,
+    source_branch: str | None = None,
+) -> list[Path]:
+    catalog, cards = build_outputs(
+        root, source_sha=source_sha, source_date=source_date, source_branch=source_branch,
+    )
     outputs = [
         root / "docs/ai-catalog.json",
         root / "docs/.well-known/ard.json",
@@ -250,13 +271,21 @@ def generate(root: Path) -> list[Path]:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=ROOT)
+    parser.add_argument("--source-commit-sha")
+    parser.add_argument("--source-commit-date")
+    parser.add_argument("--source-branch", help="origin branch whose MCP history derives the stamp when no revision is injected")
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
     try:
-        outputs = generate(args.root.resolve())
+        outputs = generate(
+            args.root.resolve(),
+            source_sha=args.source_commit_sha,
+            source_date=args.source_commit_date,
+            source_branch=args.source_branch,
+        )
     except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
         LOGGER.error("AI catalog generation failed: %s", exc)
         return 1

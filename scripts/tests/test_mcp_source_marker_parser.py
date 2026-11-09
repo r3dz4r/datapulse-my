@@ -45,11 +45,10 @@ def test_generation_ignores_a_stale_checked_in_server_marker(
 
     monkeypatch.delenv("DATAPULSE_SOURCE_COMMIT_SHA", raising=False)
     monkeypatch.delenv("DATAPULSE_SOURCE_COMMIT_DATE", raising=False)
-    monkeypatch.setattr(gen_mcp_reference, "newest_mcp_sha", lambda root: DERIVED_SHA)
     monkeypatch.setattr(
         gen_mcp_reference,
-        "_source_commit_date",
-        lambda root, sha: DERIVED_DATE,
+        "resolve_source_identity",
+        lambda root, sha, date, *, branch=None: (DERIVED_SHA, DERIVED_DATE),
     )
     monkeypatch.setattr(gen_mcp_reference, "publish_text_outputs", capture_outputs)
 

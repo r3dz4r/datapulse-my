@@ -53,6 +53,41 @@ def test_success_with_new_main_chains_once() -> None:
     }
 
 
+@pytest.mark.parametrize("depth", [0, 2])
+def test_selection_refusal_chains_once_within_budget(depth: int) -> None:
+    assert publication_chain.decide(inputs(publication_result="selection_refused", chain_depth=depth)) == {
+        "decision": "chain", "reason": "selection_refused", "next_depth": depth + 1,
+    }
+
+
+@pytest.mark.parametrize(("overrides", "reason"), [
+    ({"publication_result": "selection_refused", "chain_depth": 3}, "depth_exhausted"),
+    ({"publication_result": "selection_refused", "chain_depth": "4"}, "depth_exhausted"),
+    ({"publication_result": "selection_refused", "max_depth": 0}, "depth_exhausted"),
+    # The refused SHA is still the newest main: re-classification would refuse it again.
+    ({"publication_result": "selection_refused", "main_sha": "a" * 40}, "equal_shas"),
+    ({"publication_result": "selection_refused", "main_sha": ""}, "invalid_main_sha"),
+    ({"publication_result": "selection_refused", "published_sha": ""}, "invalid_published_sha"),
+    ({"publication_result": "SELECTION_REFUSED"}, "invalid_publication_result"),
+    ({"publication_result": "refused"}, "invalid_publication_result"),
+])
+def test_selection_refusal_stays_bounded(overrides: dict[str, object], reason: str) -> None:
+    assert publication_chain.decide(inputs(**overrides)) == {
+        "decision": "stop", "reason": reason, "next_depth": None,
+    }
+
+
+def test_consecutive_selection_refusals_end_at_the_depth_cap() -> None:
+    depth, decisions = 0, []
+    while True:
+        decision = publication_chain.decide(inputs(publication_result="selection_refused", chain_depth=depth))
+        decisions.append(decision["reason"])
+        if decision["decision"] != "chain":
+            break
+        depth = decision["next_depth"]
+    assert decisions == ["selection_refused"] * 3 + ["depth_exhausted"]
+
+
 @pytest.mark.parametrize(("overrides", "reason"), [
     ({"main_sha": "a" * 40}, "equal_shas"),
     ({"publication_result": "failure"}, "not_succeeded"),
@@ -130,6 +165,7 @@ def test_unreadable_stream_exits_zero(
     (json.dumps(inputs()), "newer_main"),
     (json.dumps(inputs(publication_result="failure")), "not_succeeded"),
     (json.dumps(inputs(main_sha="a" * 40)), "equal_shas"),
+    (json.dumps(inputs(publication_result="selection_refused")), "selection_refused"),
 ])
 def test_cli_always_exits_zero_with_machine_readable_decision(payload: str, reason: str) -> None:
     result = subprocess.run(
@@ -139,7 +175,10 @@ def test_cli_always_exits_zero_with_machine_readable_decision(payload: str, reas
     assert result.returncode == 0, result.stderr
     verdict = json.loads(result.stdout)
     assert verdict["reason"] == reason
-    assert verdict["decision"] == ("chain" if reason == "newer_main" else "stop")
+    assert verdict["decision"] == ("chain" if reason in CHAIN_REASONS else "stop")
+
+
+CHAIN_REASONS = {"newer_main", "selection_refused"}
 
 
 def workflow() -> dict:
@@ -161,9 +200,24 @@ def test_successor_reuses_selection_and_preserves_global_lock() -> None:
     steps = job["steps"]
     dispatch = next(step for step in steps if step.get("id") == "successor")
     assert "success()" in dispatch["if"] and "!cancelled()" in dispatch["if"]
-    assert "steps.chain.outputs.decision == 'chain'" in dispatch["if"]
-    assert "needs.deploy.result == 'success'" in dispatch["if"]
-    assert "needs.publication_freshness.result == 'success'" in dispatch["if"]
+    # Deliberately relaxed for one named class only: a published run, or a
+    # recognised selection refusal. Any other failure still gags the successor.
+    assert dispatch["if"] == (
+        "success() && !cancelled() && steps.chain.outputs.decision == 'chain' && "
+        "(needs.deploy.result == 'success' && needs.publication_freshness.result == 'success' || "
+        "steps.chain.outputs.reason == 'selection_refused' && needs.sign_health.result == 'failure' && "
+        "needs.sign_health.outputs.report_state == 'selection_refused')"
+    )
+    decide = next(step for step in steps if step.get("id") == "chain")
+    assert decide["env"]["PUBLICATION_RESULT"] == (
+        "${{ needs.deploy.result == 'success' && needs.publication_freshness.result == 'success' && 'success' || "
+        "needs.sign_health.result == 'failure' && needs.sign_health.outputs.report_state == 'selection_refused' "
+        "&& 'selection_refused' || 'failure' }}"
+    )
+    # The successor still runs classify, settlement and every verification step.
+    jobs = parsed["jobs"]
+    assert jobs["sign_health"]["needs"] == "classify"
+    assert jobs["deploy"]["if"] == "needs.sign_health.outputs.report_state == 'accepted'"
     assert dispatch["run"].count("gh api") == 1
     assert "/deploy-cloudflare-pages.yml/dispatches" in dispatch["run"]
     assert '-f ref=main' in dispatch["run"]
@@ -183,6 +237,11 @@ def test_successor_reuses_selection_and_preserves_global_lock() -> None:
     ("success", "b" * 40, "0", 1, "workflow_dispatch", "invalid_main_sha"),
     ("success", "garbage", "0", 0, "workflow_dispatch", "invalid_main_sha"),
     ("success", "b" * 40, "", 0, "workflow_run", "newer_main"),
+    ("selection_refused", "b" * 40, "0", 0, "workflow_dispatch", "selection_refused"),
+    ("selection_refused", "b" * 40, "", 0, "workflow_run", "selection_refused"),
+    ("selection_refused", "a" * 40, "0", 0, "workflow_dispatch", "equal_shas"),
+    ("selection_refused", "b" * 40, "3", 0, "workflow_dispatch", "depth_exhausted"),
+    ("selection_refused", "b" * 40, "0", 1, "workflow_dispatch", "invalid_main_sha"),
 ])
 def test_workflow_decision_reads_live_head_and_fails_closed(
     tmp_path: Path, result: str, head: str, depth: str, read_status: int, event: str, expected: str,
@@ -207,8 +266,8 @@ def test_workflow_decision_reads_live_head_and_fails_closed(
     assert completed.returncode == 0, completed.stderr
     fields = dict(line.split("=", 1) for line in output.read_text().splitlines())
     assert fields["reason"] == expected
-    assert fields["decision"] == ("chain" if expected == "newer_main" else "stop")
-    assert fields["next_depth"] == ("1" if expected == "newer_main" else "")
+    assert fields["decision"] == ("chain" if expected in CHAIN_REASONS else "stop")
+    assert fields["next_depth"] == ("1" if expected in CHAIN_REASONS else "")
 
 
 @pytest.mark.parametrize("dispatch_status", [0, 1])
@@ -266,3 +325,32 @@ def test_missing_decision_script_stops_and_summarizes(tmp_path: Path) -> None:
     env |= {"DECISION": "stop", "REASON": "decision_unavailable", "NEXT_DEPTH": "", "DISPATCH_OUTCOME": "skipped"}
     subprocess.run(["bash", "-c", steps[-1]["run"]], env=env, check=True, timeout=5)
     assert summary.read_text() == "Publication successor: stop (decision_unavailable).\n"
+
+
+@pytest.mark.parametrize(("selector", "status", "outputs"), [
+    ('print("REFUSED: current selector is not the terminal accepted head"); raise SystemExit(1)',
+     1, "state=selection_refused\n"),
+    # A crash or usage error is not the selector's refusal and stays anonymous.
+    ('raise RuntimeError("REFUSED: crash")', 1, None),
+    ('raise SystemExit(1)', 1, None),
+    ('print("REFUSED: usage"); raise SystemExit(2)', 2, None),
+])
+def test_selection_step_names_only_its_own_refusal(
+    tmp_path: Path, selector: str, status: int, outputs: str | None,
+) -> None:
+    (tmp_path / "scripts").mkdir()
+    (tmp_path / "scripts/select_accepted_health.py").write_text(selector + "\n")
+    step = next(step for step in workflow()["jobs"]["sign_health"]["steps"]
+                if step.get("id") == "select_accepted_health")
+    output = tmp_path / "output"
+    env = os.environ | {
+        "RUNNER_TEMP": str(tmp_path), "GITHUB_OUTPUT": str(output),
+        "PROMOTION_SOURCE_SHA": "a" * 40,
+    }
+    completed = subprocess.run(
+        ["bash", "-c", step["run"]], cwd=tmp_path, env=env,
+        text=True, capture_output=True, check=False, timeout=10,
+    )
+    # The refusal never turns the selection step green.
+    assert completed.returncode == status, completed.stdout + completed.stderr
+    assert (output.read_text() if output.exists() else None) == outputs

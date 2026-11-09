@@ -1423,7 +1423,9 @@ def test_workflow_refuses_unrecoverable_or_mismatched_accepted_inputs(tmp_path: 
     result = subprocess.run(['bash', '-c', _select_step()['run']], cwd=root, env=env,
                             capture_output=True, text=True, timeout=30)
     assert result.returncode != 0, result.stdout
-    assert not Path(env['GITHUB_OUTPUT']).exists()
+    # The refusal is named for the bounded successor; nothing is accepted.
+    assert Path(env['GITHUB_OUTPUT']).read_text() == 'state=selection_refused\n'
+    assert 'REFUSED: ' in result.stdout
 
 
 @pytest.mark.parametrize('clock', ['observation', 'publication'])
