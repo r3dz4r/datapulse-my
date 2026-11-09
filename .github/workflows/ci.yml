@@ -103,12 +103,13 @@ jobs:
     # A skipped required check satisfies branch protection, so only main pushes may skip.
     if: always() && !(github.event_name == 'push' && github.ref == 'refs/heads/main' && needs.classify.result == 'success' && needs.classify.outputs.health_only == 'true')
     runs-on: ubuntu-latest
-    # 40, not 25: the suite grew past the old ceiling. The append-fork regression file alone
-    # walks the 65k-file attestation chain and takes ~8 minutes, so two runs were killed at the
-    # boundary and GitHub reports a timed-out job as 'cancelled' — indistinguishable from an
-    # external cancel. If this creeps toward the new ceiling, cut the suite's runtime rather
-    # than raising it again.
-    timeout-minutes: 40
+    # 60, not 40: step 15 now regenerates the derived artefacts before validation (measured
+    # 4m56s on PR #3165), on top of a test suite that already runs ~30 minutes. The first run
+    # with regeneration hit the old 40-minute cap at step 16 and GitHub reports a timed-out job
+    # as 'cancelled' — indistinguishable from an external cancel. The headroom is deliberate:
+    # the append-fork regression file alone walks the 65k-file attestation chain (~8 minutes).
+    # If this creeps toward 60, cut the suite's runtime — do not raise it a third time.
+    timeout-minutes: 60
     env:
       ARTIFACT_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.health_only == 'true' }}
       APPEND_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.append_only == 'true' }}
