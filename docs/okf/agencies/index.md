@@ -35,7 +35,6 @@
 * [npra](./npra/) - Published dataset index.
 * [nres](./nres/) - Published dataset index.
 * [ntrc](./ntrc/) - Published dataset index.
-* [odin](./odin/) - Published dataset index.
 * [parliament](./parliament/) - Published dataset index.
 * [paynet](./paynet/) - Published dataset index.
 * [pdrm](./pdrm/) - Published dataset index.
