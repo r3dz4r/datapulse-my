@@ -269,8 +269,20 @@ jobs:
         run: |
           set -Eeuo pipefail
           publication="$RUNNER_TEMP/sigstore-publication"
+          selection_log="$RUNNER_TEMP/accepted-selection.log"
+          status=0
           python3 scripts/select_accepted_health.py --root . \
-            --revision "$PROMOTION_SOURCE_SHA" --out "$publication"
+            --revision "$PROMOTION_SOURCE_SHA" --out "$publication" \
+            | tee "$selection_log" || status=$?
+          if (( status != 0 )); then
+            # Name only the selector's own refusal at this pinned SHA; the job
+            # still fails and a crash stays an anonymous failure.
+            if (( status == 1 )) && grep -q '^REFUSED: ' "$selection_log"; then
+              echo "state=selection_refused" >> "$GITHUB_OUTPUT"
+              echo "::error title=Accepted report selection refused::$PROMOTION_SOURCE_SHA; nothing was published."
+            fi
+            exit "$status"
+          fi
           # Signing consumes the recovered report, including when main has newer health.
           cp "$publication/health/latest.json" health/latest.json
           cp "$publication/datapulse.json" datapulse.json
@@ -1101,7 +1113,8 @@ jobs:
         id: chain
         env:
           GH_TOKEN: ${{ github.token }}
-          PUBLICATION_RESULT: ${{ needs.deploy.result == 'success' && needs.publication_freshness.result == 'success' && 'success' || 'failure' }}
+          # A selection refusal deployed nothing; every other failure stays anonymous.
+          PUBLICATION_RESULT: ${{ needs.deploy.result == 'success' && needs.publication_freshness.result == 'success' && 'success' || needs.sign_health.result == 'failure' && needs.sign_health.outputs.report_state == 'selection_refused' && 'selection_refused' || 'failure' }}
           PUBLISHED_SHA: ${{ needs.sign_health.outputs.settled_sha }}
           CHAIN_DEPTH: ${{ github.event.inputs.chain_depth }}
         run: |
@@ -1111,7 +1124,7 @@ jobs:
             CHAIN_DEPTH=0
           fi
           main_sha=""
-          if [[ "$PUBLICATION_RESULT" == "success" ]]; then
+          if [[ "$PUBLICATION_RESULT" == "success" || "$PUBLICATION_RESULT" == "selection_refused" ]]; then
             if ! main_sha="$(timeout -k 5s 60s gh api \
               "repos/$GITHUB_REPOSITORY/commits/refs/heads/main" \
               --header "Cache-Control: no-cache" --jq '.sha')"; then
@@ -1135,7 +1148,7 @@ jobs:
 
       - name: Dispatch one bounded successor
         id: successor
-        if: success() && !cancelled() && steps.chain.outputs.decision == 'chain' && needs.deploy.result == 'success' && needs.publication_freshness.result == 'success'
+        if: success() && !cancelled() && steps.chain.outputs.decision == 'chain' && (needs.deploy.result == 'success' && needs.publication_freshness.result == 'success' || steps.chain.outputs.reason == 'selection_refused' && needs.sign_health.result == 'failure' && needs.sign_health.outputs.report_state == 'selection_refused')
         env:
           GH_TOKEN: ${{ github.token }}
           NEXT_DEPTH: ${{ steps.chain.outputs.next_depth }}
