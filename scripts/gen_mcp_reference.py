@@ -6,8 +6,6 @@ from __future__ import annotations
 import argparse
 import asyncio
 import os
-import re
-import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -31,51 +29,30 @@ from scripts.public_surface_generation import (  # noqa: E402
 )
 from scripts.verify_mcp_deployment import (  # noqa: E402
     RepositoryHistoryError,
-    newest_mcp_sha,
+    resolve_source_identity,
+    source_commit_date,
 )
 
 
 REQUIRED_ANNOTATIONS = ("readOnlyHint", "destructiveHint", "idempotentHint", "openWorldHint")
-SHA_RE = re.compile(r"^[0-9a-f]{40}$")
-DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def _source_commit_date(root: Path, sha: str) -> str:
     """Return the repository-recorded calendar date for a source revision."""
     try:
-        result = subprocess.run(
-            ["git", "-C", str(root), "show", "-s", "--format=%cs", sha],
-            capture_output=True,
-            check=False,
-            text=True,
-        )
-    except OSError as error:
-        raise GenerationError(f"cannot derive source commit date: {error}") from error
-    resolved_date = result.stdout.strip()
-    if result.returncode != 0 or not DATE_RE.fullmatch(resolved_date):
-        detail = result.stderr.strip() or result.stdout.strip() or "git command failed"
-        raise GenerationError(f"cannot derive source commit date for {sha}: {detail}")
-    return resolved_date
+        return source_commit_date(root, sha)
+    except RepositoryHistoryError as error:
+        raise GenerationError(str(error)) from error
 
 
-def _source_identity(root: Path, sha: str | None, date: str | None) -> tuple[str, str]:
-    """Resolve injected source identity, or derive it from default-branch MCP history."""
-    resolved_sha = sha or os.environ.get("DATAPULSE_SOURCE_COMMIT_SHA")
-    resolved_date = date or os.environ.get("DATAPULSE_SOURCE_COMMIT_DATE")
-    if resolved_sha is None:
-        try:
-            resolved_sha = newest_mcp_sha(root)
-        except RepositoryHistoryError as error:
-            raise GenerationError(
-                f"cannot derive deployed MCP code source revision: {error}"
-            ) from error
-    if not SHA_RE.fullmatch(resolved_sha):
-        raise GenerationError("source commit SHA must be 40 lowercase hex characters")
-    if resolved_date is None:
-        resolved_date = _source_commit_date(root, resolved_sha)
-    if not DATE_RE.fullmatch(resolved_date):
-        raise GenerationError("source commit date must be YYYY-MM-DD")
-    return resolved_sha, resolved_date
+def _source_identity(
+    root: Path, sha: str | None, date: str | None, *, branch: str | None = None,
+) -> tuple[str, str]:
+    """Resolve the published source stamp through the shared derivation."""
+    try:
+        return resolve_source_identity(root, sha, date, branch=branch)
+    except RepositoryHistoryError as error:
+        raise GenerationError(str(error)) from error
 
 
 def _manifest(root: Path) -> list[dict[str, Any]]:
@@ -247,7 +224,7 @@ def _reference(config: dict[str, Any], datasets: list[dict[str, Any]], taxonomy:
     return "\n".join(lines).rstrip() + "\n"
 
 
-async def generate(root: Path, *, source_sha: str | None = None, source_date: str | None = None, check: bool = False, validate_only: bool = False) -> bool:
+async def generate(root: Path, *, source_sha: str | None = None, source_date: str | None = None, source_branch: str | None = None, check: bool = False, validate_only: bool = False) -> bool:
     """Validate and render every MCP-owned output before publishing any of them."""
     config = load_public_surfaces(root)
     schemas: dict[str, dict[str, Any]] = {}
@@ -262,7 +239,7 @@ async def generate(root: Path, *, source_sha: str | None = None, source_date: st
     missing_featured = featured - {row["id"] for row in datasets}
     if missing_featured:
         raise GenerationError(f"featured dataset id(s) missing from manifest: {', '.join(sorted(missing_featured))}")
-    resolved_sha, resolved_date = _source_identity(root, source_sha, source_date)
+    resolved_sha, resolved_date = _source_identity(root, source_sha, source_date, branch=source_branch)
     tools = list(await server.mcp.list_tools())
     resources = list(await server.mcp.list_resources())
     templates = list(await server.mcp.list_resource_templates())
@@ -316,6 +293,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--root", type=Path, default=ROOT)
     parser.add_argument("--source-commit-sha")
     parser.add_argument("--source-commit-date")
+    parser.add_argument("--source-branch", help="origin branch whose MCP history derives the stamp when no revision is injected")
     parser.add_argument("--check", action="store_true")
     parser.add_argument("--validate-only", action="store_true")
     return parser.parse_args()
@@ -324,7 +302,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     try:
-        changed = asyncio.run(generate(args.root.resolve(), source_sha=args.source_commit_sha, source_date=args.source_commit_date, check=args.check, validate_only=args.validate_only))
+        changed = asyncio.run(generate(args.root.resolve(), source_sha=args.source_commit_sha, source_date=args.source_commit_date, source_branch=args.source_branch, check=args.check, validate_only=args.validate_only))
     except GenerationError as error:
         print(f"gen_mcp_reference.py: {error}", file=sys.stderr)
         return 1

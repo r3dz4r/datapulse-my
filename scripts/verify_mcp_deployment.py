@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
+import os
 import re
 import subprocess
 import sys
@@ -19,6 +21,12 @@ ACCEPT = "application/json, text/event-stream"
 PROTOCOL_VERSION = "2025-03-26"
 VERSION_SHA_RE = re.compile(r"\+([0-9a-f]{7,40})$")
 SHA_RE = re.compile(r"^[0-9a-f]{40}$")
+DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
+# An injected identity names the revision being published and wins over any
+# history derivation, in every generator that stamps a discovery artefact.
+SOURCE_COMMIT_SHA_ENV = "DATAPULSE_SOURCE_COMMIT_SHA"
+SOURCE_COMMIT_DATE_ENV = "DATAPULSE_SOURCE_COMMIT_DATE"
+LOGGER = logging.getLogger(__name__)
 # Keep this list explicit: tests, docs, and future files under mcp/ do not
 # change the deployed source identity unless they become runtime inputs.
 DEPLOYED_MCP_PATHS = (
@@ -189,6 +197,72 @@ def newest_mcp_sha(repo_path: Path, default_branch: str | None = None) -> str:
             f"default branch {ref} has no resolvable commit changing deployed MCP code"
         )
     return sha
+
+
+def source_commit_date(repo_path: Path, sha: str) -> str:
+    """Return the repository-recorded calendar date for a source revision."""
+    try:
+        resolved_date = _git(repo_path, "show", "-s", "--format=%cs", sha)
+    except RepositoryHistoryError as error:
+        raise RepositoryHistoryError(
+            f"cannot derive source commit date for {sha}: {error}"
+        ) from error
+    if not DATE_RE.fullmatch(resolved_date):
+        raise RepositoryHistoryError(
+            f"cannot derive source commit date for {sha}: {resolved_date or 'empty output'}"
+        )
+    return resolved_date
+
+
+def _ambient_default_ref(repo_path: Path) -> str:
+    """Describe the local origin default-branch symref for diagnostics only."""
+    try:
+        return _git(repo_path, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD")
+    except RepositoryHistoryError:
+        return "<unset>"
+
+
+def resolve_source_identity(
+    repo_path: Path,
+    sha: str | None = None,
+    date: str | None = None,
+    *,
+    branch: str | None = None,
+) -> tuple[str, str]:
+    """Return the ``(sha, date)`` source stamp every MCP discovery generator publishes.
+
+    This is the only derivation of the published stamp. Precedence is the
+    explicit argument, then the injected environment identity, then MCP
+    history. History is searched on ``branch`` when the caller names what it is
+    publishing from; otherwise it falls back to whatever origin's default ref
+    resolves to on this machine, and that fallback is logged because two
+    checkouts with differently pointed ``origin/HEAD`` derive different stamps
+    for the same tree.
+    """
+    resolved_sha = sha or os.environ.get(SOURCE_COMMIT_SHA_ENV)
+    resolved_date = date or os.environ.get(SOURCE_COMMIT_DATE_ENV)
+    if resolved_sha is None:
+        try:
+            resolved_sha = newest_mcp_sha(repo_path, branch)
+        except RepositoryHistoryError as error:
+            raise RepositoryHistoryError(
+                f"cannot derive deployed MCP code source revision: {error}"
+            ) from error
+        if branch is None:
+            LOGGER.warning(
+                "no injected source revision (%s) or source branch; derived %s "
+                "from the ambient origin default ref %s",
+                SOURCE_COMMIT_SHA_ENV,
+                resolved_sha,
+                _ambient_default_ref(repo_path),
+            )
+    if not SHA_RE.fullmatch(resolved_sha):
+        raise RepositoryHistoryError("source commit SHA must be 40 lowercase hex characters")
+    if resolved_date is None:
+        resolved_date = source_commit_date(repo_path, resolved_sha)
+    if not DATE_RE.fullmatch(resolved_date):
+        raise RepositoryHistoryError("source commit date must be YYYY-MM-DD")
+    return resolved_sha, resolved_date
 
 
 def _decode_response(payload: bytes) -> dict[str, Any]:
