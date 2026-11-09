@@ -11,8 +11,10 @@ import json
 import multiprocessing
 import os
 import re
+import sys
 import tempfile
 import urllib.request
+from multiprocessing.pool import ThreadPool
 from pathlib import Path
 from typing import Any
 
@@ -22,6 +24,14 @@ MAX_SOURCE_BYTES = 262_144
 MAX_GEOJSON_SOURCE_BYTES = 4_194_304
 SAMPLE_ROWS = 100
 CHECK_NAMES = ("file_reachable", "row_count", "freshness", "schema_stable")
+
+
+class SourceCacheMiss(RuntimeError):
+    """An isolated build could not resolve a source from the pinned cache.
+
+    Deliberately not an OSError or ValueError: build_envelope degrades those to
+    empty fields, and a miss must fail the build instead.
+    """
 
 
 def load_json(path: Path) -> dict[str, Any]:
@@ -56,61 +66,120 @@ def _replace_file(path: Path, data: bytes) -> None:
 
 def _read_cached_source(cache_dir: Path, url: str) -> tuple[bytes, str | None] | None:
     bin_path, json_path = _source_cache_paths(cache_dir, url)
-    if not bin_path.is_file() or not json_path.is_file():
+    if not json_path.is_file():
         return None
     try:
-        payload = bin_path.read_bytes()
         metadata = json.loads(json_path.read_text(encoding="utf-8"))
     except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
         return None
-    if not isinstance(metadata, dict) or "content_type" not in metadata:
+    if not isinstance(metadata, dict):
+        return None
+    if "unavailable" in metadata:
+        reason = metadata["unavailable"]
+        if not isinstance(reason, str) or bin_path.exists():
+            return None
+        # The seed pinned this source's failure, so both builds degrade it the
+        # same way a live failure degrades, without reaching the network.
+        raise OSError(f"{url} was unavailable when the source cache was seeded: {reason}")
+    if "content_type" not in metadata or not bin_path.is_file():
         return None
     content_type = metadata["content_type"]
     if content_type is not None and not isinstance(content_type, str):
         return None
-    return payload, content_type
+    try:
+        return bin_path.read_bytes(), content_type
+    except OSError:
+        return None
 
 
 def _write_cached_source(
     cache_dir: Path, url: str, payload: bytes, content_type: str | None
 ) -> None:
     bin_path, json_path = _source_cache_paths(cache_dir, url)
-    try:
-        cache_dir.mkdir(parents=True, exist_ok=True)
-        _replace_file(bin_path, payload)
-        _replace_file(
-            json_path, json.dumps({"content_type": content_type}).encode("utf-8")
-        )
-    except OSError:
-        # Cache writes are best-effort; a failure must not fail generation.
-        return
-
-
-def fetch_source(url: str) -> tuple[bytes, str | None]:
-    # Follow DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD: the cache env is only a
-    # location. A miss populates on first use because envelope sources are too
-    # large to commit, unlike the pinned metrics cache.
-    cache_dir_value = os.environ.get("DATAPULSE_ENVELOPE_SOURCE_CACHE")
-    cache_dir = (
-        Path(cache_dir_value)
-        if os.environ.get("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD") == "1"
-        and cache_dir_value
-        else None
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    _replace_file(bin_path, payload)
+    _replace_file(
+        json_path, json.dumps({"content_type": content_type}).encode("utf-8")
     )
-    if cache_dir is not None:
-        cached = _read_cached_source(cache_dir, url)
-        if cached is not None:
-            return cached
+
+
+def _write_unavailable_source(cache_dir: Path, url: str, reason: str) -> None:
+    bin_path, json_path = _source_cache_paths(cache_dir, url)
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    bin_path.unlink(missing_ok=True)
+    _replace_file(json_path, json.dumps({"unavailable": reason}).encode("utf-8"))
+
+
+def _fetch_live(url: str) -> tuple[bytes, str | None]:
     source_bytes = MAX_GEOJSON_SOURCE_BYTES if url.split("?", 1)[0].lower().endswith(".geojson") else MAX_SOURCE_BYTES
     request = urllib.request.Request(
         url,
         headers={"Range": f"bytes=0-{source_bytes - 1}", "User-Agent": "DataPulse-envelope-generator/0.1"},
     )
     with urllib.request.urlopen(request, timeout=20) as response:
-        payload, content_type = response.read(source_bytes), response.headers.get_content_type()
-    if cache_dir is not None:
-        _write_cached_source(cache_dir, url, payload, content_type)
-    return payload, content_type
+        return response.read(source_bytes), response.headers.get_content_type()
+
+
+def fetch_source(url: str) -> tuple[bytes, str | None]:
+    # An isolated reproducibility build never reaches the network: every source
+    # must already be pinned in DATAPULSE_ENVELOPE_SOURCE_CACHE by
+    # seed_source_cache, run outside isolation before the first build. A miss
+    # fails the build naming the source rather than letting the two builds see
+    # different upstream bytes.
+    if os.environ.get("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD") == "1":
+        cache_dir_value = os.environ.get("DATAPULSE_ENVELOPE_SOURCE_CACHE")
+        if not cache_dir_value:
+            raise SourceCacheMiss(
+                f"isolated reproducibility build has no DATAPULSE_ENVELOPE_SOURCE_CACHE to resolve {url}"
+            )
+        cached = _read_cached_source(Path(cache_dir_value), url)
+        if cached is None:
+            raise SourceCacheMiss(
+                f"isolated reproducibility build has no cached source for {url} in {cache_dir_value}"
+            )
+        return cached
+    return _fetch_live(url)
+
+
+def _source_url(row: dict[str, Any]) -> str | None:
+    source_url = row.get("source_url") or row.get("url")
+    return source_url if isinstance(source_url, str) else None
+
+
+def _seed_one(cache_dir: Path, url: str) -> str | None:
+    # Cache write errors propagate: an unwritten entry would be a miss later.
+    try:
+        payload, content_type = _fetch_live(url)
+    except (OSError, ValueError) as error:
+        _write_unavailable_source(cache_dir, url, str(error))
+        return f"{url}: {error}"
+    _write_cached_source(cache_dir, url, payload, content_type)
+    return None
+
+
+def seed_source_cache(root: Path, cache_dir: Path) -> int:
+    """Pin every envelope source, or its fetch failure, into cache_dir."""
+    if os.environ.get("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD") == "1":
+        raise SourceCacheMiss("an isolated reproducibility build must not seed the source cache")
+    rows = load_json(root / "datapulse.json").get("datasets")
+    if not isinstance(rows, list):
+        raise ValueError("datapulse.json must contain a datasets array")
+    urls = sorted({
+        url
+        for row in rows
+        if isinstance(row, dict) and isinstance(row.get("id"), str)
+        and "gtfs" not in row["id"].lower() and (url := _source_url(row)) is not None
+    })
+    with ThreadPool(processes=8) as pool:
+        failures = [failure for failure in pool.starmap(_seed_one, [(cache_dir, url) for url in urls]) if failure]
+    if failures:
+        print(
+            f"WARNING: pinned {len(failures)} of {len(urls)} envelope source(s) as unavailable:\n  "
+            + "\n  ".join(failures),
+            file=sys.stderr,
+        )
+    print(f"Seeded {len(urls)} envelope source(s) into {cache_dir}.")
+    return len(urls)
 
 
 def scalar_type(value: Any) -> str | None:
@@ -275,6 +344,7 @@ def build_envelope(root: Path, manifest: dict[str, Any], health: dict[str, Any])
     fields: list[dict[str, str]] = []
     fields_unavailable = False
     if isinstance(source_url, str):
+        # SourceCacheMiss is not caught here: it must fail the build.
         try:
             fields = infer_fields(source_url)
         except (OSError, UnicodeError, ValueError, json.JSONDecodeError):
@@ -389,8 +459,21 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--force", action="store_true")
     parser.add_argument("--dataset", help="Regenerate only this manifest dataset")
+    parser.add_argument(
+        "--seed-source-cache",
+        type=Path,
+        metavar="DIR",
+        help="Fetch every envelope source into DIR for an isolated build, then exit",
+    )
     args = parser.parse_args()
-    generate(args.root.resolve(), dry_run=args.dry_run, force=args.force, target_dataset_id=args.dataset)
+    try:
+        if args.seed_source_cache is not None:
+            seed_source_cache(args.root.resolve(), args.seed_source_cache)
+        else:
+            generate(args.root.resolve(), dry_run=args.dry_run, force=args.force, target_dataset_id=args.dataset)
+    except SourceCacheMiss as error:
+        print(f"ERROR: {error}", file=sys.stderr)
+        return 1
     return 0
 
 
