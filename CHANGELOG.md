@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.62.1](https://github.com/r3dz4r/datapulse-my/compare/v3.62.0...v3.62.1) (2026-11-09)
+
+
+### Bug Fixes
+
+* **mcp:** derive the published source stamp through one injectable path ([4c98a9f](https://github.com/r3dz4r/datapulse-my/commit/4c98a9f396df2805963a8bf4410e19f4c3bdc0c6))
+* **okf:** emit an unprobed dataset without inventing freshness ([ae6e101](https://github.com/r3dz4r/datapulse-my/commit/ae6e101573314eb6a92d7ae78c5148fdd7eb02bc))
+* **telemetry:** append stage journal records atomically ([#3178](https://github.com/r3dz4r/datapulse-my/issues/3178)) ([ec3dd1c](https://github.com/r3dz4r/datapulse-my/commit/ec3dd1cc7a6ce2de1b492eefb0867439327f4769))
+
 ## [3.62.0](https://github.com/r3dz4r/datapulse-my/compare/v3.61.0...v3.62.0) (2026-11-08)
 
 
