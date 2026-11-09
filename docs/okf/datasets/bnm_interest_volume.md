@@ -8,7 +8,7 @@ sources:
   - {"id": "bnm","resource": "https://api.bnm.gov.my/public/interest-volume","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-09T00:56:25Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-01T19:37:55Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Bank Negara Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/bnm_interest_volume.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 3
-stale_after: "2026-12-22T12:00:00Z"
+stale_after: "2026-12-15T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -27,7 +27,7 @@ Interest Volume: Banking Institutions is published by Bank Negara Malaysia and t
 # Schema
 
 - `column_count`: `9`
-- `first_row_hash`: `shape-v1:3a96e911e43192d8fcb6ece4b72e377ef579d2eebdec507eaf7155fd9e3ee7b7`
+- `first_row_hash`: `shape-v1:eee72bae2a21a71e296ecc1404baefd4868e966da3be41cf7b06a0283760b2c8`
 - `record_count`: `3`
 
 # Quirks
