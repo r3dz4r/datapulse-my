@@ -8,11 +8,11 @@ sources:
   - {"id": "mof","resource": "https://api.data.gov.my/data-catalogue?id=fuelprice","title": "Ministry of Finance Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-08T09:02:03Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:37:31Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Ministry of Finance"
-datapulse:real_status: "fresh"
+datapulse:real_status: "degraded"
 datapulse:health_report: "/data/fuelprice.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 945
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-Malaysian Fuel Prices is published by Ministry of Finance Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Malaysian Fuel Prices is published by Ministry of Finance Malaysia and tracked by DataPulse. The latest published probe classifies it as `degraded`.
 
 # Schema
 

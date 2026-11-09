@@ -1,5 +1,5 @@
 # Directory Update Log
 
-## 2026-11-09
+## 2026-11-07
 
-* **Update**: Projected 447 dataset entries from the published changelog snapshot.
+* **Update**: Projected 440 dataset entries from the published changelog snapshot.
