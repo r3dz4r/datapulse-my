@@ -237,12 +237,6 @@ def test_cli_is_offline_and_emits_two_lines(repository: tuple[Path, str, str]) -
     assert git(repo, "rev-parse", "HEAD") == main
 
 
-RECORD_KEYS = {
-    "decision", "reason", "state_left", "ceiling_seconds", "successor",
-    "published_seq", "branch", "head",
-}
-
-
 @pytest.fixture
 def remote(repository: tuple[Path, str, str], tmp_path: Path) -> Path:
     repo, _, _ = repository
@@ -251,18 +245,6 @@ def remote(repository: tuple[Path, str, str], tmp_path: Path) -> Path:
     git(repo, "remote", "add", "origin", str(bare))
     git(repo, "push", "-q", "origin", "main", "health-snapshots")
     return bare
-
-
-def run_apply(repo: Path, *extra: str) -> tuple[int, dict[str, object]]:
-    result = subprocess.run(
-        [sys.executable, str(Path(publisher.__file__)), "--apply", "--repo", str(repo), *extra],
-        capture_output=True, text=True, check=False,
-    )
-    lines = result.stdout.splitlines()
-    assert len(lines) == 1, result.stdout
-    record = json.loads(lines[0])
-    assert set(record) == RECORD_KEYS
-    return result.returncode, record
 
 
 def next_snapshot(repo: Path, parent: str, source: str, seq: int, content: str) -> str:
@@ -295,58 +277,63 @@ def test_push_target_other_than_health_snapshots_refused_before_git(
     calls: list[object] = []
     monkeypatch.setattr(publisher.subprocess, "run", lambda *a, **k: calls.append(a))
     with pytest.raises(publisher.PublisherError, match="refusing push target"):
-        publisher.apply(repo, branch=branch)
-    with pytest.raises(publisher.PublisherError, match="refusing push target"):
         publisher.push_with_lease(repo, branch, main, snapshot)
     assert calls == []
     assert publisher._push_target("health-snapshots") == "refs/heads/health-snapshots"
 
 
-@pytest.mark.parametrize("case", ["already-published", "in-flight", "superseded"])
-def test_apply_skips_match_dry_run_and_write_nothing(
-    repository: tuple[Path, str, str], remote: Path, case: str,
+def test_apply_is_retired_and_dry_run_still_decides(
+    repository: tuple[Path, str, str], remote: Path,
 ) -> None:
-    repo, _, snapshot = repository
-    extra: list[str] = []
-    tree = git(repo, "rev-parse", f"{snapshot}^{{tree}}")
-    if case == "already-published":
-        write(repo, "health/snapshot.json", json.dumps({"seq": 1, "snapshot": snapshot, "tree": tree}))
-        commit(repo, "chore(health): publish snapshot")
-    elif case == "in-flight":
-        extra = ["--in-flight-pr", "42"]
-    else:
-        write(repo, "health/latest.json", '{"new":true}\n')
-        write(repo, "docs/index.html", "new dashboard\n")
-        write(repo, "health/snapshot.json", json.dumps({"seq": 0, "snapshot": snapshot, "tree": tree}))
-        commit(repo, "chore(health): publish snapshot")
-        write(repo, "health/latest.json", '{"foreign":true}\n')
-        commit(repo, "manual health correction")
-    dry = publisher.evaluate(repo, 42 if extra else None).line
-    assert dry.startswith("would-skip ")
+    repo, main, _ = repository
     before_local, before_remote = git(repo, "show-ref"), git(remote, "show-ref")
-    code, record = run_apply(repo, *extra)
-    assert code == 0
-    assert record["decision"] == "skip"
-    assert record["reason"] == dry
-    assert record["branch"] == "health-snapshots"
-    assert record["head"] == snapshot
-    assert record["successor"] == {"already-published": "published", "in-flight": "pr_open", "superseded": "idle"}[case]
+    retired = subprocess.run(
+        [sys.executable, str(Path(publisher.__file__)), "--apply", "--repo", str(repo)],
+        capture_output=True, text=True, check=False,
+    )
+    assert retired.returncode == 2
+    assert retired.stdout == ""
+    assert retired.stderr == f"snapshot publisher: {publisher.APPLY_RETIRED}\n"
+    assert "apply mode is retired" in retired.stderr
+    assert "-p main" in retired.stderr and "share no ancestor" in retired.stderr
     assert git(repo, "show-ref") == before_local
     assert git(remote, "show-ref") == before_remote
 
+    dry = subprocess.run(
+        [sys.executable, str(Path(publisher.__file__)), "--dry-run", "--repo", str(repo)],
+        capture_output=True, text=True, check=True,
+    )
+    assert dry.stdout.splitlines()[0].startswith("would-apply seq=1 tree=")
+    assert git(repo, "rev-parse", "HEAD") == main
 
-def test_apply_refuses_to_rewrite_observation_chain_and_main_untouched(
+
+def test_apply_refuses_before_reading_any_ref(tmp_path: Path) -> None:
+    result = subprocess.run(
+        [sys.executable, str(Path(publisher.__file__)), "--apply", "--repo", str(tmp_path / "absent")],
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 2
+    assert "apply mode is retired" in result.stderr
+
+
+def test_dry_run_decision_cannot_fast_forward_observation_chain(
     repository: tuple[Path, str, str], remote: Path,
 ) -> None:
+    """The defect that retired apply mode, reproduced on the fixture's divergent lanes."""
     repo, main, snapshot = repository
+    assert subprocess.run(
+        ["git", "-C", str(repo), "merge-base", main, snapshot], capture_output=True, check=False,
+    ).returncode == 1
     dry = publisher.evaluate(repo)
     assert dry.line.startswith("would-apply ")
     before = git(remote, "show-ref")
-    code, record = run_apply(repo)
-    assert code == 2
-    assert record["decision"] == "refused"
-    assert "non-fast-forward" in str(record["reason"])
-    assert f"{dry.sha} does not descend from leased head {snapshot}" in str(record["reason"])
+    with publisher.overlay_objects(repo) as objects:
+        overlay = publisher.build_overlay(repo, main, snapshot, 1, objects)
+        assert overlay.sha == dry.sha
+        assert publisher.git(repo, "rev-parse", f"{overlay.sha}^", env=objects.env).decode().strip() == main
+        with pytest.raises(publisher.PublisherError, match="non-fast-forward") as error:
+            publisher.push_with_lease(repo, "health-snapshots", overlay.sha, snapshot, objects.env)
+    assert f"{dry.sha} does not descend from leased head {snapshot}" in str(error.value)
     assert git(remote, "show-ref") == before
     assert git(remote, "rev-parse", "refs/heads/main") == main
 
@@ -391,27 +378,22 @@ def test_moved_lease_refuses_naming_both_shas(
         publisher.push_with_lease(repo, "health-snapshots", ours, snapshot)
     assert snapshot in str(error.value) and moved in str(error.value)
     assert "lease moved" in str(error.value)
-    # The full apply path reads the same stale local head and refuses the same way.
-    code, record = run_apply(repo)
-    assert code == 2
-    assert snapshot in str(record["reason"]) and moved in str(record["reason"])
     assert git(remote, "show-ref") == before
 
 
 def test_workflow_schedule_stays_dry_run_without_write(repository: tuple[Path, str, str]) -> None:
     yaml = pytest.importorskip("yaml")
     path = Path(publisher.__file__).resolve().parents[1] / ".github/workflows/health-publish-snapshot.yml"
-    workflow = yaml.safe_load(path.read_text())
+    text = path.read_text()
+    workflow = yaml.safe_load(text)
     triggers = workflow[True]
+    assert set(triggers) == {"push", "schedule", "workflow_dispatch"}
+    assert triggers["push"] == {"branches": ["health-snapshots", "main"]}
     assert triggers["schedule"] == [{"cron": "7 * * * *"}]
-    assert triggers["workflow_dispatch"]["inputs"]["apply"] == {
-        "description": triggers["workflow_dispatch"]["inputs"]["apply"]["description"],
-        "type": "boolean", "default": False, "required": False,
-    }
+    assert not (triggers["workflow_dispatch"] or {}).get("inputs")
     assert workflow["permissions"] == {"contents": "read"}
-    dry, live = workflow["jobs"]["dry-run"], workflow["jobs"]["apply"]
-    assert "permissions" not in dry
-    assert "--dry-run" in dry["steps"][-1]["run"] and "--apply" not in dry["steps"][-1]["run"]
-    assert live["if"] == "github.event_name == 'workflow_dispatch' && inputs.apply"
-    assert live["permissions"] == {"contents": "write"}
-    assert "--apply" in live["steps"][-1]["run"]
+    assert set(workflow["jobs"]) == {"dry-run"}
+    dry = workflow["jobs"]["dry-run"]
+    assert "permissions" not in dry and "if" not in dry
+    assert "--dry-run" in dry["steps"][-1]["run"]
+    assert "--apply" not in text and "inputs.apply" not in text

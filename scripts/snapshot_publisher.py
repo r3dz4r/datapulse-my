@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
-"""Compute a snapshot publish commit; with --apply, lease-push it to health-snapshots.
+"""Compute the snapshot publish decision for health-snapshots; --dry-run only.
 
---dry-run never changes repository state. --apply takes the same decision and
-may only ever write PUBLISH_BRANCH on the remote, under a lease on the head it
-read, and prints one JSON transition record.
+--dry-run never changes repository state. It prints the decision line and the
+managed-tree comparison line.
+
+The apply mode is retired (operator decision, 2026-11-09). build_overlay()
+creates the publish commit with `git commit-tree <tree> -p main`, but the only
+writable ref is health-snapshots, and push_with_lease() accepts only a commit
+that descends from the health-snapshots tip. main and health-snapshots share no
+ancestor (`git merge-base` is empty; their root commits differ), so every
+would-apply decision is refused as non-fast-forward by construction, and no
+publish commit has ever landed. Parenting the commit on the lane tip instead is
+also wrong: the overlay carries the full main tree, which would put main onto
+the observation-only chain and fail the next run with "snapshot contains
+unmanaged path". --apply therefore refuses before reading any ref.
 """
 
 from __future__ import annotations
@@ -40,14 +50,19 @@ PUBLISH_SUBJECT = "chore(health): publish snapshot"
 IDENTITY_NAME = "DataPulse Snapshot Publisher"
 IDENTITY_EMAIL = "snapshot-publisher@data-pulse.my"
 SHA_RE = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
-# The only ref apply mode may write. _push_target() refuses every other name
-# before any Git command runs; main is never a push target.
+# The only ref push_with_lease() may write. _push_target() refuses every other
+# name before any Git command runs; main is never a push target.
 PUBLISH_BRANCH = "health-snapshots"
 PUBLISH_REMOTE = "origin"
-# notes/2026-10-31-publication-lane-adr.md §State machine, row "publish
-# candidate built": the ceiling and the state names the record reports.
-CANDIDATE_CEILING_SECONDS = 1500
-STATE_LEFT = "publish_candidate_built"
+APPLY_RETIRED = (
+    "apply mode is retired: the publish commit is built with "
+    "`git commit-tree <tree> -p main`, but push_with_lease() only accepts a "
+    f"commit descending from the {PUBLISH_BRANCH} tip, and main and "
+    f"{PUBLISH_BRANCH} share no ancestor (git merge-base is empty), so every "
+    "would-apply is refused as non-fast-forward; reparenting on the lane tip "
+    "would put the full main tree on the observation-only chain. "
+    "Use --dry-run; see this module's docstring."
+)
 
 
 class PublisherError(Exception):
@@ -325,7 +340,7 @@ def evaluate(repo: Path, in_flight_pr: int | None = None) -> Decision:
 
 
 def _push_target(branch: str) -> str:
-    """Return the one ref apply mode may write, refusing any other branch name."""
+    """Return the one ref the publisher may write, refusing any other branch name."""
     if branch != PUBLISH_BRANCH:
         raise PublisherError(f"refusing push target {branch!r}: only {PUBLISH_BRANCH} is writable")
     return "refs/heads/" + PUBLISH_BRANCH
@@ -382,57 +397,21 @@ def push_with_lease(
     return head, True
 
 
-def _record(decision: str, reason: str, successor: str, published_seq: int | None,
-            branch: str, head: str | None) -> dict[str, object]:
-    return {
-        "decision": decision, "reason": reason, "state_left": STATE_LEFT,
-        "ceiling_seconds": CANDIDATE_CEILING_SECONDS, "successor": successor,
-        "published_seq": published_seq, "branch": branch, "head": head,
-    }
-
-
-SKIP_SUCCESSORS = (
-    ("would-skip already-published ", "published"),
-    ("would-skip in-flight ", "pr_open"),
-    ("would-skip superseded-by ", "idle"),
-)
-
-
-def apply(repo: Path, in_flight_pr: int | None = None, branch: str = PUBLISH_BRANCH) -> dict[str, object]:
-    """Take the dry-run decision and converge the publish branch to it."""
-    _push_target(branch)
-    with overlay_objects(repo) as objects:
-        decision = _decide(repo, in_flight_pr, objects)
-        if decision.sha is None:
-            successor = next(state for prefix, state in SKIP_SUCCESSORS if decision.line.startswith(prefix))
-            return _record("skip", decision.line, successor, decision.published_seq, branch, decision.tip)
-        if decision.tip is None:
-            raise PublisherError("decision carries no leased head")
-        head, moved = push_with_lease(repo, branch, decision.sha, decision.tip, objects.env)
-    if not moved:
-        return _record("no-op", decision.line, "published", decision.seq, branch, head)
-    return _record("applied", decision.line, "published", decision.seq, branch, head)
-
-
 def main(argv: Sequence[str] | None = None) -> int:
-    """Emit dry-run decision and comparison lines, or one apply-mode JSON record."""
-    parser = argparse.ArgumentParser(description=__doc__)
+    """Emit the dry-run decision and comparison lines; refuse the retired --apply."""
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
     parser.add_argument("--repo", type=Path, default=Path("."))
     mode = parser.add_mutually_exclusive_group(required=True)
     mode.add_argument("--dry-run", action="store_true")
-    mode.add_argument("--apply", action="store_true")
+    mode.add_argument("--apply", action="store_true",
+                      help="retired: always refuses, explaining why it cannot work")
     parser.add_argument("--in-flight-pr", type=int)
     args = parser.parse_args(argv)
     if args.apply:
-        try:
-            record = apply(args.repo, args.in_flight_pr)
-        except PublisherError as error:
-            LOGGER.error("snapshot publisher: %s", error)
-            record = _record("refused", str(error), STATE_LEFT, None, PUBLISH_BRANCH, None)
-            sys.stdout.write(json.dumps(record, sort_keys=True) + "\n")
-            return 2
-        sys.stdout.write(json.dumps(record, sort_keys=True) + "\n")
-        return 0
+        sys.stderr.write(f"snapshot publisher: {APPLY_RETIRED}\n")
+        return 2
     try:
         decision = evaluate(args.repo, args.in_flight_pr)
     except PublisherError as error:
