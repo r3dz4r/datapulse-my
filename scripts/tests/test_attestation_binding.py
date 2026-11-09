@@ -650,3 +650,102 @@ def test_same_day_invalid_rekor_proof_is_rejected_without_publication(tmp_path: 
     binding = load(root / "attestations/latest/binding.json")
     assert binding["claims"]["rekor_witnessed"] is False
     assert binding["rekor"] is None
+
+
+def probe_root(tmp_path: Path) -> tuple[Path, bytes]:
+    """Accept one set, then let raw main health run one auto-merge cycle ahead."""
+    from scripts.tests.test_attestation_projections import accepted_root, git
+
+    root, _key = accepted_root(tmp_path / "estate")
+    accepted_health = (root / "health/latest.json").read_bytes()
+    ahead = load(root / "health/latest.json")
+    ahead["checked_at"] = "2026-08-15T00:40:00Z"
+    dump(root / "health/latest.json", ahead)
+    git(root, "commit", "-am", "health auto-merge ahead of binding")
+    return root, accepted_health
+
+
+def run_probe(root: Path, capsys: pytest.CaptureFixture[str], *args: str) -> tuple[int, str]:
+    from scripts import probe_attestation
+
+    status = probe_attestation.main([
+        "--root", str(root), "--now", (NOW + timedelta(hours=2)).isoformat(), *args,
+    ])
+    return status, capsys.readouterr().out
+
+
+def worktrees(root: Path) -> int:
+    listing = subprocess.run(["git", "worktree", "list", "--porcelain"], cwd=root,
+                             check=True, capture_output=True, text=True).stdout
+    return listing.count("worktree ")
+
+
+def test_probe_verifies_materialised_publication_where_raw_main_cannot(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    root, accepted_health = probe_root(tmp_path)
+    binding = load(root / "attestations/latest/binding.json")
+    assert "health_sha256" not in binding
+    accepted_sha256 = hashlib.sha256(accepted_health).hexdigest()
+    assert binding["payload"]["health"]["artifact_sha256"] == accepted_sha256
+    # The raw checkout is the permanent false alarm the probe replaces.
+    with pytest.raises(ContractError, match="does not match served health"):
+        verify_contract(root, now=NOW + timedelta(hours=2))
+
+    status, out = run_probe(root, capsys, "--revision", "main")
+
+    assert status == 0, out
+    result = json.loads(out)
+    assert result["status"] == "verified"
+    assert result["health_sha256"] == result["bound_health_sha256"] == accepted_sha256
+    assert result["accepted_main_commit"] == subprocess.run(
+        ["git", "rev-parse", "main"], cwd=root, check=True, capture_output=True, text=True
+    ).stdout.strip()
+    assert worktrees(root) == 1
+
+
+@pytest.mark.parametrize("tamper", ["binding", "snapshot"])
+def test_probe_refuses_materialised_publication_that_disagrees_with_its_binding(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], tamper: str
+) -> None:
+    import gzip
+
+    from scripts.tests.test_attestation_projections import git
+
+    root, _accepted_health = probe_root(tmp_path)
+    if tamper == "binding":
+        forged = hashlib.sha256(b"unbound publication").hexdigest()
+        targets = sorted((root / "attestations").rglob("binding.json"))
+        for path in targets:
+            binding = load(path)
+            binding["payload"]["health"]["artifact_sha256"] = forged
+            dump(path, binding)
+    else:
+        targets = sorted((root / "attestations").rglob("health.json.gz"))
+        for path in targets:
+            served = gzip.decompress(path.read_bytes()).replace(b'"fresh"', b'"stale"')
+            path.write_bytes(gzip.compress(served))
+    assert targets
+    git(root, "commit", "-am", f"tamper accepted {tamper}")
+
+    status, out = run_probe(root, capsys, "--revision", "main")
+
+    assert status == 1, out
+    assert "REFUSED: " in out
+    assert worktrees(root) == 1
+
+
+def test_probe_fails_distinctly_when_it_cannot_materialise(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    root, _accepted_health = probe_root(tmp_path)
+
+    status, out = run_probe(root, capsys, "--revision", "no-such-revision")
+    assert status == 2, out
+    assert "UNVERIFIABLE: " in out and "REFUSED" not in out
+
+    plain = tmp_path / "not-a-checkout"
+    plain.mkdir()
+    status, out = run_probe(plain, capsys)
+    assert status == 2, out
+    assert "UNVERIFIABLE: " in out
