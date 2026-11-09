@@ -8,25 +8,25 @@ sources:
   - {"id": "apad","resource": "https://api.data.gov.my/gtfs-realtime/vehicle-position/mybas-kuching","title": "Agensi Pengangkutan Awam Darat (APAD)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:37:31Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-09T04:22:01Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "BAS.MY"
-datapulse:real_status: "stale"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/gtfs_realtime_mybas_kuching.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-11-08T04:47:31Z"
+stale_after: "2026-11-09T04:32:01Z"
 datapulse:stale_after_basis: "realtime"
 ---
 
 # Summary
 
-GTFS Realtime — BAS.MY Kuching Vehicle Positions is published by Agensi Pengangkutan Awam Darat (APAD) and tracked by DataPulse. The latest published probe classifies it as `stale`.
+GTFS Realtime — BAS.MY Kuching Vehicle Positions is published by Agensi Pengangkutan Awam Darat (APAD) and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
-- `record_count`: `42`
+- `record_count`: `45`
 
 # Quirks
 
