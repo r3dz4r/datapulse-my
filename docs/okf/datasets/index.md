@@ -352,13 +352,6 @@
 * [Monthly Monetary Aggregates](monetary_aggregates.md) - data.gov.my.
 * [Nutritional Status of Children Under 5 by Sex](nutrition_children_sex.md) - data.gov.my (OpenAPI).
 * [Nutritional Status of Children Under 5 by Strata](nutrition_children_strata.md) - data.gov.my (OpenAPI).
-* [ODIN Assessment Categories (latest edition)](odin_categories.md) - Open Data Watch -- Open Data Inventory.
-* [ODIN Continent Reference](odin_continents.md) - Open Data Watch -- Open Data Inventory.
-* [ODIN Country Reference](odin_countries.md) - Open Data Watch -- Open Data Inventory.
-* [ODIN Default Assessment Weights (latest edition)](odin_default_weights.md) - Open Data Watch -- Open Data Inventory.
-* [ODIN Assessment Editions](odin_editions.md) - Open Data Watch -- Open Data Inventory.
-* [ODIN Income Group Reference](odin_income_groups.md) - Open Data Watch -- Open Data Inventory.
-* [ODIN Region Reference](odin_regions.md) - Open Data Watch -- Open Data Inventory.
 * [Daily Organ Donation Pledges](organ_pledges.md) - data.gov.my (OpenAPI).
 * [Daily Organ Donation Pledges by State](organ_pledges_state.md) - data.gov.my (OpenAPI).
 * [data.gov.my Female Representation in Parliament](parliament_sex.md) - data.gov.my (storage.data.gov.my).
