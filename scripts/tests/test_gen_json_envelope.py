@@ -1,5 +1,6 @@
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -201,46 +202,205 @@ def test_fetch_source_uses_preseeded_cache_without_network(
     assert calls == []
 
 
-def test_fetch_source_second_call_is_served_from_cache(
+def _refuse_urlopen(calls: list[object]):
+    def urlopen(*args: object, **kwargs: object) -> None:
+        calls.append((args, kwargs))
+        raise AssertionError("an isolated build must not call urlopen")
+
+    return urlopen
+
+
+def _seed_root(tmp_path: Path, urls: list[str]) -> Path:
+    root = tmp_path / "root"
+    write_json(
+        root / "datapulse.json",
+        {"datasets": [{"id": f"set_{index}", "url": url} for index, url in enumerate(urls)]
+         + [{"id": "rapid_gtfs", "url": "https://example.test/gtfs.zip"}]},
+    )
+    return root
+
+
+def test_seeded_cache_serves_isolated_build_without_network(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     url = "https://example.test/alpha.csv"
     payload = b"date,count\n2026-08-01,1\n"
     cache = tmp_path / "cache"
-    monkeypatch.setenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", str(cache))
-    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+    monkeypatch.delenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", raising=False)
     stub = _stub_urlopen(payload, "text/csv")
     monkeypatch.setattr(envelope.urllib.request, "urlopen", stub)
-    assert envelope.fetch_source(url) == (payload, "text/csv")
-    assert stub.calls
+    assert envelope.seed_source_cache(_seed_root(tmp_path, [url]), cache) == 1
+    assert len(stub.calls) == 1
 
     calls: list[object] = []
-
-    def urlopen(*args: object, **kwargs: object) -> None:
-        calls.append((args, kwargs))
-        raise AssertionError("urlopen should not be called on cache hit")
-
-    monkeypatch.setattr(envelope.urllib.request, "urlopen", urlopen)
+    monkeypatch.setattr(envelope.urllib.request, "urlopen", _refuse_urlopen(calls))
+    monkeypatch.setenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", str(cache))
+    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
     assert envelope.fetch_source(url) == (payload, "text/csv")
     assert calls == []
 
 
-def test_fetch_source_failure_does_not_write_cache(
+def test_seed_pins_every_source_the_build_resolves(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from scripts import gen_dynamic_manifest_urls
+
+    root = tmp_path / "root"
+    base = "https://example.test"
+    rows = [
+        {"id": "plain", "url": f"{base}/plain.csv"},
+        {"id": "override", "url": f"{base}/ignored.csv", "source_url": f"{base}/override.csv"},
+        {"id": "rapid_gtfs", "url": f"{base}/gtfs.zip"},
+        # The committed URL is a year behind; release-build rolls it forward.
+        {"id": "rolling", "url": f"{base}/rolling_2025.csv"},
+    ]
+    write_json(root / "scripts/probe-policy.json", {
+        "datasets": {"rolling": {"dynamic-url": {"template": f"{base}/rolling_{{YYYY}}.csv"}}},
+    })
+
+    def write_inputs() -> None:
+        write_json(root / "datapulse.json", {"datasets": rows})
+        write_json(root / "health/latest.json", {"datasets": [
+            {"dataset_id": row["id"], "status": "fresh", "url": f"{base}/rolling_2026.csv",
+             "request_url": f"{base}/rolling_2026.csv", "http_status": 200}
+            if row["id"] == "rolling" else {"dataset_id": row["id"], "status": "fresh"}
+            for row in rows
+        ]})
+
+    def seed_then_build(name: str) -> tuple[set[str], set[str]]:
+        cache = tmp_path / f"cache-{name}"
+        monkeypatch.delenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", raising=False)
+        monkeypatch.delenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", raising=False)
+        monkeypatch.setattr(envelope.urllib.request, "urlopen", _stub_urlopen(b"a,b\n1,2\n"))
+        envelope.seed_source_cache(root, cache)
+        pinned = {path.stem for path in cache.glob("*.json")}
+
+        # Replay the release-build order on a copy: dynamic URLs, then envelopes.
+        build = tmp_path / f"build-{name}"
+        shutil.copytree(root, build)
+        calls: list[object] = []
+        monkeypatch.setattr(envelope.urllib.request, "urlopen", _refuse_urlopen(calls))
+        monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+        monkeypatch.setenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", str(cache))
+        gen_dynamic_manifest_urls.sync_urls(build)
+        envelope.generate(build, dry_run=False, force=True)
+        assert calls == []
+        resolved = set()
+        for path in (build / "data/json").glob("*.json"):
+            built = json.loads(path.read_text(encoding="utf-8"))
+            assert built["fields"], f"{path.name} did not resolve its source from the cache"
+            resolved.add(built["reproducibility"]["url"])
+        return pinned, resolved
+
+    write_inputs()
+    pinned, resolved = seed_then_build("first")
+    assert resolved == {f"{base}/plain.csv", f"{base}/override.csv", f"{base}/rolling_2026.csv"}
+    assert pinned == {_cache_paths(Path(), url)[1].stem for url in resolved}
+
+    # A source added to the build is pinned without anyone listing it.
+    rows.append({"id": "added", "url": f"{base}/added.csv"})
+    write_inputs()
+    pinned, resolved = seed_then_build("second")
+    assert f"{base}/added.csv" in resolved
+    assert pinned == {_cache_paths(Path(), url)[1].stem for url in resolved}
+
+
+def test_seed_pins_failure_so_both_isolated_builds_degrade_identically(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     url = "https://example.test/alpha.csv"
     cache = tmp_path / "cache"
-    cache.mkdir()
-    monkeypatch.setenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", str(cache))
-    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+    monkeypatch.delenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", raising=False)
 
     def urlopen(*args: object, **kwargs: object) -> None:
         raise OSError("upstream down")
 
     monkeypatch.setattr(envelope.urllib.request, "urlopen", urlopen)
-    with pytest.raises(OSError, match="upstream down"):
+    envelope.seed_source_cache(_seed_root(tmp_path, [url]), cache)
+    assert "alpha.csv: upstream down" in capsys.readouterr().err
+    bin_path, json_path = _cache_paths(cache, url)
+    assert not bin_path.exists()
+    assert json.loads(json_path.read_text(encoding="utf-8")) == {"unavailable": "upstream down"}
+
+    calls: list[object] = []
+    monkeypatch.setattr(envelope.urllib.request, "urlopen", _refuse_urlopen(calls))
+    monkeypatch.setenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", str(cache))
+    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+    with pytest.raises(OSError, match="unavailable when the source cache was seeded: upstream down"):
         envelope.fetch_source(url)
-    assert list(cache.iterdir()) == []
+    first = envelope.build_envelope(tmp_path, {"id": "alpha", "url": url}, {})
+    second = envelope.build_envelope(tmp_path, {"id": "alpha", "url": url}, {})
+    assert first == second
+    assert first["fields"] == []
+    assert "Fields are inferred at the next probe run." in first["known_quirks"]
+    assert calls == []
+
+
+def test_seed_cache_write_failure_is_loud(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    blocker = tmp_path / "not-a-directory"
+    blocker.write_text("", encoding="utf-8")
+    monkeypatch.delenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", raising=False)
+    monkeypatch.setattr(envelope.urllib.request, "urlopen", _stub_urlopen(b"a\n1\n"))
+    with pytest.raises(OSError):
+        envelope.seed_source_cache(_seed_root(tmp_path, ["https://example.test/a.csv"]), blocker)
+
+
+def test_seed_refuses_inside_isolated_build(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    calls: list[object] = []
+    monkeypatch.setattr(envelope.urllib.request, "urlopen", _refuse_urlopen(calls))
+    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+    with pytest.raises(envelope.SourceCacheMiss, match="must not seed"):
+        envelope.seed_source_cache(_seed_root(tmp_path, ["https://example.test/a.csv"]), tmp_path / "cache")
+    assert calls == []
+
+
+def test_isolated_miss_fails_loudly_without_network(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    url = "https://example.test/alpha.csv"
+    cache = tmp_path / "cache"
+    cache.mkdir()
+    calls: list[object] = []
+    monkeypatch.setattr(envelope.urllib.request, "urlopen", _refuse_urlopen(calls))
+    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+
+    monkeypatch.delenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", raising=False)
+    with pytest.raises(envelope.SourceCacheMiss, match=r"no DATAPULSE_ENVELOPE_SOURCE_CACHE .*alpha\.csv"):
+        envelope.fetch_source(url)
+
+    monkeypatch.setenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", str(cache))
+    with pytest.raises(envelope.SourceCacheMiss, match=r"no cached source for https://example\.test/alpha\.csv"):
+        envelope.fetch_source(url)
+    with pytest.raises(envelope.SourceCacheMiss):
+        envelope.build_envelope(tmp_path, {"id": "alpha", "url": url}, {})
+    assert calls == []
+
+
+def test_isolated_generator_exits_nonzero_naming_the_missed_source(tmp_path: Path) -> None:
+    url = "https://example.test/alpha.csv"
+    write_json(tmp_path / "datapulse.json", {"datasets": [{"id": "alpha", "url": url}]})
+    write_json(tmp_path / "health/latest.json", {"datasets": [{"dataset_id": "alpha", "status": "fresh"}]})
+    cache = tmp_path / "cache"
+    cache.mkdir()
+
+    result = subprocess.run(
+        [sys.executable, str(GENERATOR), "--root", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        env={
+            "PATH": "/usr/bin:/bin",
+            "DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD": "1",
+            "DATAPULSE_ENVELOPE_SOURCE_CACHE": str(cache),
+        },
+    )
+
+    assert result.returncode == 1
+    assert f"no cached source for {url}" in result.stderr
+    assert not (tmp_path / "data/json/alpha.json").exists()
 
 
 def test_fetch_source_ignores_cache_when_isolated_build_switch_is_off(
@@ -277,24 +437,28 @@ def test_fetch_source_without_cache_env_fetches_live(
     assert list(tmp_path.iterdir()) == []
 
 
-def test_fetch_source_partial_or_unreadable_cache_falls_back_to_live(
+def test_isolated_partial_or_unreadable_cache_is_a_miss_not_a_live_fetch(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     url = "https://example.test/alpha.csv"
-    payload = b"live-bytes"
     cache = tmp_path / "cache"
     cache.mkdir()
     bin_path, json_path = _cache_paths(cache, url)
     monkeypatch.setenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", str(cache))
     monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
-    stub = _stub_urlopen(payload, "text/csv")
-    monkeypatch.setattr(envelope.urllib.request, "urlopen", stub)
+    calls: list[object] = []
+    monkeypatch.setattr(envelope.urllib.request, "urlopen", _refuse_urlopen(calls))
 
     json_path.write_text(json.dumps({"content_type": "text/csv"}), encoding="utf-8")
-    assert envelope.fetch_source(url) == (payload, "text/csv")
-    assert len(stub.calls) == 1
+    with pytest.raises(envelope.SourceCacheMiss, match="alpha.csv"):
+        envelope.fetch_source(url)
 
     bin_path.write_bytes(b"stale")
     json_path.write_text("{", encoding="utf-8")
-    assert envelope.fetch_source(url) == (payload, "text/csv")
-    assert len(stub.calls) == 2
+    with pytest.raises(envelope.SourceCacheMiss, match="alpha.csv"):
+        envelope.fetch_source(url)
+
+    json_path.write_text(json.dumps({"unavailable": "upstream down"}), encoding="utf-8")
+    with pytest.raises(envelope.SourceCacheMiss, match="alpha.csv"):
+        envelope.fetch_source(url)
+    assert calls == []
