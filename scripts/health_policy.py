@@ -2,11 +2,20 @@
 
 from __future__ import annotations
 
+import argparse
+import json
+import os
+import re
+import sys
+import tempfile
 from datetime import datetime, timezone
-
+from pathlib import Path
 
 REALTIME_FREQUENCIES = {"30 seconds", "hourly"}
 WEEKDAY_DAILY_FREQUENCIES = {
+    # Declared by two manifest datasets; scripts/check.sh already schedules it
+    # with the other weekday cadences (`startswith("daily (weekdays")`).
+    "daily (weekdays)",
     "daily (weekdays, 0900 myt)",
     "daily (weekdays, 1130 myt)",
     "daily (weekdays, 1200 myt)",
@@ -142,8 +151,15 @@ def is_due(
     now: datetime,
     frequency: object,
     manifest_id: str | None = None,
+    *,
+    interval_seconds: float | None = None,
 ) -> bool:
-    """Return whether a dataset is due, using only the supplied clock value."""
+    """Return whether a dataset is due, using only the supplied clock value.
+
+    ``interval_seconds`` replaces the declared cadence's interval for callers
+    that have already resolved a retry or operator override; the frequency is
+    still validated so an unknown cadence raises either way.
+    """
     normalized = _normalized_frequency(frequency, manifest_id)
     checked_at = _as_datetime(last_checked)
     current_time = _as_datetime(now)
@@ -152,8 +168,93 @@ def is_due(
     if checked_at is None:
         return True
 
+    if interval_seconds is None:
+        tier = frequency_to_tier(normalized, manifest_id)
+        interval_seconds = due_interval(tier, normalized)
+    return (current_time - checked_at).total_seconds() >= interval_seconds
+
+
+DEFAULT_RETRY_SECONDS = 240 * 60
+RETRYABLE_BROWSER_MESSAGE = re.compile("unavailable|failed|error", re.IGNORECASE)
+
+
+def probe_interval(
+    previous_row: dict[str, object],
+    frequency: object,
+    manifest_id: str | None = None,
+    *,
+    cadence_override_seconds: float | None = None,
+    retry_seconds: float = DEFAULT_RETRY_SECONDS,
+) -> float:
+    """Resolve one dataset's probe interval from its declared cadence and last outcome.
+
+    Mirrors the failure retry rules of `scripts/check.sh --due`: an unreachable
+    dataset is retried no later than its own declared refresh (30 seconds for a
+    30-second feed), even under a longer retry or cadence override; a degraded
+    or failed browser probe retries on the retry cadence.
+    """
+    normalized = _normalized_frequency(frequency, manifest_id)
     tier = frequency_to_tier(normalized, manifest_id)
-    return (current_time - checked_at).total_seconds() >= due_interval(tier, normalized)
+    declared = due_interval(tier, normalized)
+    cadence = declared if cadence_override_seconds is None else cadence_override_seconds
+    status = previous_row.get("status")
+    message = previous_row.get("message")
+    if status == "unreachable":
+        retry_limit = (
+            FRESHNESS_BASELINE_SECONDS["30 seconds"]
+            if normalized == "30 seconds"
+            else declared
+        )
+        return min(retry_seconds, cadence, retry_limit)
+    if status == "degraded" or (
+        status == "browser-dependent"
+        and isinstance(message, str)
+        and RETRYABLE_BROWSER_MESSAGE.search(message)
+    ):
+        return retry_seconds
+    return cadence
+
+
+def select_due(
+    manifest_rows: list[dict],
+    previous_rows: list[dict],
+    now: datetime,
+    *,
+    tier: str | None = None,
+    cadence_override_seconds: float | None = None,
+    retry_seconds: float = DEFAULT_RETRY_SECONDS,
+) -> list[dict]:
+    """Return the manifest entries due for a probe at ``now``, in manifest order.
+
+    A dataset is selected exactly when `is_due` says so for its previous
+    ``last_checked`` and declared ``refresh_frequency``. Every entry's cadence is
+    validated, so an unknown cadence raises rather than being skipped.
+    """
+    if tier is not None and tier not in TIER_DUE_SECONDS:
+        raise ValueError(f"unsupported health scheduling tier {tier!r}")
+    previous_by_id: dict[object, dict] = {}
+    for row in previous_rows:
+        if isinstance(row, dict):
+            previous_by_id.setdefault(row.get("dataset_id"), row)
+
+    selected = []
+    for entry in manifest_rows:
+        dataset_id = entry.get("id")
+        identifier = dataset_id if isinstance(dataset_id, str) else None
+        frequency = entry.get("refresh_frequency")
+        if tier is not None and frequency_to_tier(frequency, identifier) != tier:
+            continue
+        previous = previous_by_id.get(dataset_id, {})
+        interval = probe_interval(
+            previous,
+            frequency,
+            identifier,
+            cadence_override_seconds=cadence_override_seconds,
+            retry_seconds=retry_seconds,
+        )
+        if is_due(previous.get("last_checked"), now, frequency, identifier, interval_seconds=interval):
+            selected.append(entry)
+    return selected
 
 
 def _valid_signal(value: object, observed_at: datetime | None) -> tuple[str | None, str | None]:
@@ -379,3 +480,71 @@ def derive_trust_summary(rows: list[dict]) -> dict:
         "newest_last_modified": max(last_modified_values, default=None),
         "stale_datasets": stale_datasets,
     }
+
+
+def _read_json_document(path: Path) -> object:
+    text = path.read_text(encoding="utf-8")
+    return json.loads(text) if text.strip() else {}
+
+
+def _atomic_write_text(path: Path, content: str) -> None:
+    descriptor, temporary_name = tempfile.mkstemp(prefix=f".{path.name}.", suffix=".tmp", dir=path.parent)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as output:
+            output.write(content)
+            output.flush()
+            os.fsync(output.fileno())
+        os.replace(temporary_name, path)
+    except BaseException:
+        try:
+            os.unlink(temporary_name)
+        except OSError:
+            pass
+        raise
+
+
+def main(argv: list[str] | None = None) -> int:
+    """`select-due`: write the manifest restricted to the datasets due at --now-epoch."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    commands = parser.add_subparsers(dest="command", required=True)
+    select = commands.add_parser("select-due", help="filter a manifest to the datasets due for a probe")
+    select.add_argument("--manifest", type=Path, required=True)
+    select.add_argument("--previous", type=Path, required=True, help="prior health snapshot; may be empty")
+    select.add_argument("--now-epoch", type=int, required=True, help="injected clock, UTC epoch seconds")
+    select.add_argument("--tier", choices=sorted(TIER_DUE_SECONDS))
+    select.add_argument("--cadence-minutes", type=int)
+    select.add_argument("--retry-minutes", type=int, default=DEFAULT_RETRY_SECONDS // 60)
+    select.add_argument("--output", type=Path, help="write atomically here instead of stdout")
+    args = parser.parse_args(argv)
+    for name in ("cadence_minutes", "retry_minutes"):
+        value = getattr(args, name)
+        if value is not None and value < 1:
+            parser.error(f"--{name.replace('_', '-')} must be a positive integer")
+
+    manifest = _read_json_document(args.manifest)
+    previous = _read_json_document(args.previous)
+    if not isinstance(manifest, dict) or not isinstance(manifest.get("datasets"), list):
+        parser.error(f"invalid dataset manifest: {args.manifest}")
+    previous_rows = previous.get("datasets", []) if isinstance(previous, dict) else []
+    try:
+        due = select_due(
+            manifest["datasets"],
+            previous_rows if isinstance(previous_rows, list) else [],
+            datetime.fromtimestamp(args.now_epoch, tz=timezone.utc),
+            tier=args.tier,
+            cadence_override_seconds=None if args.cadence_minutes is None else args.cadence_minutes * 60,
+            retry_seconds=args.retry_minutes * 60,
+        )
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 1
+    content = json.dumps({**manifest, "datasets": due}, ensure_ascii=False) + "\n"
+    if args.output is None:
+        sys.stdout.write(content)
+    else:
+        _atomic_write_text(args.output, content)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
