@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.63.1](https://github.com/r3dz4r/datapulse-my/compare/v3.63.0...v3.63.1) (2026-11-10)
+
+
+### Bug Fixes
+
+* **health:** revert unapproved realtime-30s tier ([21c4d99](https://github.com/r3dz4r/datapulse-my/commit/21c4d998aa9db6031d410e2f388a9f472459c8ca))
+* **health:** select probes by declared cadence, not round-robin ([5d5690c](https://github.com/r3dz4r/datapulse-my/commit/5d5690cacd85529c7efd4472b104189e528b76f7))
+
 ## [3.63.0](https://github.com/r3dz4r/datapulse-my/compare/v3.62.2...v3.63.0) (2026-11-10)
 
 
