@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.62.2](https://github.com/r3dz4r/datapulse-my/compare/v3.62.1...v3.62.2) (2026-11-10)
+
+
+### Bug Fixes
+
+* **envelope:** an isolated build must not reach the network ([bddba32](https://github.com/r3dz4r/datapulse-my/commit/bddba325741b7d3b747029aefbd31bbef698c876))
+* **envelope:** seed the manifest the build resolves, not the committed one ([246d13a](https://github.com/r3dz4r/datapulse-my/commit/246d13a92935ff4b5c52c67569595f01863728f2))
+* **release:** seed the envelope cache before the isolated builds ([343e797](https://github.com/r3dz4r/datapulse-my/commit/343e79753ee61457256d8bcced1904e09452e024))
+
 ## [3.62.1](https://github.com/r3dz4r/datapulse-my/compare/v3.62.0...v3.62.1) (2026-11-09)
 
 
