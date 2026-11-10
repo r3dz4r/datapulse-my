@@ -13,7 +13,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -29,6 +29,14 @@ OBSERVATION_BUILD_PATHS = (
     'changelog.json', 'catalog-snapshot.json', 'catalog-graph.json',
     'datapulse_summary.json', 'docs/okf', 'docs/datasets', 'observation-receipts',
 )
+# The served observation trails main's health until the next append is accepted.
+# Appends are produced once a day (datapulse-attest-daily.yml cron "17 3 * * *"),
+# and an accepted observation reached main 1h38m-2h17m after it was taken across
+# 2026-11-05..10. A lag beyond one cadence plus that latency means an append is
+# overdue, not that the publication is faithfully waiting for the next one.
+APPEND_CADENCE_SECONDS = 24 * 60 * 60
+APPEND_LATENCY_SECONDS = 3 * 60 * 60
+SERVED_LAG_BOUND_SECONDS = APPEND_CADENCE_SECONDS + APPEND_LATENCY_SECONDS
 
 
 class SelectionError(ValueError):
@@ -75,6 +83,32 @@ def report_age(health: Path, binding: Path, now: datetime) -> dict[str, Any]:
         "max_age_seconds": MAX_AGE_SECONDS,
         "report_age_status": "current" if all(0 <= age <= MAX_AGE_SECONDS for age in ages) else "expired",
     }
+
+
+def served_lag(observed_at: str, main_observed_at: str, published_at: str) -> dict[str, Any]:
+    """Measure how far the served observation trails main, and name why."""
+    clocks = []
+    for value in (observed_at, main_observed_at, published_at):
+        timestamp = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        if timestamp.tzinfo is None:
+            raise SelectionError('observation timestamps must include a UTC offset')
+        clocks.append(timestamp)
+    lag = (clocks[1] - clocks[0]).total_seconds()
+    if lag < 0:
+        raise SelectionError('accepted observation is newer than main health at the pinned revision')
+    if lag == 0:
+        cause = 'current: served observation is main health at the pinned revision'
+    elif lag <= SERVED_LAG_BOUND_SECONDS:
+        cause = (f'awaiting_next_append: main observed after the accepted append published at '
+                 f'{published_at}; next append due by '
+                 f'{(clocks[2] + timedelta(seconds=APPEND_CADENCE_SECONDS)).isoformat().replace("+00:00", "Z")}')
+    else:
+        cause = (f'append_overdue: no append accepted for main health within '
+                 f'{SERVED_LAG_BOUND_SECONDS}s of the served observation; last published at {published_at}')
+    return {'main_observed_at': main_observed_at, 'served_lag_seconds': int(lag),
+            'served_lag_bound_seconds': SERVED_LAG_BOUND_SECONDS, 'served_lag_cause': cause,
+            'served_lag_status': 'within_append_cadence' if lag <= SERVED_LAG_BOUND_SECONDS
+            else 'exceeds_append_cadence'}
 
 
 def _archive_files(root: Path, revision: str, out: Path, paths: tuple[str, ...]) -> None:
@@ -144,6 +178,19 @@ def restore_observation_build(root: Path, revision: str, publication: Path) -> s
             break
     if source is None:
         raise SelectionError('no committed observation build matches the exact accepted health bytes')
+    main_health = json.loads(subprocess.check_output([
+        'git', 'show', f'{revision}:health/latest.json'], cwd=root))
+    lag = served_lag(identity['observed_at'], main_health['checked_at'], identity['published_at'])
+    lag['served_lag_health_commits'] = candidates.index(source)
+    LOGGER.info('Served lag: %s', json.dumps(lag, sort_keys=True))
+    if lag['served_lag_status'] != 'within_append_cadence':
+        LOGGER.info('::error title=Served observation exceeds append cadence::%ss behind main; %s',
+                    lag['served_lag_seconds'], lag['served_lag_cause'])
+        raise SelectionError(f"served observation trails main by {lag['served_lag_seconds']}s, beyond the "
+                             f"{SERVED_LAG_BOUND_SECONDS}s append cadence bound: {lag['served_lag_cause']}")
+    if lag['served_lag_seconds']:
+        LOGGER.info('::notice title=Served observation trails main::%ss (%s health commits) behind main; %s',
+                    lag['served_lag_seconds'], lag['served_lag_health_commits'], lag['served_lag_cause'])
     paths = tuple(subprocess.check_output([
         'git', 'ls-tree', '--name-only', source, '--', *OBSERVATION_BUILD_PATHS,
     ], cwd=root, text=True).splitlines())
@@ -174,6 +221,7 @@ def restore_observation_build(root: Path, revision: str, publication: Path) -> s
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(origin, target)
     identity['observation_build_commit'] = source
+    identity.update(lag)
     atomic_write(identity_path, (json.dumps(identity, sort_keys=True, indent=2) + '\n').encode())
     LOGGER.info('Accepted observation build %s: health and catalogs observed at %s', source, observed)
     return source
@@ -262,6 +310,15 @@ def main() -> int:
             if not args.revision or args.publication is None:
                 parser.error('--revision and --publication are required for build restoration')
             restore_observation_build(args.root.resolve(), args.revision, args.publication.resolve())
+            identity = json.loads((args.publication / 'publication-identity.json').read_bytes())
+            summary = os.environ.get('GITHUB_STEP_SUMMARY')
+            if summary:
+                with open(summary, 'a', encoding='utf-8') as output:
+                    output.write(f"Served observation {identity['observed_at']} trails main health "
+                                 f"{identity['main_observed_at']} by {identity['served_lag_seconds']}s "
+                                 f"({identity['served_lag_health_commits']} health commits); bound "
+                                 f"{SERVED_LAG_BOUND_SECONDS}s (append cadence + latency): "
+                                 f"{identity['served_lag_status']}. Cause: {identity['served_lag_cause']}.\n")
             return 0
         if args.measure_age:
             identity = report_age(args.health, args.binding, now)

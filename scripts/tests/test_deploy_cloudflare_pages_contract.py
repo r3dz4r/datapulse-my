@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import ast
 import builtins
@@ -1738,3 +1739,86 @@ def test_frozen_report_can_pass_the_inverted_release_proof_health_guard(tmp_path
     result = _run_verifier(tmp_path, root, built, served, publication=publication)
     assert result.returncode == 0, result.stdout + result.stderr
     assert 'Report age:' in result.stdout
+
+
+def _observation_build(root: Path, checked_at: str) -> None:
+    health = {'checked_at': checked_at, 'datasets': [{'dataset_id': 'one'}]}
+    (root / 'health').mkdir(parents=True, exist_ok=True)
+    (root / 'health/latest.json').write_text(json.dumps(health) + '\n')
+    for name in ('data', 'badges', 'deltas', 'record-evidence'):
+        (root / name).mkdir(exist_ok=True)
+        (root / name / 'build.txt').write_text(checked_at + '\n')
+    for name in ('feed.xml', 'changelog.json', 'datapulse_summary.json'):
+        (root / name).write_text(json.dumps({'generated_at': checked_at}) + '\n')
+    (root / 'catalog-snapshot.json').write_text(json.dumps(
+        {'generated_at': checked_at, 'health': {'checked_at': checked_at}}) + '\n')
+    (root / 'catalog-graph.json').write_text(json.dumps({'generated_at': checked_at}) + '\n')
+
+
+@pytest.mark.parametrize('hours,admitted', [(0, True), (24, True), (28, False)])
+def test_restored_observation_build_reports_its_lag_behind_main(
+    tmp_path: Path, hours: int, admitted: bool,
+) -> None:
+    """A faithful day-old observation is measured and named; an overdue append is refused."""
+    from scripts.select_accepted_health import SERVED_LAG_BOUND_SECONDS
+    from scripts.tests.test_attestation_projections import git
+    observed = datetime(2026, 11, 9, 10, 12, 34, tzinfo=timezone.utc)
+    stamp = lambda moment: moment.isoformat().replace('+00:00', 'Z')
+    root = tmp_path / 'repo'
+    root.mkdir()
+    git(root, 'init', '-b', 'main')
+    git(root, 'config', 'user.name', 'Test')
+    git(root, 'config', 'user.email', 'test@example.test')
+    _observation_build(root, stamp(observed))
+    git(root, 'add', '-A')
+    git(root, 'commit', '-m', 'accepted observation build')
+    accepted = git(root, 'rev-parse', 'HEAD')
+    health_bytes = (root / 'health/latest.json').read_bytes()
+    for hour in range(1, hours + 1):
+        _observation_build(root, stamp(observed + timedelta(hours=hour)))
+        git(root, 'commit', '-qam', f'health {hour}')
+    revision = git(root, 'rev-parse', 'HEAD')
+    main_summary = (root / 'datapulse_summary.json').read_bytes()
+    publication = tmp_path / 'publication'
+    (publication / 'health').mkdir(parents=True)
+    (publication / 'health/latest.json').write_bytes(health_bytes)
+    published = stamp(observed + timedelta(hours=1, minutes=17))
+    (publication / 'publication-identity.json').write_text(json.dumps({
+        'accepted_main_commit': revision, 'accepted_chain_head': 'c' * 64,
+        'health_sha256': hashlib.sha256(health_bytes).hexdigest(),
+        'observed_at': stamp(observed), 'published_at': published}))
+    summary = tmp_path / 'summary'
+    result = subprocess.run([
+        sys.executable, str(ROOT / 'scripts/select_accepted_health.py'), '--restore-observation-build',
+        '--root', str(root), '--revision', revision, '--publication', str(publication),
+    ], env=os.environ | {'GITHUB_STEP_SUMMARY': str(summary)}, capture_output=True, text=True, timeout=60)
+    output = result.stdout + result.stderr
+    assert SERVED_LAG_BOUND_SECONDS == 27 * 3600
+    assert f'"served_lag_seconds": {hours * 3600}' in output, output
+    identity = json.loads((publication / 'publication-identity.json').read_bytes())
+    if not admitted:
+        assert result.returncode == 1, output
+        assert 'REFUSED: served observation trails main by 100800s' in output
+        assert '::error title=Served observation exceeds append cadence::' in output
+        assert 'append_overdue' in output
+        assert 'served_lag_seconds' not in identity
+        assert (root / 'datapulse_summary.json').read_bytes() == main_summary
+        return
+    assert result.returncode == 0, output
+    assert identity['observation_build_commit'] == accepted
+    assert identity['main_observed_at'] == stamp(observed + timedelta(hours=hours))
+    assert identity['served_lag_seconds'] == hours * 3600
+    assert identity['served_lag_health_commits'] == hours
+    assert identity['served_lag_bound_seconds'] == SERVED_LAG_BOUND_SECONDS
+    assert identity['served_lag_status'] == 'within_append_cadence'
+    assert json.loads((root / 'datapulse_summary.json').read_bytes())['generated_at'] == stamp(observed)
+    if hours:
+        # A faithful day-old artifact is admitted, but never silently.
+        assert identity['served_lag_cause'] == (
+            f'awaiting_next_append: main observed after the accepted append published at {published}; '
+            'next append due by 2026-11-10T11:29:34Z')
+        assert '::notice title=Served observation trails main::86400s (24 health commits)' in output
+    else:
+        assert identity['served_lag_cause'].startswith('current:')
+        assert '::notice' not in output
+    assert f"by {hours * 3600}s ({hours} health commits)" in summary.read_text()
