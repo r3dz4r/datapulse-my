@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.63.0](https://github.com/r3dz4r/datapulse-my/compare/v3.62.2...v3.63.0) (2026-11-10)
+
+
+### Features
+
+* **deploy:** measure the served observation's lag behind main and bound it ([51cd781](https://github.com/r3dz4r/datapulse-my/commit/51cd7812f36019f9ccdcf7e579a28ae347ad95af))
+
 ## [3.62.2](https://github.com/r3dz4r/datapulse-my/compare/v3.62.1...v3.62.2) (2026-11-10)
 
 
