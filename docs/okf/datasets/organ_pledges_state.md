@@ -8,7 +8,7 @@ sources:
   - {"id": "ntrc","resource": "https://api.data.gov.my/data-catalogue?id=organ_pledges_state","title": "National Transplant Resource Centre and Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-09T07:43:17Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T07:23:17Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "National Transplant Resource Centre, Ministry of Health Malaysia"
