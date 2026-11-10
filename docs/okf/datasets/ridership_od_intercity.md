@@ -8,7 +8,7 @@ sources:
   - {"id": "ktmb","resource": "https://storage.data.gov.my/transportation/ktmb/intercity_2026.csv","title": "Keretapi Tanah Melayu Berhad"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-09T11:30:06Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T10:24:55Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Malayan Railways Limited, Ministry of Transport"
