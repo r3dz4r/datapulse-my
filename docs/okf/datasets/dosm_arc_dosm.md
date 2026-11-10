@@ -8,11 +8,11 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=arc_dosm","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-08T07:23:17Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-09T07:43:17Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
-datapulse:real_status: "aging"
+datapulse:real_status: "stale"
 datapulse:health_report: "/data/dosm_arc_dosm.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 316
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-DOSM's Advance Release Calendar is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
+DOSM's Advance Release Calendar is published by Department of Statistics Malaysia and tracked by DataPulse. The latest published probe classifies it as `stale`.
 
 # Schema
 
