@@ -422,6 +422,55 @@ def _record_envelope_source_cache(cache_dir: Path, metadata: Path) -> None:
     print(f"Envelope source cache digest: {record['digest']} ({record['entry_count']} entries)")
 
 
+def _seed_source_cache(source: Path, cache_dir: Path) -> int:
+    """Pin every envelope source, or its fetch failure, once before either build.
+
+    The seed runs outside isolation so it may fetch; the two isolated builds then
+    read only this cache. Seeding per build would let each pin its own transient
+    failures, which is the asymmetry the byte-identity check exists to catch.
+    """
+    environment = dict(os.environ)
+    environment.pop("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", None)
+    environment.pop("DATAPULSE_ENVELOPE_SOURCE_CACHE", None)
+    generator = Path(__file__).with_name("gen_json_envelope.py")
+    try:
+        completed = subprocess.run(
+            [
+                sys.executable, str(generator),
+                "--root", str(source),
+                "--seed-source-cache", str(cache_dir),
+            ],
+            cwd=source,
+            env=environment,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
+        )
+    except OSError as error:
+        raise SetupFailure(f"could not execute the envelope source cache seed: {error}") from error
+    if completed.stdout:
+        print(completed.stdout, end="")
+    if completed.stderr:
+        print(completed.stderr, file=sys.stderr, end="")
+    if completed.returncode != 0:
+        raise SetupFailure(
+            f"envelope source cache seed failed with exit code {completed.returncode}; "
+            "refusing to run isolated builds against an unseeded cache"
+        )
+    match = re.search(r"^Seeded (\d+) envelope source\(s\)", completed.stdout, re.MULTILINE)
+    if match is None:
+        raise SetupFailure("envelope source cache seed did not report how many sources it pinned")
+    seeded = int(match.group(1))
+    # Every seeded source leaves a metadata entry, fetched or pinned unavailable.
+    pinned = len(list(cache_dir.glob("*.json")))
+    if pinned != seeded:
+        raise SetupFailure(
+            f"envelope source cache seed reported {seeded} source(s) but pinned {pinned} in {cache_dir}"
+        )
+    return seeded
+
+
 def _build(
     source: Path, workdir: Path, git_dir: str, verification_time: str,
     source_sha: str = "0123456789abcdef0123456789abcdef01234567",
@@ -600,6 +649,7 @@ def verify(workdir_root: Path, output: Path, reproduction: str) -> int:
         git_dir = _run_git("rev-parse", "--absolute-git-dir")
         verification_time = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
         metadata = _workdir(workdir_root, "datapulse-release-meta-")
+        _seed_source_cache(ROOT, source_cache)
         first_workdir = _workdir(workdir_root, "datapulse-release-A-")
         first = _build(
             ROOT, first_workdir, git_dir, verification_time, source_sha, source_date,

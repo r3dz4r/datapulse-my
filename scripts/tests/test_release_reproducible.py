@@ -188,6 +188,7 @@ def test_verify_passes_one_captured_time_to_both_isolated_builds(
     monkeypatch.setattr(verifier, "_run_git", lambda *arguments: "/tmp/fake-git-dir")
     monkeypatch.setattr(verifier, "_workdir", fake_workdir)
     monkeypatch.setattr(verifier, "_build", fake_build)
+    monkeypatch.setattr(verifier, "_seed_source_cache", lambda source, cache_dir: 0)
     monkeypatch.setattr(verifier, "_write_hash_table", lambda path, hashes: None)
     monkeypatch.setattr(verifier, "_summary", lambda *args: "proof\n")
 
@@ -220,6 +221,7 @@ def test_verify_passes_one_shared_envelope_source_cache_to_both_isolated_builds(
     monkeypatch.setattr(verifier, "_run_git", lambda *arguments: "/tmp/fake-git-dir")
     monkeypatch.setattr(verifier, "_workdir", fake_workdir)
     monkeypatch.setattr(verifier, "_build", fake_build)
+    monkeypatch.setattr(verifier, "_seed_source_cache", lambda source, cache_dir: 0)
     monkeypatch.setattr(verifier, "_write_hash_table", lambda path, hashes: None)
     monkeypatch.setattr(verifier, "_summary", lambda *args: "proof\n")
 
@@ -263,6 +265,7 @@ def test_verify_envelope_source_cache_cleanup_failure_does_not_raise(
     monkeypatch.setattr(verifier, "_run_git", lambda *arguments: "/tmp/fake-git-dir")
     monkeypatch.setattr(verifier, "_workdir", fake_workdir)
     monkeypatch.setattr(verifier, "_build", fake_build)
+    monkeypatch.setattr(verifier, "_seed_source_cache", lambda source, cache_dir: 0)
     monkeypatch.setattr(verifier, "_write_hash_table", lambda path, hashes: None)
     monkeypatch.setattr(verifier, "_summary", lambda *args: "proof\n")
     monkeypatch.setattr(verifier.shutil, "rmtree", fake_rmtree)
@@ -271,6 +274,139 @@ def test_verify_envelope_source_cache_cleanup_failure_does_not_raise(
     captured = capsys.readouterr()
     assert "WARNING" in captured.err
     assert "cache busy" in captured.err
+
+
+def _verify_with_fake_builds(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, fake_build: object
+) -> int:
+    created: list[Path] = []
+
+    def fake_workdir(root: Path, prefix: str) -> Path:
+        path = root / f"{prefix}{len(created)}"
+        path.mkdir()
+        created.append(path)
+        return path
+
+    monkeypatch.setattr(verifier, "_run_git", lambda *arguments: "/tmp/fake-git-dir")
+    monkeypatch.setattr(verifier, "_workdir", fake_workdir)
+    monkeypatch.setattr(verifier, "_build", fake_build)
+    monkeypatch.setattr(verifier, "_write_hash_table", lambda path, hashes: None)
+    monkeypatch.setattr(verifier, "_summary", lambda *args: "proof\n")
+    return verifier.verify(tmp_path, tmp_path / "proof.md", "reproduce")
+
+
+def test_verify_seeds_source_cache_once_outside_isolation_before_the_first_build(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    events: list[tuple[str, Path, tuple[str, ...]]] = []
+    seed_environments: list[dict[str, str]] = []
+
+    def fake_seed_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        cache = Path(command[command.index("--seed-source-cache") + 1])
+        environment = kwargs["env"]
+        assert isinstance(environment, dict)
+        seed_environments.append(environment)
+        for key in ("a", "b"):
+            (cache / f"{key}.json").write_text("{}", encoding="utf-8")
+        events.append(("seed", cache, ()))
+        return subprocess.CompletedProcess(command, 0, f"Seeded 2 envelope source(s) into {cache}.\n", "")
+
+    def fake_build(
+        source: Path, workdir: Path, git_dir: str, verification_time: str,
+        source_sha: str, source_date: str,
+        source_cache: Path | None = None,
+    ) -> verifier.BuildCapture:
+        assert source_cache is not None
+        events.append(("build", source_cache, tuple(sorted(p.name for p in source_cache.iterdir()))))
+        return verifier.BuildCapture({}, {}, workdir)
+
+    # Ambient isolation must not leak into the seed, or the seeder refuses to fetch.
+    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+    monkeypatch.setattr(verifier.subprocess, "run", fake_seed_run)
+
+    assert _verify_with_fake_builds(tmp_path, monkeypatch, fake_build) == 0
+    assert [kind for kind, _, _ in events] == ["seed", "build", "build"]
+    seeded_cache = events[0][1]
+    assert events[1][1] == seeded_cache and events[2][1] == seeded_cache
+    assert events[1][2] == ("a.json", "b.json")
+    assert events[2][2] == ("a.json", "b.json")
+    assert len(seed_environments) == 1
+    assert "DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD" not in seed_environments[0]
+
+
+def test_verify_fails_loudly_when_seed_source_cache_fails(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    builds: list[Path] = []
+
+    def failing_seed_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(command, 1, "", "Traceback: manifest unreadable\n")
+
+    def fake_build(
+        source: Path, workdir: Path, git_dir: str, verification_time: str,
+        source_sha: str, source_date: str,
+        source_cache: Path | None = None,
+    ) -> verifier.BuildCapture:
+        builds.append(workdir)
+        return verifier.BuildCapture({}, {}, workdir)
+
+    monkeypatch.setattr(verifier.subprocess, "run", failing_seed_run)
+
+    with pytest.raises(verifier.SetupFailure, match="seed failed with exit code 1"):
+        _verify_with_fake_builds(tmp_path, monkeypatch, fake_build)
+    assert builds == []
+    assert "manifest unreadable" in capsys.readouterr().err
+
+
+def test_verify_rejects_seed_that_pinned_fewer_sources_than_it_reported(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def short_seed_run(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(command, 0, "Seeded 3 envelope source(s) into cache.\n", "")
+
+    def fake_build(*args: object, **kwargs: object) -> verifier.BuildCapture:
+        raise AssertionError("an unseeded cache must not reach a build")
+
+    monkeypatch.setattr(verifier.subprocess, "run", short_seed_run)
+
+    with pytest.raises(verifier.SetupFailure, match="reported 3 source\\(s\\) but pinned 0"):
+        _verify_with_fake_builds(tmp_path, monkeypatch, fake_build)
+
+
+def test_seed_pinned_unavailable_source_degrades_both_builds_identically(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from scripts import gen_json_envelope as envelope
+
+    # Nothing listens on the discard port, so the real seeder pins a fetch
+    # failure without reaching any external host.
+    row = {"id": "alpha", "url": "http://127.0.0.1:9/alpha.csv"}
+    root = tmp_path / "source"
+    root.mkdir()
+    (root / "datapulse.json").write_text(json.dumps({"datasets": [row]}), encoding="utf-8")
+    envelopes: list[str] = []
+
+    def envelope_build(
+        source: Path, workdir: Path, git_dir: str, verification_time: str,
+        source_sha: str, source_date: str,
+        source_cache: Path | None = None,
+    ) -> verifier.BuildCapture:
+        assert source_cache is not None
+        monkeypatch.setenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", str(source_cache))
+        _, serialized = envelope.generate_envelope(str(root), row, {})
+        envelopes.append(serialized)
+        digest = verifier.hashlib.sha256(serialized.encode("utf-8")).hexdigest()
+        return verifier.BuildCapture({"data/json/alpha.json": digest}, {}, workdir)
+
+    monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+    monkeypatch.setattr(verifier, "ROOT", root)
+
+    assert _verify_with_fake_builds(tmp_path, monkeypatch, envelope_build) == 0
+    assert len(envelopes) == 2
+    assert envelopes[0] == envelopes[1]
+    degraded = json.loads(envelopes[0])
+    assert degraded["fields"] == []
+    assert "Fields are inferred at the next probe run." in degraded["known_quirks"]
 
 
 def test_build_forwards_envelope_source_cache_into_narrow_environment(
