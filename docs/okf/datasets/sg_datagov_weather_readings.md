@@ -8,7 +8,7 @@ sources:
   - {"id": "sg-datagov","resource": "https://api.data.gov.sg/v1/environment/air-temperature","title": "Singapore Government"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-09-07T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-09T17:27:39Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T11:42:30Z"}
 status: "stable"
 datapulse:licence: "Singapore Open Data Licence v1.0 (attribution required)"
 datapulse:attribution: "Contains information from National Environment Agency, Singapore Open Data Licence v1.0; accessed 2026-09-07"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/sg_datagov_weather_readings.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-11-11T05:25:00Z"
+stale_after: "2026-11-09T23:34:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -27,7 +27,7 @@ Weather Readings real-time (SG) is published by Singapore Government and tracked
 # Schema
 
 - `column_count`: `2`
-- `first_row_hash`: `shape-v1:f0a5d8e8806c818fa057d025c7f656d4e159e9607a8128856c444455f5dba781`
+- `first_row_hash`: `shape-v1:ff460652b5269c9d7dc04f0703c8babd6d9021aa520bc059edd2f2a356923c9c`
 - `record_count`: `1`
 
 # Quirks
