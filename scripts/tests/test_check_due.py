@@ -125,19 +125,19 @@ def _ago(seconds: float) -> str:
 
 def test_operator_approved_tiers() -> None:
     assert TIER_DUE_SECONDS == {
-        "realtime-30s": 60,
         "realtime": 900,
         "daily": 86400,
         "weekly-monthly": 604800,
         "slow": 2592000,
     }
-    assert frequency_to_tier("30 seconds") == "realtime-30s"
+    assert frequency_to_tier("30 seconds") == "realtime"
     assert frequency_to_tier("hourly") == "realtime"
 
 
-def test_thirty_second_dataset_is_due_after_one_minute() -> None:
-    assert is_due(_ago(59), NOW, "30 seconds", "rt30") is False
-    assert is_due(_ago(60), NOW, "30 seconds", "rt30") is True
+def test_thirty_second_dataset_is_due_after_fifteen_minutes() -> None:
+    assert is_due(_ago(899), NOW, "30 seconds", "rt30") is False
+    assert is_due(_ago(900), NOW, "30 seconds", "rt30") is True
+    assert is_due(_ago(901), NOW, "30 seconds", "rt30") is True
 
 
 def test_hourly_dataset_is_due_after_fifteen_minutes() -> None:
@@ -192,8 +192,8 @@ MIXED_MANIFEST = [
     {"id": "unreachable_annual", "refresh_frequency": "annual"},
 ]
 MIXED_PREVIOUS = [
-    {"dataset_id": "rt30_due", "status": "fresh", "last_checked": _ago(60)},
-    {"dataset_id": "rt30_wait", "status": "fresh", "last_checked": _ago(59)},
+    {"dataset_id": "rt30_due", "status": "fresh", "last_checked": _ago(900)},
+    {"dataset_id": "rt30_wait", "status": "fresh", "last_checked": _ago(899)},
     {"dataset_id": "hourly_wait", "status": "fresh", "last_checked": _ago(61)},
     {"dataset_id": "hourly_due", "status": "fresh", "last_checked": _ago(901)},
     {"dataset_id": "weekday_due", "status": "fresh", "last_checked": _ago(3600)},

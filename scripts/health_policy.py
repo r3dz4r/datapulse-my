@@ -12,9 +12,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REALTIME_FREQUENCIES = {"30 seconds", "hourly"}
-# Operator-approved 2026-11-08: a 30-second feed gets its own one-minute tier
-# instead of sharing the 15-minute realtime tier with hourly feeds.
-REALTIME_30S_FREQUENCIES = {"30 seconds"}
 WEEKDAY_DAILY_FREQUENCIES = {
     # Declared by two manifest datasets; scripts/check.sh already schedules it
     # with the other weekday cadences (`startswith("daily (weekdays")`).
@@ -32,7 +29,6 @@ SLOW_FREQUENCIES = {
 }
 
 TIER_DUE_SECONDS = {
-    "realtime-30s": 60,
     "realtime": 15 * 60,
     "daily": 24 * 60 * 60,
     "weekly-monthly": 7 * 24 * 60 * 60,
@@ -114,8 +110,6 @@ def _normalized_frequency(frequency: object, manifest_id: str | None = None) -> 
 def frequency_to_tier(frequency: object, manifest_id: str | None = None) -> str:
     """Map one manifest refresh frequency to its probe scheduling tier."""
     normalized = _normalized_frequency(frequency, manifest_id)
-    if normalized in REALTIME_30S_FREQUENCIES:
-        return "realtime-30s"
     if normalized in REALTIME_FREQUENCIES:
         return "realtime"
     if normalized == "daily" or normalized in WEEKDAY_DAILY_FREQUENCIES:
@@ -208,7 +202,7 @@ def probe_interval(
     if status == "unreachable":
         retry_limit = (
             FRESHNESS_BASELINE_SECONDS["30 seconds"]
-            if normalized in REALTIME_30S_FREQUENCIES
+            if normalized == "30 seconds"
             else declared
         )
         return min(retry_seconds, cadence, retry_limit)
