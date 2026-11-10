@@ -6,11 +6,13 @@ from __future__ import annotations
 import argparse
 import csv
 import hashlib
+import importlib.util
 import io
 import json
 import multiprocessing
 import os
 import re
+import shutil
 import sys
 import tempfile
 import urllib.request
@@ -146,6 +148,55 @@ def _source_url(row: dict[str, Any]) -> str | None:
     return source_url if isinstance(source_url, str) else None
 
 
+def _is_envelope_row(row: dict[str, Any]) -> bool:
+    return "gtfs" not in row["id"].lower()
+
+
+def envelope_source_urls(manifest_rows: list[Any]) -> list[str]:
+    """Every source generate(force=True) resolves for these manifest rows.
+
+    generate and build_envelope select rows and URLs through the same
+    _is_envelope_row and _source_url, so the seed cannot pin a different set.
+    """
+    return sorted({
+        url
+        for row in manifest_rows
+        if isinstance(row, dict) and isinstance(row.get("id"), str)
+        and _is_envelope_row(row) and (url := _source_url(row)) is not None
+    })
+
+
+def _build_manifest_rows(root: Path) -> list[Any]:
+    # release-build runs gen_dynamic_manifest_urls before this generator, and it
+    # rewrites dynamic-url rows to the probe's confirmed request URL. Replay that
+    # exact step on a scratch copy so the seed reads the manifest the build
+    # resolves, not the committed one.
+    policy = root / "scripts/probe-policy.json"
+    health = root / "health/latest.json"
+    if not policy.is_file() or not health.is_file():
+        rows = load_json(root / "datapulse.json").get("datasets")
+    else:
+        spec = importlib.util.spec_from_file_location(
+            "_datapulse_dynamic_manifest_urls", Path(__file__).with_name("gen_dynamic_manifest_urls.py")
+        )
+        if spec is None or spec.loader is None:
+            raise RuntimeError("cannot load gen_dynamic_manifest_urls.py to resolve the build manifest")
+        dynamic_urls = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(dynamic_urls)
+        with tempfile.TemporaryDirectory(prefix="datapulse-seed-manifest-") as scratch_name:
+            scratch = Path(scratch_name)
+            (scratch / "scripts").mkdir()
+            (scratch / "health").mkdir()
+            shutil.copy2(root / "datapulse.json", scratch / "datapulse.json")
+            shutil.copy2(policy, scratch / "scripts/probe-policy.json")
+            shutil.copy2(health, scratch / "health/latest.json")
+            dynamic_urls.sync_urls(scratch)
+            rows = load_json(scratch / "datapulse.json").get("datasets")
+    if not isinstance(rows, list):
+        raise ValueError("datapulse.json must contain a datasets array")
+    return rows
+
+
 def _seed_one(cache_dir: Path, url: str) -> str | None:
     # Cache write errors propagate: an unwritten entry would be a miss later.
     try:
@@ -161,15 +212,7 @@ def seed_source_cache(root: Path, cache_dir: Path) -> int:
     """Pin every envelope source, or its fetch failure, into cache_dir."""
     if os.environ.get("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD") == "1":
         raise SourceCacheMiss("an isolated reproducibility build must not seed the source cache")
-    rows = load_json(root / "datapulse.json").get("datasets")
-    if not isinstance(rows, list):
-        raise ValueError("datapulse.json must contain a datasets array")
-    urls = sorted({
-        url
-        for row in rows
-        if isinstance(row, dict) and isinstance(row.get("id"), str)
-        and "gtfs" not in row["id"].lower() and (url := _source_url(row)) is not None
-    })
+    urls = envelope_source_urls(_build_manifest_rows(root))
     with ThreadPool(processes=8) as pool:
         failures = [failure for failure in pool.starmap(_seed_one, [(cache_dir, url) for url in urls]) if failure]
     if failures:
@@ -341,12 +384,13 @@ def access_method(health: dict[str, Any]) -> str:
 
 def build_envelope(root: Path, manifest: dict[str, Any], health: dict[str, Any]) -> dict[str, Any]:
     source_url = manifest.get("source_url") or manifest.get("url")
+    fetch_url = _source_url(manifest)
     fields: list[dict[str, str]] = []
     fields_unavailable = False
-    if isinstance(source_url, str):
+    if fetch_url is not None:
         # SourceCacheMiss is not caught here: it must fail the build.
         try:
-            fields = infer_fields(source_url)
+            fields = infer_fields(fetch_url)
         except (OSError, UnicodeError, ValueError, json.JSONDecodeError):
             fields_unavailable = True
     else:
@@ -421,7 +465,7 @@ def generate(root: Path, *, dry_run: bool, force: bool, target_dataset_id: str |
         dataset_id = row["id"]
         if target_dataset_id is not None and target_dataset_id != dataset_id:
             continue
-        if "gtfs" in dataset_id.lower():
+        if not _is_envelope_row(row):
             continue
         path = output_dir / f"{dataset_id}.json"
         if path.exists() and not force:

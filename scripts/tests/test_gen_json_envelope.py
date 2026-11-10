@@ -1,5 +1,6 @@
 import hashlib
 import json
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -237,6 +238,71 @@ def test_seeded_cache_serves_isolated_build_without_network(
     monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
     assert envelope.fetch_source(url) == (payload, "text/csv")
     assert calls == []
+
+
+def test_seed_pins_every_source_the_build_resolves(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from scripts import gen_dynamic_manifest_urls
+
+    root = tmp_path / "root"
+    base = "https://example.test"
+    rows = [
+        {"id": "plain", "url": f"{base}/plain.csv"},
+        {"id": "override", "url": f"{base}/ignored.csv", "source_url": f"{base}/override.csv"},
+        {"id": "rapid_gtfs", "url": f"{base}/gtfs.zip"},
+        # The committed URL is a year behind; release-build rolls it forward.
+        {"id": "rolling", "url": f"{base}/rolling_2025.csv"},
+    ]
+    write_json(root / "scripts/probe-policy.json", {
+        "datasets": {"rolling": {"dynamic-url": {"template": f"{base}/rolling_{{YYYY}}.csv"}}},
+    })
+
+    def write_inputs() -> None:
+        write_json(root / "datapulse.json", {"datasets": rows})
+        write_json(root / "health/latest.json", {"datasets": [
+            {"dataset_id": row["id"], "status": "fresh", "url": f"{base}/rolling_2026.csv",
+             "request_url": f"{base}/rolling_2026.csv", "http_status": 200}
+            if row["id"] == "rolling" else {"dataset_id": row["id"], "status": "fresh"}
+            for row in rows
+        ]})
+
+    def seed_then_build(name: str) -> tuple[set[str], set[str]]:
+        cache = tmp_path / f"cache-{name}"
+        monkeypatch.delenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", raising=False)
+        monkeypatch.delenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", raising=False)
+        monkeypatch.setattr(envelope.urllib.request, "urlopen", _stub_urlopen(b"a,b\n1,2\n"))
+        envelope.seed_source_cache(root, cache)
+        pinned = {path.stem for path in cache.glob("*.json")}
+
+        # Replay the release-build order on a copy: dynamic URLs, then envelopes.
+        build = tmp_path / f"build-{name}"
+        shutil.copytree(root, build)
+        calls: list[object] = []
+        monkeypatch.setattr(envelope.urllib.request, "urlopen", _refuse_urlopen(calls))
+        monkeypatch.setenv("DATAPULSE_ISOLATED_REPRODUCIBILITY_BUILD", "1")
+        monkeypatch.setenv("DATAPULSE_ENVELOPE_SOURCE_CACHE", str(cache))
+        gen_dynamic_manifest_urls.sync_urls(build)
+        envelope.generate(build, dry_run=False, force=True)
+        assert calls == []
+        resolved = set()
+        for path in (build / "data/json").glob("*.json"):
+            built = json.loads(path.read_text(encoding="utf-8"))
+            assert built["fields"], f"{path.name} did not resolve its source from the cache"
+            resolved.add(built["reproducibility"]["url"])
+        return pinned, resolved
+
+    write_inputs()
+    pinned, resolved = seed_then_build("first")
+    assert resolved == {f"{base}/plain.csv", f"{base}/override.csv", f"{base}/rolling_2026.csv"}
+    assert pinned == {_cache_paths(Path(), url)[1].stem for url in resolved}
+
+    # A source added to the build is pinned without anyone listing it.
+    rows.append({"id": "added", "url": f"{base}/added.csv"})
+    write_inputs()
+    pinned, resolved = seed_then_build("second")
+    assert f"{base}/added.csv" in resolved
+    assert pinned == {_cache_paths(Path(), url)[1].stem for url in resolved}
 
 
 def test_seed_pins_failure_so_both_isolated_builds_degrade_identically(
