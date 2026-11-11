@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.63.2](https://github.com/r3dz4r/datapulse-my/compare/v3.63.1...v3.63.2) (2026-11-11)
+
+
+### Bug Fixes
+
+* **telemetry:** tolerate torn rows and reconcile repeated skips ([c53ba37](https://github.com/r3dz4r/datapulse-my/commit/c53ba37eab74bf3f088c7bca5e73c0cdb9a34682))
+* **telemetry:** tolerate torn rows and reconcile repeated skips ([88acac6](https://github.com/r3dz4r/datapulse-my/commit/88acac6b57890dd6d6b71752e3ac725e6199a4b4))
+
 ## [3.63.1](https://github.com/r3dz4r/datapulse-my/compare/v3.63.0...v3.63.1) (2026-11-10)
 
 
