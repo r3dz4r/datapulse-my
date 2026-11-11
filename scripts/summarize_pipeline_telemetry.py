@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import logging
 import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -42,6 +43,7 @@ SUBSTAGE_TOKEN = re.compile(r"[a-z0-9][a-z0-9_-]*")
 SCHEMA = "datapulse/v1/pipeline-run-receipt"
 MODES = frozenset({"health-cycle", "release-build", "audit", "shadow-health"})
 COMMIT_PATTERN = re.compile(r"[0-9a-f]{7,64}")
+LOGGER = logging.getLogger(__name__)
 
 
 class TelemetryError(ValueError):
@@ -125,24 +127,28 @@ def parse_event(value: object, line_number: int) -> dict[str, Any]:
     }
 
 
-def read_events(path: Path) -> list[dict[str, Any]]:
-    """Read and validate every non-empty JSONL row before selecting a cycle."""
+def read_events(path: Path) -> tuple[list[dict[str, Any]], int]:
+    """Skip undecodable JSON rows, counting them; validate every decoded event."""
     try:
         lines = path.read_text(encoding="utf-8").splitlines()
     except OSError as exc:
         raise TelemetryError(f"cannot read telemetry: {exc}") from exc
     events: list[dict[str, Any]] = []
+    skipped_malformed_rows = 0
     for line_number, line in enumerate(lines, start=1):
         if not line.strip():
             raise TelemetryError(f"line {line_number}: empty rows are not allowed")
         try:
             event = json.loads(line)
-        except json.JSONDecodeError as exc:
-            raise TelemetryError(f"line {line_number}: malformed JSON") from exc
+        except json.JSONDecodeError:
+            skipped_malformed_rows += 1
+            continue
         events.append(parse_event(event, line_number))
+    if skipped_malformed_rows:
+        LOGGER.warning("skipped %d malformed telemetry rows", skipped_malformed_rows)
     if not events:
         raise TelemetryError("telemetry is empty")
-    return events
+    return events, skipped_malformed_rows
 
 
 def select_cycle(events: list[dict[str, Any]], requested_cycle: str | None) -> tuple[str, list[dict[str, Any]]]:
@@ -169,7 +175,8 @@ def distinct_events(events: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def build_receipt(
-    events: list[dict[str, Any]], cycle: str, mode: str, source_commit: str, health_commit: str
+    events: list[dict[str, Any]], cycle: str, mode: str, source_commit: str, health_commit: str,
+    skipped_malformed_rows: int = 0,
 ) -> dict[str, Any]:
     """Build one deterministic receipt while rejecting contradictory stage records.
 
@@ -178,7 +185,9 @@ def build_receipt(
     perform the work. That sequence is not contradictory -- the later
     non-skipped record is authoritative, and the coalesced attempt is preserved
     in the receipt rather than dropped. Two differing non-skipped records for
-    one stage remain a defect and are refused.
+    one stage remain a defect and are refused. Repeated skips with matching
+    duration and sanitized metadata reconcile to the last record, provided
+    their timestamps do not go backwards.
     """
     grouped: dict[str, list[dict[str, Any]]] = {}
     for event in events:
@@ -192,9 +201,12 @@ def build_receipt(
         if len(performed) > 1:
             raise TelemetryError(f"contradictory duplicate record for stage {stage}")
         if not performed:
-            if len(skipped) > 1:
-                raise TelemetryError(f"contradictory duplicate record for stage {stage}")
-            by_stage[stage] = skipped[0]
+            for previous, current in zip(records, records[1:]):
+                if current["timestamp"] < previous["timestamp"]:
+                    raise TelemetryError(f"non-monotonic timestamp for stage {stage}")
+                if (current["duration_ms"], current["metadata"]) != (previous["duration_ms"], previous["metadata"]):
+                    raise TelemetryError(f"contradictory duplicate record for stage {stage}")
+            by_stage[stage] = records[-1]
             continue
         # A coalesced attempt is only superseded by work that happened after it.
         if any(attempt["timestamp"] >= performed[0]["timestamp"] for attempt in skipped):
@@ -231,6 +243,7 @@ def build_receipt(
         "health_commit": health_commit,
         "mode": mode,
         "schema": SCHEMA,
+        "skipped_malformed_rows": skipped_malformed_rows,
         "source_commit": source_commit,
         "stages": stages,
         "total_elapsed_ms": (last_timestamp - first_timestamp) // timedelta(milliseconds=1),
@@ -255,9 +268,10 @@ def main() -> int:
     parser.add_argument("--health-commit", required=True, type=parse_commit_identifier, help="health commit")
     args = parser.parse_args()
     try:
-        events = read_events(args.input)
+        events, skipped_malformed_rows = read_events(args.input)
         cycle, selected = select_cycle(events, args.cycle)
-        write_receipt(args.output, build_receipt(selected, cycle, args.mode, args.source_commit, args.health_commit))
+        receipt = build_receipt(selected, cycle, args.mode, args.source_commit, args.health_commit, skipped_malformed_rows)
+        write_receipt(args.output, receipt)
     except TelemetryError as exc:
         parser.error(str(exc))
     return 0
