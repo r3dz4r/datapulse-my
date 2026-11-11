@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 
 ROOT = Path(__file__).resolve().parents[2]
 SCRIPT = ROOT / "scripts/summarize_pipeline_telemetry.py"
@@ -83,6 +85,7 @@ def test_aggregates_a_sanitized_receipt_for_selected_cycle(tmp_path: Path) -> No
         "last_timestamp": "2026-09-09T00:00:03Z",
         "mode": "health-cycle",
         "schema": "datapulse/v1/pipeline-run-receipt",
+        "skipped_malformed_rows": 0,
         "source_commit": "abcdef1",
         "stages": {
             "mcp-sync": {"duration_ms": 30, "metadata": {"result": "no-change", "source": "deploy"}, "status": "success"},
@@ -225,3 +228,79 @@ def test_rejects_invalid_pipeline_metadata_identifiers(tmp_path: Path) -> None:
 
         assert result.returncode != 0
         assert not receipt.exists()
+
+
+@pytest.mark.parametrize("mode", ["health-cycle", "release-build", "audit", "shadow-health"])
+def test_skips_unparseable_rows_loudly_in_every_mode(tmp_path: Path, mode: str) -> None:
+    telemetry = tmp_path / "stages.jsonl"
+    receipt = tmp_path / "receipt.json"
+    valid = json.dumps(_event("2026-09-09T00:00:00Z", "probe", 1))
+    telemetry.write_text('{"secret":"do-not-log\n' + valid + '\nnot-json\n', encoding="utf-8")
+
+    result = _run(telemetry, receipt, "--mode", mode)
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(receipt.read_text())
+    assert payload["skipped_malformed_rows"] == 2
+    assert payload["cycle"] == "cycle-a"
+    assert "skipped 2 malformed" in result.stderr
+    assert "do-not-log" not in result.stderr
+    assert _run(telemetry, receipt, "--mode", mode).returncode == 0
+    assert json.loads(receipt.read_text()) == payload
+
+
+def test_reconciles_repeated_matching_skips(tmp_path: Path) -> None:
+    telemetry = tmp_path / "stages.jsonl"
+    receipt = tmp_path / "receipt.json"
+    _write_events(telemetry, [
+        _event("2026-09-09T00:00:00Z", "publish.gate", 0, status="skipped"),
+        _event("2026-09-09T00:05:00Z", "publish.gate", 0, status="skipped"),
+        _event("2026-09-09T00:10:00Z", "publish.gate", 0, status="skipped"),
+    ])
+
+    result = _run(telemetry, receipt)
+
+    assert result.returncode == 0, result.stderr
+    payload = json.loads(receipt.read_text())
+    assert payload["stages"]["publish.gate"] == {"duration_ms": 0, "metadata": {}, "status": "skipped"}
+    assert payload["last_timestamp"] == "2026-09-09T00:10:00Z"
+    assert payload["total_elapsed_ms"] == 600000
+
+
+@pytest.mark.parametrize("change", [
+    {"duration_ms": 1},
+    {"extra": {"result": "different"}},
+    {"ts": "2026-09-08T23:59:00Z"},
+    {"status": "success", "ts": "2026-09-09T00:00:00Z"},
+])
+def test_repeated_skips_keep_conflicts_fatal(tmp_path: Path, change: dict[str, object]) -> None:
+    telemetry = tmp_path / "stages.jsonl"
+    receipt = tmp_path / "receipt.json"
+    first = _event("2026-09-09T00:00:00Z", "publish.gate", 0, status="skipped")
+    second = {**first, "ts": "2026-09-09T00:05:00Z", **change}
+    _write_events(telemetry, [first, second])
+    receipt.write_text("known-good\n")
+
+    result = _run(telemetry, receipt)
+
+    assert result.returncode == 2
+    assert "publish.gate" in result.stderr
+    assert receipt.read_text() == "known-good\n"
+
+
+@pytest.mark.parametrize("bad_row", [
+    "not-json",
+    "",
+    json.dumps({**_event("2026-09-09T00:00:00Z", "probe", 0), "cycle": None}),
+    json.dumps(_event("not-a-timestamp", "probe", 0)),
+])
+def test_unusable_input_preserves_existing_receipt(tmp_path: Path, bad_row: str) -> None:
+    telemetry = tmp_path / "stages.jsonl"
+    receipt = tmp_path / "receipt.json"
+    telemetry.write_text(bad_row + "\n")
+    receipt.write_text("known-good\n")
+
+    result = _run(telemetry, receipt)
+
+    assert result.returncode == 2
+    assert receipt.read_text() == "known-good\n"
