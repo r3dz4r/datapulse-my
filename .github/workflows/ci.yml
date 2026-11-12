@@ -142,6 +142,7 @@ jobs:
           cache-dependency-path: requirements-dev.txt
 
       - name: Set up Node
+        if: env.FULL_VERIFICATION == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "22.23.1"
