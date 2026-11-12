@@ -864,10 +864,15 @@ def test_health_cycle_classifier_fails_closed_outside_generated_ownership(disall
 
 
 def test_native_pages_uses_only_canonical_health_input_and_regenerates_embed() -> None:
-    workflow = _workflow()
-    fast_path = workflow.split("      - name: Embed canonical health dashboard (health-only path)\n", 1)[1].split(
-        "      - name: Consume verified release build (non-health path)\n", 1
-    )[0]
+    steps = yaml.safe_load(_workflow())["jobs"]["deploy"]["steps"]
+    embed = _deploy_step("Embed canonical health dashboard (health-only path)")
+    release = _deploy_step("Consume verified release build (non-health path)")
+    assert embed["if"] == "needs.sign_health.outputs.health_only == 'true'"
+    fast_path = "\n".join(
+        step.get("run", "")
+        for step in steps[steps.index(embed):steps.index(release)]
+        if step.get("if") != "needs.sign_health.outputs.health_only != 'true'"
+    )
 
     assert "python3 scripts/embed_dashboard_data.py --health health/latest.json" in fast_path
     assert "health/trends.json" not in fast_path
@@ -1061,10 +1066,32 @@ def test_native_pages_installs_pinned_pandoc_before_non_health_release_build() -
     assert pandoc_index < release_build_index
     assert pandoc_step["if"] == "needs.sign_health.outputs.health_only != 'true'"
     assert pandoc_step["run"].splitlines() == [
-        "sudo apt-get update",
-        "sudo apt-get install -y pandoc=3.1.3+ds-2",
-        "pandoc --version | sed -n '1p'",
+        "set -euo pipefail",
+        'curl --fail --location --silent --show-error --output "$RUNNER_TEMP/pandoc-3.1.3-linux-amd64.tar.gz" '
+        "https://github.com/jgm/pandoc/releases/download/3.1.3/pandoc-3.1.3-linux-amd64.tar.gz",
+        'sudo tar -xzf "$RUNNER_TEMP/pandoc-3.1.3-linux-amd64.tar.gz" '
+        "--strip-components=2 -C /usr/local/bin pandoc-3.1.3/bin/pandoc",
+        'pandoc --version | sed -n \'1p\' | tee "$RUNNER_TEMP/pandoc-version.txt"',
+        'grep -Fxq \'pandoc 3.1.3\' "$RUNNER_TEMP/pandoc-version.txt"',
     ]
+
+
+@pytest.mark.parametrize("workflow_name", [
+    "ci.yml",
+    "main-consistency-audit.yml",
+    "preview-verify.yml",
+    "publish-publication.yml",
+])
+def test_workflows_mirror_native_pages_pandoc_install(workflow_name: str) -> None:
+    parsed = yaml.safe_load((ROOT / ".github/workflows" / workflow_name).read_text())
+    pandoc_steps = [
+        step
+        for job in parsed["jobs"].values()
+        for step in job.get("steps", [])
+        if step.get("name") == "Install Pandoc"
+    ]
+    assert len(pandoc_steps) == 1
+    assert pandoc_steps[0]["run"] == _deploy_step("Install Pandoc")["run"]
 
 
 def test_pages_cannot_generate_a_private_substitute_for_an_accepted_report() -> None:
