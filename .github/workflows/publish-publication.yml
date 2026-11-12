@@ -37,10 +37,14 @@ jobs:
           persist-credentials: false
 
       - name: Install Pandoc
+        # A runner-image rotation removed the pinned apt version; the official
+        # release asset keeps the 3.1.3 pin independent of future rotations.
         run: |
-          sudo apt-get update
-          sudo apt-get install -y pandoc=3.1.3+ds-2
-          pandoc --version | sed -n '1p'
+          set -euo pipefail
+          curl --fail --location --silent --show-error --output "$RUNNER_TEMP/pandoc-3.1.3-linux-amd64.tar.gz" https://github.com/jgm/pandoc/releases/download/3.1.3/pandoc-3.1.3-linux-amd64.tar.gz
+          sudo tar -xzf "$RUNNER_TEMP/pandoc-3.1.3-linux-amd64.tar.gz" --strip-components=2 -C /usr/local/bin pandoc-3.1.3/bin/pandoc
+          pandoc --version | sed -n '1p' | tee "$RUNNER_TEMP/pandoc-version.txt"
+          grep -Fxq 'pandoc 3.1.3' "$RUNNER_TEMP/pandoc-version.txt"
 
       - name: Install release verification dependencies
         run: |
