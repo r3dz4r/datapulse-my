@@ -66,6 +66,17 @@ NPRA_LINK_FIELDS = (
 DEFAULT_EXCERPT_SIZE = 50
 MAX_ATTEMPTS = 3
 REQUEST_TIMEOUT_SECONDS = 60.0
+UNAVAILABLE_FIELDS = (
+    "source_sha256",
+    "record_count",
+    "schema_valid_count",
+    "status_distribution",
+)
+UNAVAILABLE_FRESHNESS = {
+    "source_last_modified": None,
+    "age_days": None,
+    "status": "unreachable",
+}
 
 
 @dataclass(frozen=True)
@@ -305,6 +316,12 @@ def _schema_errors(envelope: dict[str, Any]) -> list[str]:
         return []
     schema_path = ROOT / "record-evidence.schema.json"
     schema = json.loads(schema_path.read_text(encoding="utf-8"))
+    if "source_unavailable" in envelope:
+        # Retain metadata validation while allowing explicitly absent evidence.
+        schema["required"].append("source_unavailable")
+        schema["properties"]["source_unavailable"] = {"type": "string"}
+        for field in UNAVAILABLE_FIELDS:
+            schema["properties"][field] = {"type": "null"}
     validator = Draft202012Validator(schema, format_checker=FormatChecker())
     return [
         f"{'.'.join(str(part) for part in failure.absolute_path) or '<root>'}: {failure.message}"
@@ -320,6 +337,19 @@ def validate_record_evidence(
     """Return strict envelope errors without mutating the document."""
     errors = _schema_errors(envelope)
     if errors:
+        return errors
+    if "source_unavailable" in envelope:
+        reason = envelope["source_unavailable"]
+        if not isinstance(reason, str) or not re.fullmatch(
+            r"http-(?:429|5[0-9]{2})|[A-Za-z][A-Za-z0-9]{0,63}", reason
+        ):
+            errors.append("source_unavailable must be a normalized transient reason")
+        if any(envelope.get(field) is not None for field in UNAVAILABLE_FIELDS):
+            errors.append("unavailable source must not contain download evidence")
+        if envelope.get("records") != []:
+            errors.append("unavailable source must have empty records")
+        if envelope.get("freshness") != UNAVAILABLE_FRESHNESS:
+            errors.append("unavailable source must have unreachable freshness")
         return errors
     distribution = envelope["status_distribution"]
     if tuple(distribution) != STATUSES:
@@ -484,7 +514,32 @@ def generate(
             url = dataset.get("record_source_url") or dataset.get("url")
             if not isinstance(url, str) or not url:
                 raise ValueError(f"{dataset.get('id')}: no record source URL")
-            content, modified, observed = _download(url)
+            try:
+                content, modified, observed = _download(url)
+            except (httpx.HTTPStatusError, httpx.RequestError) as exc:
+                if isinstance(exc, httpx.HTTPStatusError):
+                    status = exc.response.status_code
+                    if status != 429 and not 500 <= status < 600:
+                        raise
+                    reason = f"http-{status}"
+                else:
+                    reason = type(exc).__name__
+                envelope = {
+                    "schema": SCHEMA_NAME,
+                    "dataset_id": dataset.get("id"),
+                    "observed_at": _iso_datetime(observed_at or datetime.now(UTC)),
+                    "run_date": run_date.isoformat(),
+                    "source_url": url,
+                    **dict.fromkeys(UNAVAILABLE_FIELDS),
+                    "freshness": dict(UNAVAILABLE_FRESHNESS),
+                    "records": [],
+                    "source_unavailable": reason,
+                }
+                paths = write_record_evidence(
+                    envelope, root / "record-evidence", excerpt_size=excerpt_size
+                )
+                generated.append((envelope, paths))
+                continue
         else:
             content = source_file.read_bytes()
             modified = source_last_modified
@@ -534,8 +589,13 @@ def main(argv: list[str] | None = None) -> int:
         print("No vertical datasets; record evidence generation skipped.")
         return 0
     for envelope, paths in generated:
+        summary = (
+            f"source unavailable ({envelope['source_unavailable']})"
+            if "source_unavailable" in envelope
+            else f"{envelope['record_count']} records"
+        )
         print(
-            f"Generated {envelope['dataset_id']}: {envelope['record_count']} records; "
+            f"Generated {envelope['dataset_id']}: {summary}; "
             f"full={paths.full}; latest={paths.latest}"
         )
     return 0
