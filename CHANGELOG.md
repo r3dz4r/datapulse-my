@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.64.0](https://github.com/r3dz4r/datapulse-my/compare/v3.63.3...v3.64.0) (2026-11-12)
+
+
+### Features
+
+* **scripts:** GTFS realtime fleet-availability report ([#3306](https://github.com/r3dz4r/datapulse-my/issues/3306)) ([5e0fe19](https://github.com/r3dz4r/datapulse-my/commit/5e0fe190faf5364213737064efd22e1cf325278b))
+
 ## [3.63.3](https://github.com/r3dz4r/datapulse-my/compare/v3.63.2...v3.63.3) (2026-11-12)
 
 
