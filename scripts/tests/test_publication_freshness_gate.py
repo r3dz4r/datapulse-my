@@ -14,7 +14,8 @@ from pathlib import Path
 import pytest
 import yaml
 
-from scripts.publication_freshness_gate import freshness_verdict
+from scripts import publication_freshness_gate as gate
+from scripts.publication_freshness_gate import deployment_age_verdict
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -41,8 +42,8 @@ NOW = "2026-10-18T06:00:00Z"
     ],
 )
 def test_core_and_cli_verdicts(timestamp: str | None, verdict: str, code: int) -> None:
-    assert freshness_verdict(timestamp, NOW, 24) == verdict
-    args = [sys.executable, str(SCRIPT), "--now", NOW]
+    assert deployment_age_verdict(timestamp, NOW, 24) == verdict
+    args = [sys.executable, str(SCRIPT), "--deployment-age-only", "--now", NOW]
     if timestamp is not None:
         args.extend(["--timestamp", timestamp])
     result = subprocess.run(args, text=True, capture_output=True, check=False)
@@ -55,7 +56,7 @@ def test_core_and_cli_verdicts(timestamp: str | None, verdict: str, code: int) -
 @pytest.mark.parametrize("bound", ["0", "-1", "nan", "inf", "bad"])
 def test_invalid_bound_is_unknown(bound: str) -> None:
     result = subprocess.run(
-        [sys.executable, str(SCRIPT), "--timestamp", NOW, "--now", NOW,
+        [sys.executable, str(SCRIPT), "--deployment-age-only", "--timestamp", NOW, "--now", NOW,
          "--max-age-hours", bound], text=True, capture_output=True, check=False,
     )
     assert result.returncode == 2
@@ -63,13 +64,105 @@ def test_invalid_bound_is_unknown(bound: str) -> None:
 
 
 def test_custom_bound_and_invalid_now() -> None:
-    assert freshness_verdict("2026-10-18T04:00:00Z", NOW, 1) == "stale"
-    assert freshness_verdict(NOW, "broken", 24) == "unknown"
+    assert deployment_age_verdict("2026-10-18T04:00:00Z", NOW, 1) == "stale"
+    assert deployment_age_verdict(NOW, "broken", 24) == "unknown"
+
+
+@pytest.mark.parametrize("served, expected, code", [
+    ("2026-11-12T09:26:20Z", "stale", 1),
+    ("2026-11-12T10:55:44Z", "fresh", 0),
+    ("2026-11-12T10:45:44Z", "fresh", 0),
+    ("2026-11-12T10:45:43.999999Z", "stale", 1),
+    ("2026-11-12T11:00:44Z", "served_newer", 0),
+    (None, "unknown", 2),
+    ("invalid", "unknown", 2),
+    ("2026-11-12T10:55:44+08:00", "unknown", 2),
+])
+def test_content_comparison(served: str | None, expected: str, code: int) -> None:
+    repository = "2026-11-12T10:55:44Z"
+    assert gate.freshness_verdict(served, repository) == expected
+    args = [sys.executable, str(SCRIPT), "--repository-checked-at", repository]
+    if served is not None:
+        args += ["--served-checked-at", served]
+    result = subprocess.run(args, text=True, capture_output=True, check=False)
+    assert result.returncode == code, result.stdout + result.stderr
+    assert result.stdout.startswith(f"{expected}: content freshness")
+    assert "2 pipeline cycles (10 minutes)" in result.stdout
+
+
+@pytest.mark.parametrize("repository", [None, "", "broken", "2026-11-12"])
+def test_missing_or_invalid_repository_is_unknown(repository: str | None) -> None:
+    assert gate.freshness_verdict(NOW, repository) == "unknown"
+
+
+def test_fresh_content_is_independent_of_deployment_age() -> None:
+    assert gate.freshness_verdict(NOW, NOW) == "fresh"
+    assert deployment_age_verdict("2026-10-16T06:00:00Z", NOW) == "stale"
+
+
+def test_content_is_required_by_default() -> None:
+    result = subprocess.run([sys.executable, str(SCRIPT), "--timestamp", NOW],
+                            text=True, capture_output=True, check=False)
+    assert result.returncode == 2
+    assert result.stdout.startswith("unknown: content freshness")
 
 
 def _freshness_job() -> dict:
     workflow = yaml.safe_load((ROOT / ".github/workflows/deploy-cloudflare-pages.yml").read_text())
     return workflow["jobs"]["publication_freshness"]
+
+
+@pytest.mark.parametrize("served, expected_code, verdict", [
+    ("2026-11-12T09:26:20Z", 1, "stale"),
+    ("2026-11-12T10:55:44Z", 0, "fresh"),
+    ("2026-11-12T11:00:44Z", 0, "served_newer"),
+    ("bad", 2, "unknown"),
+])
+def test_workflow_compares_served_content_to_deployed_commit(
+    tmp_path: Path, served: str, expected_code: int, verdict: str,
+) -> None:
+    step = next(s for s in _freshness_job()["steps"]
+                if s.get("name") == "Compare served health with deployed commit")
+    assert step["if"] == "always()"
+    checkout = _freshness_job()["steps"][0]
+    assert checkout["with"]["fetch-depth"] == 0
+    (tmp_path / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
+    health = tmp_path / "health/latest.json"
+    health.parent.mkdir()
+    health.write_text(json.dumps({"checked_at": "2026-11-12T10:55:44Z"}))
+
+    def git(*args: str) -> str:
+        return subprocess.check_output(["git", *args], cwd=tmp_path, text=True).strip()
+
+    git("init", "-q")
+    git("config", "user.name", "Test")
+    git("config", "user.email", "test@example.invalid")
+    git("add", "health/latest.json")
+    git("commit", "-qm", "deployed")
+    deployed = git("rev-parse", "HEAD")
+    # Current checkout is newer: comparing HEAD would incorrectly fail the equal pair.
+    health.write_text(json.dumps({"checked_at": "2026-11-12T12:00:00Z"}))
+    git("commit", "-qam", "later main")
+    bin_path = tmp_path / "bin"
+    bin_path.mkdir()
+    curl = bin_path / "curl"
+    curl.write_text('''#!/bin/bash
+case "${@: -1}" in
+  */publication-identity.json) printf '%s' "$IDENTITY" ;;
+  */health/latest.json) printf '%s' "$SERVED_HEALTH" ;;
+  *) exit 99 ;;
+esac
+''')
+    curl.chmod(0o755)
+    env = {**os.environ, "PATH": f"{bin_path}:{os.environ['PATH']}",
+           "IDENTITY": json.dumps({"accepted_main_commit": deployed}),
+           "SERVED_HEALTH": json.dumps({"checked_at": served}),
+           "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
+    result = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, env=env,
+                            text=True, capture_output=True, check=False)
+    assert result.returncode == expected_code, result.stdout + result.stderr
+    assert f"{verdict}: content freshness" in result.stdout
+    assert f"Content freshness: {verdict}:" in (tmp_path / "summary").read_text()
 
 
 def test_workflow_runs_after_skipped_deploy_outside_pr_checks() -> None:

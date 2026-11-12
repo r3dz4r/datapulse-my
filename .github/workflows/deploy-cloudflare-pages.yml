@@ -1004,6 +1004,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Production may still be an ancestor when this run was skipped.
+          fetch-depth: 0
           persist-credentials: false
       - name: Measure canonical production deployment age
         if: always()
@@ -1025,7 +1027,7 @@ jobs:
             fi
           fi
           status=0
-          verdict="$(python3 scripts/publication_freshness_gate.py --timestamp "$timestamp" --max-age-hours 24)" || status=$?
+          verdict="$(python3 scripts/publication_freshness_gate.py --deployment-age-only --timestamp "$timestamp" --max-age-hours 24)" || status=$?
           printf 'Deployment age (24h policy): %s\n' "$verdict" >> "$GITHUB_STEP_SUMMARY"
           case "$status" in
             0) echo "$verdict" ;;
@@ -1033,6 +1035,27 @@ jobs:
             2) echo "::warning title=Production publication freshness unknown::$verdict; Pages API credentials or deployment metadata may be unavailable. Freshness is not verified." ;;
             *) echo "::error title=Publication freshness gate failed::Unexpected gate exit $status"; exit "$status" ;;
           esac
+      - name: Compare served health with deployed commit
+        if: always()
+        run: |
+          set -Eeuo pipefail
+          identity="$(curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            https://www.data-pulse.my/publication-identity.json)"
+          deployed_sha="$(jq -er '.accepted_main_commit' <<< "$identity")"
+          [[ "$deployed_sha" =~ ^[0-9a-f]{40}$ ]]
+          # Compare the consumer route to the actual deployed revision, not HEAD
+          # or the immutable signed report, which may intentionally be older.
+          repository_checked_at="$(git show "$deployed_sha:health/latest.json" | jq -er '.checked_at')"
+          served_checked_at="$(curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            https://www.data-pulse.my/health/latest.json | jq -er '.checked_at')"
+          status=0
+          verdict="$(python3 scripts/publication_freshness_gate.py \
+            --served-checked-at "$served_checked_at" \
+            --repository-checked-at "$repository_checked_at")" || status=$?
+          printf 'Content freshness: %s\n' "$verdict" >> "$GITHUB_STEP_SUMMARY"
+          echo "$verdict"
+          exit "$status"
+
       - name: Measure canonical production report age
         if: always()
         run: |

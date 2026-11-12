@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Report whether the canonical production deployment is within its age bound."""
+"""Compare served health with its deployed revision; separately bound deployment age."""
 from __future__ import annotations
 
 import argparse
@@ -13,7 +13,12 @@ from typing import Literal
 
 LOGGER = logging.getLogger(__name__)
 UTC_TIMESTAMP = re.compile(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|\+00:00)\Z")
-EXIT_CODES = {"fresh": 0, "stale": 1, "unknown": 2}
+HEALTH_CYCLE_MINUTES = 5
+CONTENT_LAG_TOLERANCE_CYCLES = 2
+CONTENT_LAG_TOLERANCE = timedelta(
+    minutes=HEALTH_CYCLE_MINUTES * CONTENT_LAG_TOLERANCE_CYCLES,
+)
+EXIT_CODES = {"fresh": 0, "stale": 1, "unknown": 2, "served_newer": 0}
 
 
 def _parse_utc(value: str) -> datetime:
@@ -32,6 +37,20 @@ def _age_hours(timestamp: str | None, now: str) -> float | None:
 
 
 def freshness_verdict(
+    served_checked_at: str | None,
+    repository_checked_at: str | None,
+) -> Literal["fresh", "stale", "unknown", "served_newer"]:
+    """Allow two producer cycles of lag; a newer store is a distinct state."""
+    try:
+        lag = _parse_utc(repository_checked_at or "") - _parse_utc(served_checked_at or "")
+    except (TypeError, ValueError):
+        return "unknown"
+    if lag < timedelta(0):
+        return "served_newer"
+    return "stale" if lag > CONTENT_LAG_TOLERANCE else "fresh"
+
+
+def deployment_age_verdict(
     last_production_deployment_created_at: str | None,
     now: str,
     max_age_hours: float = 24,
@@ -45,16 +64,28 @@ def freshness_verdict(
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--served-checked-at", help="Served /health/latest.json checked_at (UTC)")
+    parser.add_argument("--repository-checked-at", help="Health checked_at at the deployed commit (UTC)")
+    parser.add_argument("--deployment-age-only", action="store_true",
+                        help="Run the independent secondary deployment-age condition")
     parser.add_argument("--timestamp", help="Canonical production deployment created_on (UTC)")
     parser.add_argument("--now", help="Override current UTC time for deterministic checks")
     parser.add_argument("--max-age-hours", default="24", help="Maximum deployment age (default: 24)")
     args = parser.parse_args(argv)
+    if not args.deployment_age_only:
+        verdict = freshness_verdict(args.served_checked_at, args.repository_checked_at)
+        LOGGER.info("%s: content freshness; served_checked_at=%s; repository_checked_at=%s; "
+                    "tolerance %s pipeline cycles (%s minutes)",
+                    verdict, args.served_checked_at, args.repository_checked_at,
+                    CONTENT_LAG_TOLERANCE_CYCLES,
+                    HEALTH_CYCLE_MINUTES * CONTENT_LAG_TOLERANCE_CYCLES)
+        return EXIT_CODES[verdict]
     now = args.now if args.now is not None else datetime.now(timezone.utc).isoformat()
     try:
         bound = float(args.max_age_hours)
     except ValueError:
         bound = math.nan
-    verdict = freshness_verdict(args.timestamp, now, bound)
+    verdict = deployment_age_verdict(args.timestamp, now, bound)
     age = _age_hours(args.timestamp, now)
     measured = "unknown" if age is None else f"{age:.6f}h"
     reason = (
