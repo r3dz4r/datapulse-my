@@ -16,6 +16,7 @@ from scripts import gen_attestations as ga
 from scripts.select_accepted_health import SelectionError, restore_observation_build
 from scripts.tests.test_attestation_projections import git
 from scripts.tests.test_attestations import fixture_root
+from scripts.tests.test_receipt_snapshot_publication import write_snapshot_receipt
 
 ROOT = Path(__file__).resolve().parents[2]
 WORKFLOW = ROOT / '.github/workflows/deploy-cloudflare-pages.yml'
@@ -92,6 +93,7 @@ def bound_observation(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, d
         _write(root / name, document)
     result = _run(root, env, generate)
     assert result.returncode == 0, result.stdout + result.stderr
+    write_snapshot_receipt(root)
     git(root, 'add', '-A')
     git(root, 'commit', '-m', 'newer checkout build H1')
     env['PROMOTION_SOURCE_SHA'] = git(root, 'rev-parse', 'HEAD')
@@ -105,29 +107,30 @@ def bound_observation(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, d
     return root, env, observed, newer
 
 
-def test_binding_publishes_one_accepted_observation_and_discloses_it(bound_observation) -> None:
+def test_binding_publishes_receipt_covered_pinned_observation_and_discloses_anchor(bound_observation) -> None:
     root, env, observed, newer = bound_observation
     assert observed < newer
     snapshot = json.loads((root / 'catalog-snapshot.json').read_bytes())
-    assert snapshot['generated_at'] == snapshot['health']['checked_at'] == observed
-    assert json.loads((root / 'catalog-graph.json').read_bytes())['generated_at'] == observed
-    assert json.loads((root / 'health/latest.json').read_bytes())['checked_at'] == observed
+    assert snapshot['generated_at'] == snapshot['health']['checked_at'] == newer
+    assert json.loads((root / 'catalog-graph.json').read_bytes())['generated_at'] == newer
+    assert json.loads((root / 'health/latest.json').read_bytes())['checked_at'] == newer
     for name in DERIVED_CLOCKS:
-        assert json.loads((root / name).read_bytes())['generated_at'] == observed, name
+        assert json.loads((root / name).read_bytes())['generated_at'] == newer, name
     site = root / '_site'
     site.mkdir()
     for name in ('health', 'attestations', '.attestations'):
         shutil.copytree(root / name, site / name)
     shutil.copy2(root / 'datapulse.json', site / 'datapulse.json')
     shutil.copy2(root / 'docs/index.html', site / 'index.html')
-    env = env | {'ACCEPTED_MAIN_COMMIT': env['PROMOTION_SOURCE_SHA'], 'ACCEPTED_OBSERVED_AT': observed}
+    env = env | {'ACCEPTED_MAIN_COMMIT': env['PROMOTION_SOURCE_SHA'], 'ACCEPTED_OBSERVED_AT': newer}
     result = _run(root, env, _step('Verify accepted report identity and disclose observation time'))
     assert result.returncode == 0, result.stdout + result.stderr
-    assert f'<time datetime="{observed}">{observed}</time>' in (site / 'index.html').read_text()
+    assert f'<time datetime="{newer}">{newer}</time>' in (site / 'index.html').read_text()
     identity = json.loads((site / 'publication-identity.json').read_bytes())
-    assert identity['observed_at'] == observed
-    assert identity['observation_build_commit'] == env['ACCEPTED_BUILD_SHA']
-    assert identity['observation_build_commit'] != env['PROMOTION_SOURCE_SHA']
+    assert identity['observed_at'] == newer
+    assert identity['anchor_observed_at'] == observed
+    assert identity['observation_build_commit'] == env['PROMOTION_SOURCE_SHA']
+    assert identity['observation_build_commit'] != env['ACCEPTED_BUILD_SHA']
 
 
 @pytest.mark.parametrize('path,keys', [
@@ -136,14 +139,14 @@ def test_binding_publishes_one_accepted_observation_and_discloses_it(bound_obser
     ('catalog-graph.json', ('generated_at',)),
 ])
 def test_mixed_observation_clocks_still_fail_the_real_invariant(bound_observation, path, keys) -> None:
-    root, env, _, newer = bound_observation
+    root, env, observed, _ = bound_observation
     target = root / path
     original = target.read_bytes()
     document = json.loads(original)
     value = document
     for key in keys[:-1]:
         value = value[key]
-    value[keys[-1]] = newer
+    value[keys[-1]] = observed
     try:
         _write(target, document)
         result = _run(root, env, 'bash scripts/verify_release_invariants.sh --local')
@@ -161,6 +164,11 @@ def test_binding_refuses_missing_build_provenance_before_overwriting_checkout(tm
     from scripts.tests.test_deploy_cloudflare_pages_contract import _accepted_workflow_case, _select_step
 
     root, revision, _, env = _accepted_workflow_case(tmp_path)
+    write_snapshot_receipt(root)
+    git(root, 'add', 'docs/.well-known/datapulse-probe-keys.json', 'observation-receipts')
+    git(root, 'commit', '-m', 'receipt for pinned H1')
+    revision = git(root, 'rev-parse', 'HEAD')
+    env['PROMOTION_SOURCE_SHA'] = revision
     result = _run(root, env, _select_step()['run'])
     assert result.returncode == 0, result.stdout + result.stderr
     publication = Path(env['RUNNER_TEMP']) / 'sigstore-publication'

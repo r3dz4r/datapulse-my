@@ -393,6 +393,82 @@ def verify_unbound_legacy_plane(
     _selected_directory(root, verify_datasets=verify_datasets)
 
 
+def health_claim(snapshot: dict[str, Any], content: bytes) -> dict[str, Any]:
+    """Derive count, membership, clock and exact-byte identity together."""
+    datasets = snapshot.get("datasets")
+    if not isinstance(datasets, list) or not datasets:
+        raise ContractError("health dataset array is invalid")
+    ids = [row.get("dataset_id") for row in datasets if isinstance(row, dict)]
+    if len(ids) != len(datasets) or any(not isinstance(item, str) or not item for item in ids):
+        raise ContractError("health dataset identifiers are invalid")
+    if len(ids) != len(set(ids)):
+        raise ContractError("health dataset identifiers are ambiguous")
+    return {
+        "artifact_ref": "health/latest.json", "artifact_sha256": _digest_bytes(content),
+        "dataset_count": len(ids), "dataset_ids_sha256": _digest_bytes(canonical(sorted(ids))),
+        "observed_at": snapshot.get("checked_at"),
+    }
+
+
+def matching_snapshot_receipt(root: Path, content: bytes, now: datetime) -> dict[str, Any]:
+    """Require a signed receipt for the exact bytes, never a normalized substitute."""
+    snapshot = json.loads(content)
+    claim = health_claim(snapshot, content)
+    observed = _parse_time(claim['observed_at'], 'snapshot observation time')
+    day = observed.date().isoformat()
+    reference = f'observation-receipts/days/{day}.json'
+    label = f"snapshot sha256={claim['artifact_sha256']} receipt file={root / reference}"
+    try:
+        document = _load(root / reference, 'observation receipt day')
+        receipts = document.get('receipts')
+        if (document.get('schema') != 'datapulse/v1/observation-day'
+                or document.get('cycle_date') != day or not isinstance(receipts, list)):
+            raise ContractError('observation receipt day is invalid')
+        matches = [r for r in receipts if isinstance(r, dict)
+                   and isinstance(r.get('payload'), dict)
+                   and r['payload'].get('health_artifact_sha256') == claim['artifact_sha256']
+                   and r['payload'].get('cycle_date') == day
+                   and r['payload'].get('artifact_path') == 'health/latest.json']
+        if not matches:
+            raise ContractError('no matching signed observation receipt')
+        registry = _load(root / 'docs/.well-known/datapulse-probe-keys.json', 'probe key registry')
+        if registry.get('schema') != 'datapulse/v2/probe-key-registry' or not isinstance(registry.get('keys'), list):
+            raise ContractError('receipt key registry is invalid')
+        # Check every matching entry so a corrupted duplicate cannot hide behind
+        # a valid entry. Receipt keys are independent of the daily current_key_id.
+        for receipt in matches:
+            payload = receipt['payload']
+            signed_at = _parse_time(payload.get('observed_at'), 'receipt observation time')
+            valid_until = _parse_time(payload.get('valid_until'), 'receipt validity time')
+            if (payload.get('schema') != 'datapulse/v1/observation-receipt'
+                    or type(payload.get('dataset_count')) is not int
+                    or payload['dataset_count'] != claim['dataset_count']
+                    or not observed <= signed_at <= now <= valid_until
+                    or receipt.get('receipt_id') != _digest_bytes(canonical(payload))):
+                raise ContractError('observation receipt count/time/identity is invalid')
+            rows = [row for row in registry['keys'] if isinstance(row, dict)
+                    and row.get('key_id') == payload.get('key_id')]
+            if len(rows) != 1:
+                raise ContractError('observation receipt key is missing or ambiguous')
+            row = rows[0]
+            if (row.get('purpose') != 'observation-receipt-signing'
+                    or row.get('status') != 'active' or row.get('compromised_at')
+                    or not (_parse_time(row.get('not_before'), 'receipt key not_before')
+                            <= signed_at <= now
+                            <= _parse_time(row.get('not_after'), 'receipt key not_after'))):
+                raise ContractError('observation receipt key purpose/status/window is invalid')
+            try:
+                public = Ed25519PublicKey.from_public_bytes(base64.b64decode(
+                    row['public_key_base64'], validate=True))
+            except (KeyError, ValueError, TypeError) as error:
+                raise ContractError('observation receipt public key is invalid') from error
+            _verify_signature(public, payload, receipt.get('signature_base64'), 'observation receipt')
+    except ContractError as error:
+        raise ContractError(f'{label}: {error}') from error
+    return {'reference': reference, 'receipt_id': matches[-1]['receipt_id'],
+            'payload': matches[-1]['payload']}
+
+
 def verify_contract(
     root: Path,
     *,
@@ -401,7 +477,7 @@ def verify_contract(
     verify_datasets: bool = True,
     allow_newer_health: bool = False,
 ) -> dict[str, Any]:
-    """Verify the signed plane; optionally permit a newer unpublished health snapshot."""
+    """Verify the daily anchor and any independently receipt-covered newer health."""
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     health_path = root / "health/latest.json"
     health = _load(health_path, "health snapshot")
@@ -455,28 +531,10 @@ def verify_contract(
     if age_seconds > max_age:
         raise ContractError("served attestation is stale")
 
-    def health_claim(snapshot: dict[str, Any], content: bytes) -> dict[str, Any]:
-        datasets = snapshot.get("datasets")
-        if not isinstance(datasets, list) or not datasets:
-            raise ContractError("health dataset array is invalid")
-        dataset_ids = [row.get("dataset_id") for row in datasets if isinstance(row, dict)]
-        if len(dataset_ids) != len(datasets) or any(not isinstance(item, str) or not item for item in dataset_ids):
-            raise ContractError("health dataset identifiers are invalid")
-        if len(dataset_ids) != len(set(dataset_ids)):
-            raise ContractError("health dataset identifiers are ambiguous")
-        return {
-            "artifact_ref": "health/latest.json",
-            "artifact_sha256": _digest_bytes(content),
-            "dataset_count": len(dataset_ids),
-            "dataset_ids_sha256": _digest_bytes(canonical(sorted(dataset_ids))),
-            "observed_at": snapshot.get("checked_at"),
-        }
-
     expected_health = health_claim(health, health_path.read_bytes())
+    receipt = None
     if health_binding != expected_health:
         mismatch = "health digest/count/time binding does not match served health"
-        if not allow_newer_health:
-            raise ContractError(mismatch)
         raw_path = root / selected_directory / "health.json"
         compressed_path = root / selected_directory / "health.json.gz"
         if raw_path.is_file() == compressed_path.is_file():
@@ -499,9 +557,16 @@ def verify_contract(
             <= observed_at
         ):
             raise ContractError(mismatch)
-        expected_health = signed_health
+        # The daily bytes retain their original signed digest/count/time check.
+        # Membership is unchanged; the newer snapshot additionally needs its
+        # own signed exact-byte receipt. allow_newer_health no longer bypasses it.
+        receipt = matching_snapshot_receipt(root, health_path.read_bytes(), current)
+        snapshot_observed = _parse_time(expected_health['observed_at'], 'snapshot observation time')
+        age_seconds = max(age_seconds, (current - snapshot_observed).total_seconds())
+        if snapshot_observed > current or age_seconds > max_age:
+            raise ContractError('served snapshot is stale or in the future')
 
-    rekor = _verify_rekor(root, binding.get("rekor"), expected_health["artifact_sha256"])
+    rekor = _verify_rekor(root, binding.get("rekor"), health_binding["artifact_sha256"])
     if require_rekor and rekor is None:
         raise ContractError("required Rekor proof reference is missing")
     claims = {
@@ -511,17 +576,25 @@ def verify_contract(
     }
     if binding.get("claims") != claims:
         raise ContractError("published trust claims do not match verified evidence")
+    # A daily Rekor witness covers the daily bytes only. A cycle receipt must
+    # never inherit that transparency claim for a different snapshot digest.
+    served_claims = claims if receipt is None else {
+        "artifact_signed": False, "rekor_witnessed": False, "source_truth_verified": False,
+    }
     return {
         "schema": "datapulse/v1/attestation-verification-result",
-        "claims": claims,
+        "claims": served_claims,
         "freshness": {
             "status": "current",
             "age_seconds": int(age_seconds),
             "max_age_seconds": max_age,
         },
         "health": expected_health,
+        "daily_anchor": {"health": health_binding, "ed25519": ed25519,
+                         "published_at": payload['published_at'], "claims": claims, "rekor": rekor},
+        "observation_receipt": receipt,
         "ed25519": ed25519,
-        "rekor": rekor,
+        "rekor": rekor if receipt is None else None,
     }
 
 
