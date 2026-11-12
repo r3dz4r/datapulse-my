@@ -349,9 +349,18 @@ def register(root: Path, config: dict[str, Any], observation: dict[str, Any]) ->
         "http_status": 200,
         "access_method": "direct GET",
         "content_length": primary["bytes"],
+        # The register publishes no Last-Modified header; the key is emitted as
+        # null because the per-dataset receipt generator reads it unconditionally.
+        "last_modified": None,
         "content_freshness_date": None,
+        "first_record_timestamp": None,
         "record_count": sum(s["data_rows"] for s in observation["sections"] if s["source"] == "active_expired"),
         "record_count_estimated": False,
+        # No prior cycle exists for this dataset, so tolerance and freshness
+        # signal are unknown rather than assumed true.
+        "record_count_within_tolerance": None,
+        "freshness_signal": None,
+        "freshness_signal_source": None,
         "message": "HTTP 200; primary register rows observed; publication date unknown. Historical cancellation rows are recorded separately in the observation report.",
     }
     # A replay must not roll back a later pipeline probe for this dataset.
