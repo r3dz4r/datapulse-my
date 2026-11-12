@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.64.1](https://github.com/r3dz4r/datapulse-my/compare/v3.64.0...v3.64.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **ci:** install pinned Pandoc from the official release asset ([#3322](https://github.com/r3dz4r/datapulse-my/issues/3322)) ([56ac01d](https://github.com/r3dz4r/datapulse-my/commit/56ac01dae5fc5522967c31523873fd7f2418dd35))
+
 ## [3.64.0](https://github.com/r3dz4r/datapulse-my/compare/v3.63.3...v3.64.0) (2026-11-12)
 
 
