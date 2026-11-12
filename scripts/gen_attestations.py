@@ -74,6 +74,22 @@ def health_binding(root: Path, health: dict) -> dict:
         "observed_at":checked_at,
     }
 
+def reject_stale_health_input(root: Path, chain_index: dict, day: str, health_claim: dict) -> None:
+    """Refuse a same-day observation regression before reuse or signing."""
+    run = chain_index["days"].get(day, [])
+    if not run:
+        return
+    # Discovery verifies immutable sets; latest/ and the original daily alias
+    # may still project an earlier revision and cannot set this lower bound.
+    reference = set_directory(chain_index["heads"][run[-1]]) + "/binding.json"
+    bound = load(root / reference)["payload"]["health"]["observed_at"]
+    observed = health_claim["observed_at"]
+    if parse_time(observed) < parse_time(bound):
+        raise ValueError(
+            f"stale_health_input: health/latest.json observed_at={observed} "
+            f"is older than {reference} observed_at={bound} for {day}"
+        )
+
 def binding_envelope(private: Ed25519PrivateKey, day: str, generated_at: str, health_claim: dict, head: dict, key_id: str, rekor: dict | None = None) -> dict:
     payload={
         "schema":"datapulse/v1/attestation-binding",
@@ -274,6 +290,7 @@ def _generate(root: Path, key_path: Path, now: datetime, rekor_reference: Path |
     if previous != ZERO and load(root / chain_index["heads"][previous])["payload"]["date"] > day:
         raise ValueError("older dated attestation cannot supersede latest")
     health_claim = health_binding(root, health)
+    reject_stale_health_input(root, chain_index, day, health_claim)
     registry = load(root / "docs/.well-known/datapulse-probe-keys.json")
     rekor = rekor_binding(root, rekor_reference, health_claim["artifact_sha256"])
     if previous != ZERO:

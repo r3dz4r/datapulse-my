@@ -2,7 +2,7 @@
 """Keep generated proof storage consistent with the immutable digest boundary."""
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 import gzip
 from pathlib import Path
 import shutil
@@ -17,6 +17,72 @@ from scripts.verify_attestation_binding import ContractError, verify_contract
 
 NOW = datetime(2026, 8, 15, 1, tzinfo=timezone.utc)
 DAY = "2026-08-15"
+
+
+@pytest.mark.parametrize("force_append", [False, True])
+@pytest.mark.parametrize("after_correction", [False, True])
+def test_stale_health_input_is_refused_before_signing_without_writes(
+    tmp_path: Path, force_append: bool, after_correction: bool,
+) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, NOW)
+    health_path = root / "health/latest.json"
+    health = ga.load(health_path)
+    if after_correction:
+        health["checked_at"] = "2026-08-15T00:40:00Z"
+        health["datasets"][0]["last_checked"] = health["checked_at"]
+        write(health_path, health)
+        ga.generate(root, key, NOW + timedelta(minutes=1))
+    document = ga.discovery(root)
+    reference = ga.set_directory(document["heads"][document["current_head"]]) + "/binding.json"
+    bound = ga.load(root / reference)["payload"]["health"]["observed_at"]
+    # The correction case is newer than the original daily alias but older
+    # than the latest immutable revision; mutable projections are no authority.
+    health["checked_at"] = "2026-08-15T00:20:00Z" if after_correction else "2026-08-14T23:59:59Z"
+    health["datasets"][0]["last_checked"] = health["checked_at"]
+    write(health_path, health)
+    (root / "attestations/latest/binding.json").write_bytes(b"{}\n")
+    key.unlink()
+    before = {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()}
+
+    with pytest.raises(ValueError, match="stale_health_input:") as error:
+        ga.generate(root, key, NOW + timedelta(minutes=2), force_append=force_append)
+
+    assert health["checked_at"] in str(error.value)
+    assert bound in str(error.value)
+    assert reference in str(error.value)
+    assert {path.relative_to(root): path.read_bytes() for path in root.rglob("*") if path.is_file()} == before
+
+
+@pytest.mark.parametrize("force_append", [False, True])
+@pytest.mark.parametrize("change", ["equal", "equal_correction", "newer"])
+def test_equal_or_newer_health_keeps_reuse_and_append_behaviour(
+    tmp_path: Path, force_append: bool, change: str,
+) -> None:
+    root, key = fixture_root(tmp_path)
+    ga.generate(root, key, NOW)
+    directory = selected_directory(root)
+    accepted = {path: path.read_bytes() for path in (root / "attestations" / DAY).rglob("*")
+                if path.is_file()}
+    health = ga.load(root / "health/latest.json")
+    if change == "equal_correction":
+        health["datasets"][0]["status"] = "aging"
+    elif change == "newer":
+        health["checked_at"] = "2026-08-15T00:40:00Z"
+        health["datasets"][0]["last_checked"] = health["checked_at"]
+    write(root / "health/latest.json", health)
+
+    ga.generate(root, key, NOW + timedelta(minutes=1), force_append=force_append)
+
+    selected = selected_directory(root)
+    assert (selected == directory) is (change == "equal" and not force_append)
+    assert all(path.read_bytes() == content for path, content in accepted.items())
+    verify_set(root, selected + "/chain_head.json")
+    assert verify_contract(root, now=NOW + timedelta(minutes=1))["health"]["observed_at"] == health["checked_at"]
+    if selected != directory:
+        binding = ga.load(root / selected / "binding.json")["payload"]
+        prior_head = ga.load(root / directory / "chain_head.json")["chain_head"]
+        assert binding["correction"]["supersedes_chain_head"] == prior_head
 
 
 def test_already_appended_alias_legacy_snapshot_refreshes_chain_head(tmp_path: Path) -> None:
