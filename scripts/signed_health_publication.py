@@ -345,8 +345,15 @@ const response = await onRequest({request: new Request("https://fixture.invalid"
 process.stdout.write(JSON.stringify({status:response.status, body:Buffer.from(await response.arrayBuffer()).toString("base64"), cache:response.headers.get("Cache-Control")}));
 '''
     data = {"handler": handler.as_uri(), "values": {key: b64(value) for key, value in values.items()}, "registry": canonical(registry).decode() if registry is not None else None, "now": now, "path": path, "crypto_available": crypto_available, "ed25519_available": ed25519_available, "assets_available": assets_available, "method": method}
-    result = subprocess.run(["node", "--experimental-default-type=module", "--input-type=module", "-e", harness], input=canonical(data), capture_output=True, timeout=20)
-    _require(result.returncode == 0, "fixture_handler_failed")
+    command = ["node", "--experimental-default-type=module", "--input-type=module", "-e", harness]
+    result = subprocess.run(command, input=canonical(data), capture_output=True, timeout=20)
+    if result.returncode != 0:
+        stdout = result.stdout[:2048].decode("utf-8", errors="replace")
+        stderr = result.stderr[:2048].decode("utf-8", errors="replace")
+        raise PublicationError(
+            f"fixture_handler_failed: command={command!r}; returncode={result.returncode}; "
+            f"stdout={stdout!r}; stderr={stderr!r}"
+        )
     output = strict_json(result.stdout, 16 * 1024 * 1024)
     _require(output.get("cache") == "no-store", "fixture_cache_policy_failed")
     return output["status"], unb64(output["body"], 12 * 1024 * 1024)

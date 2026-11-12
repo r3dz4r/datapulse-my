@@ -711,6 +711,36 @@ def test_quick_test_failure_is_not_stubbed(monkeypatch: pytest.MonkeyPatch) -> N
         shi.quick_test()
 
 
+@pytest.mark.parametrize(
+    ("stdout", "stderr"),
+    [
+        (b"fixture child stdout", b"fixture child stderr"),
+        (b"", b""),
+        (b"stdout start\n" + b"x" * 4096 + b"stdout tail", b"stderr start\n\xff" + b"y" * 4096 + b"stderr tail"),
+    ],
+)
+def test_fixture_handler_failure_reports_bounded_child_output(
+    monkeypatch: pytest.MonkeyPatch, stdout: bytes, stderr: bytes,
+) -> None:
+    child = subprocess.CompletedProcess(args=[], returncode=17, stdout=stdout, stderr=stderr)
+
+    def failed_child(command: list[str], **_kwargs: Any) -> subprocess.CompletedProcess[bytes]:
+        child.args = command
+        return child
+
+    monkeypatch.setattr(shp.subprocess, "run", failed_child)
+    with pytest.raises(shp.PublicationError, match="^fixture_handler_failed") as error:
+        shp.exercise_handler({}, None, now=NOW)
+
+    message = str(error.value)
+    assert f"stderr={stderr[:2048].decode('utf-8', errors='replace')!r}" in message
+    assert f"stdout={stdout[:2048].decode('utf-8', errors='replace')!r}" in message
+    assert f"command={child.args!r}" in message
+    assert "returncode=17" in message
+    assert "stdout tail" not in message and "stderr tail" not in message
+    assert len(message) < len(repr(child.args)) + 18_000
+
+
 # --------------------------------------------------------------------------- #
 # Real local Wrangler/workerd Pages runtime
 # --------------------------------------------------------------------------- #
