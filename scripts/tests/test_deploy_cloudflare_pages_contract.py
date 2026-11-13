@@ -40,6 +40,17 @@ def _deploy_step(name: str) -> dict:
     return next(step for step in steps if step.get("name") == name)
 
 
+def test_health_snapshot_gate_owned_by_verify_served_release() -> None:
+    run = _deploy_step("Verify canonical served surface")["run"]
+    assert "--sigstore-publication \"$RUNNER_TEMP/sigstore-publication\"" in run
+    assert "--kv-surfaces-published-elsewhere" not in run
+
+    verifier = SERVED_VERIFIER.read_text(encoding="utf-8")
+    health_gate = verifier.split('if [[ "$kv_surfaces_published_elsewhere" != true || "$accepted_report" == true ]]; then', 1)[1]
+    assert "served health digest differs from the accepted report bytes" in health_gate
+    assert 'if [[ "$accepted_report" == true ]]; then' in health_gate
+
+
 def _write_site_json(site: Path, reference: str, value: dict) -> None:
     path = site / reference
     path.parent.mkdir(parents=True, exist_ok=True)
