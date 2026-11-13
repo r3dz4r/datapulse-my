@@ -1,14 +1,14 @@
 # DataPulse
 
 <!-- BEGIN catalog-summary -->
-> DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors. It publishes a machine-readable manifest of 447 official datasets.
+> DataPulse — an open, read-only verification layer for Malaysian public data, publishing per-dataset freshness, licence, structure and signed-observation evidence for AI agents, analysts and auditors. It publishes a machine-readable manifest of 448 official datasets.
 
 Each manifest entry retains its human-readable `steward` and stable `custodian` publisher ID. Health anomaly fields explain freshness-delta outliers without adding statuses.
 <!-- END catalog-summary -->
 
 ## Model Context Protocol (MCP)
 
-DataPulse exposes a **read-only MCP server** so AI agents (Claude Desktop, Cursor, Cline, etc.) can query the 447-dataset catalogue natively.
+DataPulse exposes a **read-only MCP server** so AI agents (Claude Desktop, Cursor, Cline, etc.) can query the 448-dataset catalogue natively.
 
 - **MCP endpoint:** https://mcp.data-pulse.my/mcp
 - **Transport:** Streamable HTTP (POST-only, single endpoint)
@@ -138,7 +138,7 @@ freshness and route/stop/trip counts or realtime vehicle counts and feed timesta
 The `datapulse://index` resource exposes each dataset's namespace for lightweight
 transport filtering.
 
-The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 19 read-only tools over the 447-dataset catalogue. `trust_verdict` joins published signed facts and unsigned score rows; `verify_attestation` performs L1 signature/key checks and optional L2 tag-anchor replay. Deployment and service details for `datapulse-mcp` are in [`mcp-deploy.md`](https://www.data-pulse.my/mcp-deploy.md).
+The public endpoint is live at `https://mcp.data-pulse.my/mcp` and serves all 19 read-only tools over the 448-dataset catalogue. `trust_verdict` joins published signed facts and unsigned score rows; `verify_attestation` performs L1 signature/key checks and optional L2 tag-anchor replay. Deployment and service details for `datapulse-mcp` are in [`mcp-deploy.md`](https://www.data-pulse.my/mcp-deploy.md).
 
 ## Datasets
 
