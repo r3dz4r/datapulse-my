@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Publish a receipt-covered pinned snapshot alongside the accepted daily anchor."""
+"""Materialise the exact accepted report at one pinned main build revision."""
 from __future__ import annotations
 
 import argparse
@@ -51,50 +51,49 @@ def atomic_write(path: Path, content: bytes) -> None:
     temporary.replace(path)
 
 
-def receipt_matches_snapshot(root: Path, content: bytes, now: datetime) -> dict[str, Any]:
-    """Fail closed unless the cycle receipt signs the exact snapshot bytes."""
-    from scripts.verify_attestation_binding import ContractError, matching_snapshot_receipt
-
-    try:
-        return matching_snapshot_receipt(root, content, now)
-    except ContractError as error:
-        raise SelectionError(str(error)) from error
-
-
 def report_age(health: Path, binding: Path, now: datetime) -> dict[str, Any]:
     """Measure both signed clocks, independently of the Pages deployment clock."""
-    from scripts.verify_attestation_binding import ContractError, health_claim
-
     content = health.read_bytes()
     snapshot = json.loads(content)
     payload = json.loads(binding.read_bytes())["payload"]
     claim = payload["health"]
-    try:
-        expected = health_claim(snapshot, content)
-    except ContractError as error:
-        raise SelectionError(str(error)) from error
-    if (type(claim.get('dataset_count')) is not int
-            or claim['dataset_count'] != expected['dataset_count']
-            or claim['dataset_ids_sha256'] != expected['dataset_ids_sha256']):
-        raise SelectionError("health digest/count/ids/observation time disagree with accepted binding")
-    if claim != expected:
-        receipt_matches_snapshot(health.parent.parent, content, now)
+    ids = [row["dataset_id"] for row in snapshot["datasets"]]
+    if (not ids or any(not isinstance(item, str) or not item for item in ids)
+            or len(ids) != len(set(ids)) or type(claim.get('dataset_count')) is not int or claim != {
+        "artifact_ref": "health/latest.json",
+        "artifact_sha256": hashlib.sha256(content).hexdigest(),
+        "dataset_count": len(ids),
+        "dataset_ids_sha256": hashlib.sha256(json.dumps(sorted(ids), ensure_ascii=False,
+            sort_keys=True, separators=(',', ':')).encode()).hexdigest(),
+        "observed_at": snapshot["checked_at"],
+    }):
+        # A newer served snapshot needs independent exact-byte evidence. Keep
+        # the accepted-set diagnostic when that evidence cannot be verified.
+        from scripts.verify_attestation_binding import verify_contract
+
+        try:
+            if type(claim.get('dataset_count')) is not int:
+                raise SelectionError('accepted binding count must be an integer')
+            result = verify_contract(health.parent.parent, now=now)
+            if result['daily_anchor']['health'] != claim or result['observation_receipt'] is None:
+                raise SelectionError('receipt does not cover this binding')
+        except (ValueError, KeyError, TypeError, OSError) as error:
+            raise SelectionError("health digest/count/ids/observation time disagree with accepted binding") from error
     max_age = payload["freshness"]["max_age_seconds"]
     if type(max_age) is not int or max_age != MAX_AGE_SECONDS:
         raise SelectionError("signed report age policy must remain 36 hours")
     ages = []
-    for value in (snapshot["checked_at"], payload["published_at"], claim["observed_at"]):
+    for value in (claim["observed_at"], payload["published_at"]):
         timestamp = datetime.fromisoformat(value.replace('Z', '+00:00'))
         if timestamp.tzinfo is None:
             raise SelectionError("report timestamps must include a UTC offset")
         ages.append((now - timestamp).total_seconds())
+    observation_age = (now - datetime.fromisoformat(snapshot['checked_at'].replace('Z', '+00:00'))).total_seconds()
     return {
         "observed_at": snapshot["checked_at"], "published_at": payload["published_at"],
-        "anchor_observed_at": claim["observed_at"],
-        "observation_age_seconds": ages[0], "envelope_age_seconds": ages[1],
-        "anchor_observation_age_seconds": ages[2],
+        "observation_age_seconds": observation_age, "envelope_age_seconds": ages[1],
         "max_age_seconds": MAX_AGE_SECONDS,
-        "report_age_status": "current" if all(0 <= age <= MAX_AGE_SECONDS for age in ages) else "expired",
+        "report_age_status": "current" if all(0 <= age <= MAX_AGE_SECONDS for age in [*ages, observation_age]) else "expired",
     }
 
 
@@ -167,7 +166,7 @@ def _export(root: Path, revision: str, out: Path) -> None:
 
 
 def restore_observation_build(root: Path, revision: str, publication: Path) -> str:
-    """Recover the pinned build whose exact health bytes the cycle receipt signs."""
+    """Recover the build whose committed health bytes the accepted report signs."""
     identity_path = publication / 'publication-identity.json'
     identity = json.loads(identity_path.read_bytes())
     health_bytes = (publication / 'health/latest.json').read_bytes()
@@ -175,15 +174,32 @@ def restore_observation_build(root: Path, revision: str, publication: Path) -> s
             or identity['accepted_main_commit'] != revision
             or hashlib.sha256(health_bytes).hexdigest() != identity['health_sha256']):
         raise SelectionError('accepted observation build identity differs from pinned report')
-    pinned_bytes = subprocess.check_output(['git', 'show', f'{revision}:health/latest.json'], cwd=root)
-    if pinned_bytes != health_bytes:
-        raise SelectionError('no committed observation build matches the exact pinned health bytes')
-    # Receipt-only commits still belong to this build: recover the entire pinned
-    # revision, rather than the last commit that happened to change health.
-    source = revision
-    main_health = json.loads(pinned_bytes)
+    blob = subprocess.check_output(['git', 'hash-object', '--stdin'], input=health_bytes, cwd=root).decode().strip()
+    # Follow only the pinned main ancestry. A candidate branch or a later main
+    # observation can never supply the published build, even if its date matches.
+    candidates = subprocess.check_output([
+        'git', 'log', '--first-parent', '--format=%H', revision, '--', 'health/latest.json',
+    ], cwd=root, text=True).splitlines()
+    source = None
+    for commit in candidates:
+        candidate = subprocess.check_output([
+            'git', 'rev-parse', f'{commit}:health/latest.json',
+        ], cwd=root, text=True).strip()
+        if candidate == blob:
+            source = commit
+            break
+    if source is None:
+        raise SelectionError('no committed observation build matches the exact accepted health bytes')
+    main_health = json.loads(subprocess.check_output([
+        'git', 'show', f'{revision}:health/latest.json'], cwd=root))
+    if identity.get('observation_receipt_ref'):
+        pinned = subprocess.check_output(['git', 'show', f'{revision}:health/latest.json'], cwd=root)
+        if pinned != health_bytes:
+            raise SelectionError('no committed observation build matches the exact accepted health bytes')
+        # A receipt-only commit can carry evidence missing from the health commit.
+        source = revision
     lag = served_lag(identity['observed_at'], main_health['checked_at'], identity['published_at'])
-    lag['served_lag_health_commits'] = 0
+    lag['served_lag_health_commits'] = 0 if identity.get('observation_receipt_ref') else candidates.index(source)
     LOGGER.info('Served lag: %s', json.dumps(lag, sort_keys=True))
     if lag['served_lag_status'] != 'within_append_cadence':
         LOGGER.info('::error title=Served observation exceeds append cadence::%ss behind main; %s',
@@ -229,11 +245,39 @@ def restore_observation_build(root: Path, revision: str, publication: Path) -> s
     return source
 
 
+def prefer_receipt_covered_snapshot(root: Path, revision: str, out: Path, now: datetime) -> dict[str, Any] | None:
+    """Prefer verified pinned cycle bytes; retain the accepted set otherwise."""
+    from scripts.verify_attestation_binding import matching_snapshot_receipt, verify_contract
+
+    accepted_bytes = (out / 'health/latest.json').read_bytes()
+    receipt = None
+    source = 'receipt_absent_fallback (accepted_set)'
+    try:
+        paths = tuple(subprocess.check_output([
+            'git', 'ls-tree', '--name-only', revision, '--', 'observation-receipts',
+        ], cwd=root, text=True).splitlines())
+        if paths:
+            _archive_files(root, revision, out, paths)
+            content = subprocess.check_output(['git', 'show', f'{revision}:health/latest.json'], cwd=root)
+            receipt = matching_snapshot_receipt(out, content, now)
+            atomic_write(out / 'health/latest.json', content)
+            # The unchanged verifier enforces membership, chronology, age and
+            # the daily anchor as well as the receipt's exact artifact digest.
+            verify_contract(out, now=now)
+            source = 'receipt_covered_snapshot'
+    except (ValueError, KeyError, TypeError, OSError, subprocess.CalledProcessError) as error:
+        atomic_write(out / 'health/latest.json', accepted_bytes)
+        receipt = None
+        LOGGER.info('Receipt preference unavailable: %s', error)
+    LOGGER.info('Health selection source: %s', source)
+    return receipt
+
+
 def select_report(root: Path, revision: str, out: Path, now: datetime) -> dict[str, Any]:
-    """Resolve the accepted spine and require a receipt for the pinned snapshot."""
-    from scripts.attestation_sets import FILES, set_directory, verify_set
+    """Resolve the accepted spine from Git and recover its signed health bytes."""
+    from scripts.attestation_sets import FILES, set_directory, snapshot_content, verify_set
     from scripts.verify_attestation_append import accepted_discovery
-    from scripts.verify_attestation_binding import health_claim, verify_contract
+    from scripts.verify_attestation_binding import verify_contract
 
     if re.fullmatch(r'[0-9a-f]{40}', revision) is None:
         raise SelectionError("accepted main commit must be a pinned full SHA")
@@ -254,17 +298,7 @@ def select_report(root: Path, revision: str, out: Path, now: datetime) -> dict[s
                  if (out / directory / name).is_file()]
     if len(snapshots) != 1:
         raise SelectionError(f"accepted set {directory} has no unique recoverable health snapshot")
-    content = subprocess.check_output(['git', 'show', f'{revision}:health/latest.json'], cwd=root)
-    receipt_paths = tuple(subprocess.check_output([
-        'git', 'ls-tree', '--name-only', revision, '--', 'observation-receipts',
-    ], cwd=root, text=True).splitlines())
-    if receipt_paths:
-        _archive_files(root, revision, out, receipt_paths)
-    # Gate the exact bytes before writing health/latest.json. Missing evidence
-    # refuses publication; the daily copy is never a fallback.
-    receipt = receipt_matches_snapshot(out, content, now)
-    atomic_write(out / 'health/latest.json', content)
-    snapshot_claim = health_claim(json.loads(content), content)
+    atomic_write(out / 'health/latest.json', snapshot_content(snapshots[0]))
     manifest_bytes = (out / 'datapulse.json').read_bytes()
     manifest = json.loads(manifest_bytes)
     index = json.loads((out / directory / 'index.json').read_bytes())
@@ -287,20 +321,30 @@ def select_report(root: Path, revision: str, out: Path, now: datetime) -> dict[s
         raise SelectionError("accepted report exceeds 36 hours or has future timestamps")
     LOGGER.info('Verify materialised binding and accepted history')
     result = verify_contract(out, now=now)
-    if (result['health'] != snapshot_claim or result['daily_anchor']['health'] != claim
-            or result['ed25519']['chain_head'] != head):
+    if result['health'] != claim or result['ed25519']['chain_head'] != head:
         raise SelectionError("materialised accepted report identity changed")
     identity = {'accepted_main_commit': revision, 'accepted_chain_head': head,
-                'health_sha256': snapshot_claim['artifact_sha256'], 'dataset_count': snapshot_claim['dataset_count'],
+                'health_sha256': claim['artifact_sha256'], 'dataset_count': claim['dataset_count'],
                 'manifest_sha256': hashlib.sha256(manifest_bytes).hexdigest(),
-                'health_snapshot_ref': 'health/latest.json',
-                'anchor_health_snapshot_ref': snapshots[0].relative_to(out).as_posix(),
-                'anchor_observed_at': claim['observed_at'],
-                'observation_receipt_ref': receipt['reference'],
-                'observation_receipt_id': receipt['receipt_id'],
-                'receipt_observed_at': receipt['payload']['observed_at'],
+                'health_snapshot_ref': snapshots[0].relative_to(out).as_posix(),
                 'observed_at': age['observed_at'], 'published_at': age['published_at'],
                 'max_age_seconds': MAX_AGE_SECONDS}
+    # Preserve every accepted-set precondition and diagnostic before considering
+    # the optional cycle source. Absence never invalidates the accepted report.
+    receipt = prefer_receipt_covered_snapshot(root, revision, out, now)
+    if receipt is not None:
+        age = report_age(out / 'health/latest.json', out / directory / 'binding.json', now)
+        content = (out / 'health/latest.json').read_bytes()
+        identity.update({
+            'health_sha256': hashlib.sha256(content).hexdigest(),
+            'health_snapshot_ref': 'health/latest.json',
+            'anchor_health_snapshot_ref': snapshots[0].relative_to(out).as_posix(),
+            'anchor_observed_at': claim['observed_at'],
+            'observation_receipt_ref': receipt['reference'],
+            'observation_receipt_id': receipt['receipt_id'],
+            'receipt_observed_at': receipt['payload']['observed_at'],
+            'observed_at': age['observed_at'],
+        })
     atomic_write(out / 'publication-identity.json',
                  (json.dumps(identity, sort_keys=True, indent=2) + '\n').encode())
     return {**identity, **age}
