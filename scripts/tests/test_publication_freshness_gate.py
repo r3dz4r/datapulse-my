@@ -112,17 +112,24 @@ def _freshness_job() -> dict:
     return workflow["jobs"]["publication_freshness"]
 
 
-@pytest.mark.parametrize("served, expected_code, verdict", [
-    ("2026-11-12T09:26:20Z", 1, "stale"),
-    ("2026-11-12T10:55:44Z", 0, "fresh"),
-    ("2026-11-12T11:00:44Z", 0, "served_newer"),
-    ("bad", 2, "unknown"),
+@pytest.mark.parametrize("damage, expected_code, verdict", [
+    ("none", 0, "fresh: content freshness"),
+    ("clock", 1, "served_health_observed_at_mismatch"),
+    ("newer", 1, "served_health_observed_at_mismatch"),
+    ("digest", 1, "served_health_digest_mismatch"),
+    ("missing-clock", 1, "publication_observed_at_missing_or_invalid"),
+    ("missing-digest", 1, "publication_health_sha256_missing_or_invalid"),
+    ("invalid-digest", 1, "publication_health_sha256_missing_or_invalid"),
+    ("empty-identity", 1, "publication_identity_empty"),
+    ("empty-health", 1, "served_health_empty"),
+    ("invalid-clock", 2, "unknown: content freshness"),
 ])
-def test_workflow_compares_served_content_to_deployed_commit(
-    tmp_path: Path, served: str, expected_code: int, verdict: str,
+def test_workflow_compares_served_content_to_published_artifact(
+    tmp_path: Path, damage: str, expected_code: int, verdict: str,
 ) -> None:
     step = next(s for s in _freshness_job()["steps"]
-                if s.get("name") == "Compare served health with deployed commit")
+                if s.get("name") == "Compare served health with published artifact")
+    assert "git show" not in step["run"]
     assert step["if"] == "always()"
     checkout = _freshness_job()["steps"][0]
     assert checkout["with"]["fetch-depth"] == 0
@@ -140,7 +147,7 @@ def test_workflow_compares_served_content_to_deployed_commit(
     git("add", "health/latest.json")
     git("commit", "-qm", "deployed")
     deployed = git("rev-parse", "HEAD")
-    # Current checkout is newer: comparing HEAD would incorrectly fail the equal pair.
+    # Both repository clocks differ from the signed report this deploy published.
     health.write_text(json.dumps({"checked_at": "2026-11-12T12:00:00Z"}))
     git("commit", "-qam", "later main")
     bin_path = tmp_path / "bin"
@@ -161,16 +168,33 @@ case "${@: -1}" in
 esac
 ''')
     curl.chmod(0o755)
+    observed_at = "bad" if damage == "invalid-clock" else "2026-11-12T09:26:20Z"
+    served = json.dumps({"checked_at": observed_at})
+    identity = {"accepted_main_commit": deployed, "observed_at": observed_at,
+                "health_sha256": hashlib.sha256(served.encode()).hexdigest()}
+    if damage in {"clock", "newer"}:
+        served = json.dumps({"checked_at": "2026-11-12T09:25:20Z" if damage == "clock"
+                             else "2026-11-12T09:27:20Z"})
+    elif damage == "digest":
+        served += "\n"
+    elif damage == "missing-clock":
+        del identity["observed_at"]
+    elif damage == "missing-digest":
+        del identity["health_sha256"]
+    elif damage == "invalid-digest":
+        identity["health_sha256"] = "not-a-digest"
     env = {**os.environ, "PATH": f"{bin_path}:{os.environ['PATH']}",
-           "IDENTITY": json.dumps({"accepted_main_commit": deployed}),
-           "SERVED_HEALTH": json.dumps({"checked_at": served}),
+           "IDENTITY": "" if damage == "empty-identity" else json.dumps(identity),
+           "SERVED_HEALTH": "" if damage == "empty-health" else served,
            "RUNNER_TEMP": str(tmp_path),
            "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
     result = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, env=env,
                             text=True, capture_output=True, check=False)
     assert result.returncode == expected_code, result.stdout + result.stderr
-    assert f"{verdict}: content freshness" in result.stdout
-    assert f"Content freshness: {verdict}:" in (tmp_path / "summary").read_text()
+    assert verdict in result.stdout
+    if expected_code == 0:
+        assert "published_observed_at=2026-11-12T09:26:20Z" in result.stdout
+        assert "Content freshness: fresh:" in (tmp_path / "summary").read_text()
 
 
 def test_workflow_runs_after_skipped_deploy_outside_pr_checks() -> None:

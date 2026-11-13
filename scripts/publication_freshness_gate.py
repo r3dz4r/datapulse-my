@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Compare served health with its deployed revision; separately bound deployment age."""
+"""Compare served health with its published artifact; separately bound deployment age."""
 from __future__ import annotations
 
 import argparse
@@ -65,7 +65,8 @@ def deployment_age_verdict(
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--served-checked-at", help="Served /health/latest.json checked_at (UTC)")
-    parser.add_argument("--repository-checked-at", help="Health checked_at at the deployed commit (UTC)")
+    parser.add_argument("--published-observed-at", "--repository-checked-at", dest="reference_checked_at",
+                        help="Published artifact observed_at (UTC); legacy repository option retained")
     parser.add_argument("--deployment-age-only", action="store_true",
                         help="Run the independent secondary deployment-age condition")
     parser.add_argument("--timestamp", help="Canonical production deployment created_on (UTC)")
@@ -73,10 +74,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-age-hours", default="24", help="Maximum deployment age (default: 24)")
     args = parser.parse_args(argv)
     if not args.deployment_age_only:
-        verdict = freshness_verdict(args.served_checked_at, args.repository_checked_at)
-        LOGGER.info("%s: content freshness; served_checked_at=%s; repository_checked_at=%s; "
+        verdict = freshness_verdict(args.served_checked_at, args.reference_checked_at)
+        LOGGER.info("%s: content freshness; served_checked_at=%s; published_observed_at=%s; "
                     "tolerance %s pipeline cycles (%s minutes)",
-                    verdict, args.served_checked_at, args.repository_checked_at,
+                    verdict, args.served_checked_at, args.reference_checked_at,
                     CONTENT_LAG_TOLERANCE_CYCLES,
                     HEALTH_CYCLE_MINUTES * CONTENT_LAG_TOLERANCE_CYCLES)
         return EXIT_CODES[verdict]

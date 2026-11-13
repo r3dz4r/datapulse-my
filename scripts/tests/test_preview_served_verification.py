@@ -835,10 +835,112 @@ def test_accepted_report_mutations_refuse_publication(tmp_path: Path, damage: st
     assert refusal in result.stdout + result.stderr
 
 
-def test_existing_kv_option_cannot_bypass_accepted_report_digest(tmp_path: Path) -> None:
+def test_existing_kv_option_cannot_bypass_health_attribution_without_receipt(tmp_path: Path) -> None:
     root, built, served, publication = _stage_accepted_fixture(tmp_path)
     _stale_served_health(served)
     result = _run_verifier(tmp_path, root, built, served, publication=publication,
                            kv_surfaces_published_elsewhere=True)
     assert result.returncode != 0
     assert "served health digest differs from the accepted report bytes" in result.stderr
+
+
+def _stage_receipt_snapshot(
+    root: Path, built: Path, served: Path, *, damage: str = "none",
+) -> None:
+    """Sign exact snapshot bytes with an ephemeral, release-pinned public key."""
+    import base64
+
+    from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
+    from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
+    from scripts.observation_receipt import build_payload, canonical_bytes, create_receipt, health_binding
+    from scripts.verify_release_artifact import create_manifest
+
+    now = datetime.now(timezone.utc).replace(microsecond=0)
+    health = {"checked_at": (now - timedelta(minutes=5)).isoformat(),
+              "datasets": [{"dataset_id": "alpha", "status": "fresh"},
+                           {"dataset_id": "beta", "status": "fresh"}]}
+    content = canonical_bytes(health)
+    (served / "health/latest.json").write_bytes(content)
+    (served / "health/index.json").write_bytes(content)
+    key = Ed25519PrivateKey.generate()
+    key_id = "fixture-observation-key"
+    registry = {"schema": "datapulse/v2/probe-key-registry", "keys": [{
+        "key_id": key_id, "scope": "observation-receipts", "status": "active",
+        "not_before": (now - timedelta(days=1)).isoformat(),
+        "not_after": (now + timedelta(days=1)).isoformat(),
+        "public_key_base64": base64.b64encode(key.public_key().public_bytes(
+            Encoding.Raw, PublicFormat.Raw)).decode(),
+    }]}
+    if damage == "wrong-scope":
+        registry["keys"][0]["scope"] = "cycle-attestation"
+    for directory in (built, served):
+        _write(directory / ".well-known/datapulse-probe-keys.json", json.dumps(registry))
+    payload = build_payload(binding=health_binding(health), observed_at=now.isoformat(),
+        key_id=key_id, sequence_number=1, previous_receipt_id=None, policy=None,
+        profile_version="fixture", artifact_commit=SOURCE_COMMIT,
+        artifact_path="other.json" if damage == "wrong-path" else "health/latest.json")
+    assert payload["health_artifact_sha256"] == hashlib.sha256(content).hexdigest()
+    if damage == "normalized-only":
+        # A normalized digest cannot substitute for the required byte digest.
+        (served / "health/latest.json").write_bytes(content + b"\n")
+    if damage == "wrong-hash":
+        payload["health_artifact_sha256"] = "0" * 64
+    receipt = create_receipt(payload, key)
+    if damage == "bad-signature":
+        receipt["signature_base64"] = base64.b64encode(bytes(64)).decode()
+    if damage == "bad-identity":
+        receipt["receipt_id"] = "0" * 64
+    day = {"schema": "datapulse/v1/observation-day", "cycle_date": payload["cycle_date"],
+           "receipts": [receipt]}
+    if damage == "bad-schema":
+        day["schema"] = "unexpected"
+    if damage != "absent":
+        _write(served / f"observation-receipts/days/{payload['cycle_date']}.json", json.dumps(day))
+    for name in ("observation_verify.py", "observation_receipt.py", "artifact_modes.py"):
+        shutil.copy2(ROOT / "scripts" / name, root / "scripts" / name)
+    create_manifest(built, root / "runner/release-artifact-manifest.json", SOURCE_COMMIT)
+
+
+@pytest.mark.parametrize("state", ["accepted_report", "receipt_covered_served_snapshot", "neither"])
+@pytest.mark.parametrize("kv_excluded", [False, True])
+def test_two_source_served_health_attribution(tmp_path: Path, state: str, kv_excluded: bool) -> None:
+    root, built, served, publication = _stage_accepted_fixture(tmp_path)
+    if state != "accepted_report":
+        _stage_receipt_snapshot(root, built, served, damage="absent" if state == "neither" else "none")
+    result = _run_verifier(tmp_path, root, built, served, publication=publication,
+                           kv_surfaces_published_elsewhere=kv_excluded)
+    output = result.stdout + result.stderr
+    evidence = "\n".join(line for line in output.splitlines() if line.startswith(
+        ("health attribution:", "verified observation receipt:", "::error")))
+    print(f"fixture={state} kv_excluded={kv_excluded} exit={result.returncode}\n{evidence}")
+    if state == "neither":
+        assert result.returncode != 0, output
+        assert "served health digest differs from the accepted report bytes" in output
+        for path in (served / "health/latest.json", built / "health/latest.json"):
+            assert hashlib.sha256(path.read_bytes()).hexdigest() in output
+    else:
+        assert result.returncode == 0, output
+        assert f"health attribution: {state}" in output
+        assert "Report age:" in output
+
+
+@pytest.mark.parametrize("damage", ["wrong-hash", "bad-signature", "wrong-path", "bad-identity",
+                                   "wrong-scope", "bad-schema", "normalized-only", "absent"])
+def test_receipt_cannot_cover_unattributable_served_bytes(tmp_path: Path, damage: str) -> None:
+    root, built, served, publication = _stage_accepted_fixture(tmp_path)
+    _stage_receipt_snapshot(root, built, served, damage=damage)
+    result = _run_verifier(tmp_path, root, built, served, publication=publication)
+    output = result.stdout + result.stderr
+    assert result.returncode != 0, output
+    assert "served health digest differs from the accepted report bytes" in output
+    assert "health attribution: receipt_covered_served_snapshot" not in output
+
+
+def test_receipt_coverage_preserves_accepted_report_age_gate(tmp_path: Path) -> None:
+    root, built, served, publication = _stage_accepted_fixture(tmp_path, age_hours=37)
+    _stage_receipt_snapshot(root, built, served)
+    result = _run_verifier(tmp_path, root, built, served, publication=publication)
+    output = result.stdout + result.stderr
+    assert "health attribution: receipt_covered_served_snapshot" in output
+    assert result.returncode != 0, output
+    assert "accepted report exceeds 36-hour signed policy" in output
