@@ -7,7 +7,7 @@ usage() {
   echo "usage: $0 --base-url URL --site DIR --sigstore-signed true|false --health-only true|false --source-commit SHA [--sigstore-publication DIR] [--cosign PATH] [--kv-surfaces-published-elsewhere]" >&2
   echo "  --sigstore-publication is required for accepted reports and when --sigstore-signed true" >&2
   echo "  --kv-surfaces-published-elsewhere skips served /health/ namespace checks" >&2
-  echo "    for unsigned build previews; accepted reports always require exact health bytes" >&2
+  echo "    for unsigned build previews; accepted reports require report or signed receipt coverage" >&2
   exit 64
 }
 
@@ -216,20 +216,65 @@ grep -q 'DataPulse MY' "$smoke_dir/index.html" && fail "origin root retains the 
 fetch_alias landing.html "$base_url/landing.html" /; fetch_alias landing "$base_url/landing" /; fetch_alias dashboard "$base_url/dashboard" /; fetch_alias register "$base_url/register" /
 if [[ "$kv_surfaces_published_elsewhere" != true || "$accepted_report" == true ]]; then
 fetch "health snapshot" "$base_url/health/latest.json" "$smoke_dir/health/latest.json"
-python3 - "$site_dir/health/latest.json" "$smoke_dir/health/latest.json" <<'PY'
-import hashlib,sys
+accepted_report_digest="$(sha256sum "$site_dir/health/latest.json" | cut -d ' ' -f 1)"
+served_digest="$(sha256sum "$smoke_dir/health/latest.json" | cut -d ' ' -f 1)"
+receipt_covered_served_snapshot=false
+if [[ "$served_digest" == "$accepted_report_digest" ]]; then
+  echo "health attribution: accepted_report digest=$served_digest"
+else
+  # Pin the receipt's key to the assembled release, never a fetched registry.
+  if [[ "$accepted_report" == true ]] && receipt_day="$(jq -er '.checked_at | select(type == "string") | select(test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T")) | .[0:10]' "$smoke_dir/health/latest.json")"; then
+    receipt_file="$smoke_dir/observation-day.json"
+    if retrieve "observation receipt day" "$base_url/observation-receipts/days/$receipt_day.json" "$receipt_file" "" && [[ "$last_status" == 200 ]]; then
+      if python3 - "$receipt_file" "$site_dir/.well-known/datapulse-probe-keys.json" "$served_digest" <<'PY'
+import json, sys
 from pathlib import Path
-digests = [hashlib.sha256(Path(path).read_bytes()).hexdigest() for path in sys.argv[1:]]
-if digests[0] != digests[1]:
- raise SystemExit('served health digest differs from the accepted report bytes')
+from scripts.observation_verify import verify_receipt
+
+try:
+    day = json.loads(Path(sys.argv[1]).read_bytes())
+    registry = json.loads(Path(sys.argv[2]).read_bytes())
+    if day.get('schema') != 'datapulse/v1/observation-day' or not isinstance(day.get('receipts'), list):
+        raise ValueError('observation_day_invalid')
+    for receipt in day['receipts']:
+        payload = receipt.get('payload') if isinstance(receipt, dict) else None
+        if not isinstance(payload, dict):
+            continue
+        if payload.get('health_artifact_sha256') != sys.argv[3] or payload.get('artifact_path') != 'health/latest.json':
+            continue
+        keys = registry.get('keys', [])
+        if not any(isinstance(row, dict) and row.get('key_id') == payload.get('key_id')
+                   and isinstance(row.get('scope'), str) and row['scope'].startswith('observation-receipts')
+                   for row in keys):
+            continue
+        failures = verify_receipt(receipt, registry=registry)
+        if not failures:
+            print('verified observation receipt: ' + receipt['receipt_id'])
+            break
+        print('observation receipt refused: ' + '; '.join(failures), file=sys.stderr)
+    else:
+        raise ValueError('matching_signed_observation_receipt_absent')
+except (OSError, ValueError, TypeError, AttributeError, KeyError) as error:
+    raise SystemExit('observation receipt coverage refused: ' + str(error))
 PY
+      then
+        receipt_covered_served_snapshot=true
+      fi
+    fi
+  fi
+  if [[ "$receipt_covered_served_snapshot" == true ]]; then
+    echo "health attribution: receipt_covered_served_snapshot digest=$served_digest"
+  else
+    fail "served health digest differs from the accepted report bytes: served=$served_digest accepted_report=$accepted_report_digest; no matching signed observation receipt covers health/latest.json" >&2
+  fi
+fi
 fi
 if [[ "$accepted_report" == true ]]; then
   fetch "accepted publication identity" "$base_url/publication-identity.json" "$smoke_dir/publication-identity.json"
   cmp -s "$publication_dir/publication-identity.json" "$smoke_dir/publication-identity.json" || fail "served accepted report identity differs from staged artifact"
   fetch "accepted report binding" "$base_url/attestations/latest/binding.json" "$smoke_dir/report-binding.json"
   cmp -s "$publication_dir/attestations/latest/binding.json" "$smoke_dir/report-binding.json" || fail "served accepted report binding differs from staged artifact"
-  python3 - "$smoke_dir" "$source_commit" <<'PY'
+  python3 - "$smoke_dir" "$source_commit" "$site_dir/health/latest.json" <<'PY'
 import json,sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -238,7 +283,8 @@ from scripts.select_accepted_health import report_age
 served = Path(sys.argv[1])
 identity = json.loads((served / 'publication-identity.json').read_bytes())
 binding = json.loads((served / 'report-binding.json').read_bytes())['payload']
-age = report_age(served / 'health/latest.json', served / 'report-binding.json', datetime.now(timezone.utc))
+# Check the accepted report's own age even when a receipt covers the snapshot.
+age = report_age(Path(sys.argv[3]), served / 'report-binding.json', datetime.now(timezone.utc))
 if (identity['accepted_main_commit'] != sys.argv[2]
         or identity['health_sha256'] != binding['health']['artifact_sha256']
         or identity['dataset_count'] != binding['health']['dataset_count']

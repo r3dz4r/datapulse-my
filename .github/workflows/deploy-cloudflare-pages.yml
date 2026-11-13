@@ -1035,7 +1035,7 @@ jobs:
             2) echo "::warning title=Production publication freshness unknown::$verdict; Pages API credentials or deployment metadata may be unavailable. Freshness is not verified." ;;
             *) echo "::error title=Publication freshness gate failed::Unexpected gate exit $status"; exit "$status" ;;
           esac
-      - name: Compare served health with deployed commit
+      - name: Compare served health with published artifact
         if: always()
         run: |
           set -Eeuo pipefail
@@ -1045,20 +1045,23 @@ jobs:
           rm -f "$comparison/verified" "$comparison/identity.json" "$comparison/health.json"
           curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
             -o "$comparison/identity.json" https://www.data-pulse.my/publication-identity.json
-          test -s "$comparison/identity.json"
-          deployed_sha="$(jq -er '.accepted_main_commit' "$comparison/identity.json")"
-          [[ "$deployed_sha" =~ ^[0-9a-f]{40}$ ]]
-          # Compare the consumer route to the actual deployed revision, not HEAD
-          # or the immutable signed report, which may intentionally be older.
-          repository_checked_at="$(git show "$deployed_sha:health/latest.json" | jq -er '.checked_at')"
+          refuse_comparison() { echo "::error title=No verified served publication::$1"; exit 1; }
+          test -s "$comparison/identity.json" || refuse_comparison publication_identity_empty
+          published_observed_at="$(jq -er '.observed_at | select(type == "string" and length > 0)' "$comparison/identity.json")" || refuse_comparison publication_observed_at_missing_or_invalid
+          published_health_sha256="$(jq -er '.health_sha256 | select(type == "string") | select(test("^[0-9a-f]{64}$"))' "$comparison/identity.json")" || refuse_comparison publication_health_sha256_missing_or_invalid
+          # Compare the signed artifact this deployment published. The accepted
+          # commit remains provenance rather than the report's clock.
           curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
             -o "$comparison/health.json" https://www.data-pulse.my/health/latest.json
-          test -s "$comparison/health.json"
-          served_checked_at="$(jq -er '.checked_at' "$comparison/health.json")"
+          test -s "$comparison/health.json" || refuse_comparison served_health_empty
+          served_checked_at="$(jq -er '.checked_at | select(type == "string" and length > 0)' "$comparison/health.json")" || refuse_comparison served_checked_at_missing_or_invalid
+          [[ "$served_checked_at" == "$published_observed_at" ]] || refuse_comparison served_health_observed_at_mismatch
+          served_health_sha256="$(sha256sum "$comparison/health.json" | cut -d ' ' -f 1)"
+          [[ "$served_health_sha256" == "$published_health_sha256" ]] || refuse_comparison "served_health_digest_mismatch: served=$served_health_sha256 published=$published_health_sha256"
           status=0
           verdict="$(python3 scripts/publication_freshness_gate.py \
             --served-checked-at "$served_checked_at" \
-            --repository-checked-at "$repository_checked_at")" || status=$?
+            --published-observed-at "$published_observed_at")" || status=$?
           printf 'Content freshness: %s\n' "$verdict" >> "$GITHUB_STEP_SUMMARY"
           echo "$verdict"
           if (( status == 0 )); then printf 'verified\n' > "$comparison/verified"; fi
