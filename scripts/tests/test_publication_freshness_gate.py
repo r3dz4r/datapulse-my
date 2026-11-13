@@ -147,9 +147,16 @@ def test_workflow_compares_served_content_to_deployed_commit(
     bin_path.mkdir()
     curl = bin_path / "curl"
     curl.write_text('''#!/bin/bash
+output=""
+while (($# > 1)); do
+  case "$1" in
+    --output|-o) output="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
 case "${@: -1}" in
-  */publication-identity.json) printf '%s' "$IDENTITY" ;;
-  */health/latest.json) printf '%s' "$SERVED_HEALTH" ;;
+  */publication-identity.json) printf '%s' "$IDENTITY" > "$output" ;;
+  */health/latest.json) printf '%s' "$SERVED_HEALTH" > "$output" ;;
   *) exit 99 ;;
 esac
 ''')
@@ -157,6 +164,7 @@ esac
     env = {**os.environ, "PATH": f"{bin_path}:{os.environ['PATH']}",
            "IDENTITY": json.dumps({"accepted_main_commit": deployed}),
            "SERVED_HEALTH": json.dumps({"checked_at": served}),
+           "RUNNER_TEMP": str(tmp_path),
            "GITHUB_STEP_SUMMARY": str(tmp_path / "summary")}
     result = subprocess.run(["bash", "-c", step["run"]], cwd=tmp_path, env=env,
                             text=True, capture_output=True, check=False)
