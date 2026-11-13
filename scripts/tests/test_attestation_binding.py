@@ -691,7 +691,7 @@ def worktrees(root: Path) -> int:
     return listing.count("worktree ")
 
 
-def test_probe_refuses_to_materialise_newer_snapshot_without_cycle_receipt(
+def test_probe_fallback_preserves_bound_health_without_cycle_receipt(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     root, accepted_health = probe_root(tmp_path)
@@ -701,10 +701,12 @@ def test_probe_refuses_to_materialise_newer_snapshot_without_cycle_receipt(
         verify_contract(root, now=NOW + timedelta(hours=2))
 
     status, out = run_probe(root, capsys, "--revision", "main")
-    assert status == 2, out
-    assert "UNVERIFIABLE: cannot materialise" in out
-    assert hashlib.sha256((root / "health/latest.json").read_bytes()).hexdigest() in out
-    assert "observation-receipts/days/2026-08-15.json" in out
+    assert status == 0, out
+    result = json.loads(out)
+    newer_snapshot_digest = hashlib.sha256((root / "health/latest.json").read_bytes()).hexdigest()
+    assert result["health_sha256"] == result["bound_health_sha256"]
+    assert result["materialisation"] == "select_accepted_health.select_report"
+    assert result["health_sha256"] != newer_snapshot_digest
     assert worktrees(root) == 1
 
 
