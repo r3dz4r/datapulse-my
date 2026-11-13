@@ -1,0 +1,55 @@
+name: Derive owned surfaces
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: derive-surfaces
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  derive:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Mint GitHub App token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+      - name: Verify installed generator dependencies
+        run: python3 -c 'import jsonschema, fastmcp'
+      - name: Derive surfaces
+        id: derive
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          python3 scripts/regenerate_surfaces.py --ci
+          if git diff --quiet && [[ -z "$(git ls-files --others --exclude-standard)" ]]; then
+            echo 'changed=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+      - name: Commit and push derived surfaces
+        if: steps.derive.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          set -Eeuo pipefail
+          git add -u
+          git add -A -- data/jsonld docs/mcp/cards
+          git diff --cached --quiet && exit 0
+          git config user.name 'datapulse-derive[bot]'
+          git config user.email 'datapulse-derive[bot]@users.noreply.github.com'
+          git commit -m 'chore: regenerate owned surfaces'
+          git -c 'credential.helper=!f() { echo username=x-access-token; echo "password=$GH_TOKEN"; }; f' push origin HEAD:main
