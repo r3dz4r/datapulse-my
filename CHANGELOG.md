@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.64.3](https://github.com/r3dz4r/datapulse-my/compare/v3.64.2...v3.64.3) (2026-11-13)
+
+
+### Bug Fixes
+
+* **parity:** remove duplicate served health check ([02d932b](https://github.com/r3dz4r/datapulse-my/commit/02d932b2819bb296d58b8c87b9f73a3dcfb0a344))
+* **parity:** remove the duplicate served-health check, pin the real gate ([5bb50b8](https://github.com/r3dz4r/datapulse-my/commit/5bb50b8e2b278e6d740f21e210a1e412f716d40f))
+
 ## [3.64.2](https://github.com/r3dz4r/datapulse-my/compare/v3.64.1...v3.64.2) (2026-11-13)
 
 
