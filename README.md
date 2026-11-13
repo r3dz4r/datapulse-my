@@ -185,7 +185,7 @@ Graded by [mcpgrade](https://www.npmjs.com/package/mcpgrade) — replay with `ba
 - 19 tools: `search_datasets`, `get_dataset`, `get_data_passport`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 
 The public endpoint serves all 19 read-only tools over the
-447-dataset catalogue.
+448-dataset catalogue.
 <!-- END mcp-tools -->
 
 `get_evidence` exposes pipeline receipts; `verify_evidence` performs cached

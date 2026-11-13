@@ -1,0 +1,40 @@
+{
+  "schema": "datapulse/v0.1/dataset-health",
+  "id": "kpdn_direct_selling_licences",
+  "status": "unknown-freshness",
+  "last_checked": "2026-11-12T13:21:29.946108Z",
+  "freshness_days": null,
+  "next_expected_update": null,
+  "refresh_frequency": "daily",
+  "record_count": 1856,
+  "date_range": null,
+  "fields": [],
+  "checks": [
+    {
+      "name": "file_reachable",
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct GET"
+    },
+    {
+      "name": "row_count",
+      "status": "pass",
+      "method": "Probe measured 1856 record(s)"
+    },
+    {
+      "name": "freshness",
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as unknown-freshness"
+    },
+    {
+      "name": "schema_stable",
+      "status": "warn",
+      "method": "Primary HTTP probe checks reachability only. The scoped observation generator reads both Malay source pages, including the main register's cancellation tab. Licence dates are not publication dates; reuse terms, sector and operations address are not stated."
+    }
+  ],
+  "known_quirks": [
+    "HTML columns vary by section; parsed row fields and raw source cells are in data/observations/kpdn_direct_selling_licences.json"
+  ],
+  "breaking_changes": [],
+  "licence": "Reuse licence not stated on the KPDN source pages; permission unverified",
+  "attribution": "Kementerian Perdagangan Dalam Negeri dan Kos Sara Hidup (KPDN)"
+}
