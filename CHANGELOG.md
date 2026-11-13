@@ -14,6 +14,16 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.64.2](https://github.com/r3dz4r/datapulse-my/compare/v3.64.1...v3.64.2) (2026-11-13)
+
+
+### Bug Fixes
+
+* **attestations:** refuse stale same-day health input ([c20156c](https://github.com/r3dz4r/datapulse-my/commit/c20156c54646d4ed9d4404df5f9a4933b488d27a))
+* **deploy:** refuse a served publication that was never fetched ([400cf49](https://github.com/r3dz4r/datapulse-my/commit/400cf49fbd10f9a3a620724290876f19869890f7))
+* **publication:** compare served health with deployed snapshot ([0fe0ccf](https://github.com/r3dz4r/datapulse-my/commit/0fe0ccfe067d370e052e740016eed3f03e66bdaf))
+* **publication:** judge served content freshness, and refuse stale attestation binds ([52db8df](https://github.com/r3dz4r/datapulse-my/commit/52db8df211b995cda337a182cc2acd7c74d4e7e5))
+
 ## [3.64.1](https://github.com/r3dz4r/datapulse-my/compare/v3.64.0...v3.64.1) (2026-11-12)
 
 
