@@ -5,6 +5,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+import logging
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -73,15 +74,19 @@ def pinned_snapshot(tmp_path: Path) -> tuple[Path, str, Path]:
     return root, git(root, 'rev-parse', 'HEAD'), receipt_path
 
 
-def test_matching_receipt_publishes_exact_pinned_bytes_and_preserves_daily_anchor(tmp_path: Path) -> None:
-    root, revision, _ = pinned_snapshot(tmp_path)
+def test_receipt_preferred_over_accepted_set(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture,
+) -> None:
+    root, revision, receipt_path = pinned_snapshot(tmp_path)
     content = (root / 'health/latest.json').read_bytes()
     anchor = {p.relative_to(root): p.read_bytes() for base in ('attestations', '.attestations')
               for p in (root / base).rglob('*') if p.is_file()}
     # A dirty checkout must never supply the published snapshot or receipt.
     (root / 'health/latest.json').write_text('{}')
+    receipt_path.write_text('{}')
     out = tmp_path / 'publication'
-    result = select_report(root, revision, out, NOW + timedelta(hours=2))
+    with caplog.at_level(logging.INFO):
+        result = select_report(root, revision, out, NOW + timedelta(hours=2))
     assert (out / 'health/latest.json').read_bytes() == content
     for path, original in anchor.items():
         assert (out / path).read_bytes() == original, path
@@ -92,18 +97,136 @@ def test_matching_receipt_publishes_exact_pinned_bytes_and_preserves_daily_ancho
     assert result['anchor_observed_at'] == '2026-08-15T00:00:00Z'
     assert result['health_snapshot_ref'] == 'health/latest.json'
     assert result['observation_receipt_ref'] == 'observation-receipts/days/2026-08-15.json'
+    assert 'Health selection source: receipt_covered_snapshot' in caplog.messages
+
+
+def test_absent_receipt_uses_accepted_set_and_names_fallback(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture,
+) -> None:
+    from scripts.attestation_sets import selected_directory, snapshot_content
+
+    root, _, receipt_path = pinned_snapshot(tmp_path)
+    accepted_path = selected_directory(root) + '/health.json.gz'
+    accepted_bytes = snapshot_content(root / accepted_path)
+    receipt_path.unlink()
+    git(root, 'add', '-A')
+    git(root, 'commit', '-m', 'cycle receipt absent')
+    revision = git(root, 'rev-parse', 'HEAD')
+    # Neither an untracked receipt nor dirty health may override the pinned set.
+    write_snapshot_receipt(root)
+    (root / 'health/latest.json').write_text('{}')
+    out = tmp_path / 'publication'
+    with caplog.at_level(logging.INFO):
+        result = select_report(root, revision, out, NOW + timedelta(hours=2))
+    assert (out / 'health/latest.json').read_bytes() == accepted_bytes
+    assert result['health_snapshot_ref'] == accepted_path
+    assert result['observed_at'] == '2026-08-15T00:00:00Z'
+    assert 'observation_receipt_ref' not in result
+    assert 'Health selection source: receipt_absent_fallback (accepted_set)' in caplog.messages
+
+
+@pytest.mark.parametrize('damage,diagnostic', [
+    ('manifest', 'pinned manifest membership differs from accepted report'),
+    ('url', 'pinned manifest source URL differs for'),
+    ('expired_anchor', 'accepted report exceeds 36 hours or has future timestamps'),
+])
+def test_receipt_preference_preserves_accepted_preconditions(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, damage: str, diagnostic: str,
+) -> None:
+    root, _, _ = pinned_snapshot(tmp_path)
+    now = NOW + timedelta(hours=2)
+    if damage == 'expired_anchor':
+        now = NOW + timedelta(hours=37)
+        health = load(root / 'health/latest.json')
+        health['checked_at'] = now.isoformat()
+        dump(root / 'health/latest.json', health)
+        write_snapshot_receipt(root)
+    else:
+        manifest = load(root / 'datapulse.json')
+        manifest['datasets'][0]['id' if damage == 'manifest' else 'url'] = 'wrong'
+        dump(root / 'datapulse.json', manifest)
+    git(root, 'add', '-A')
+    git(root, 'commit', '-m', 'invalid accepted precondition with valid cycle receipt')
+    with caplog.at_level(logging.INFO), pytest.raises(SelectionError, match=diagnostic):
+        select_report(root, git(root, 'rev-parse', 'HEAD'), tmp_path / 'publication', now)
+    assert not any(message.startswith('Health selection source:') for message in caplog.messages)
+
+
+def test_receipt_does_not_relax_report_measurement_count_type(tmp_path: Path) -> None:
+    from scripts.select_accepted_health import report_age
+
+    root, revision, _ = pinned_snapshot(tmp_path)
+    out = tmp_path / 'publication'
+    select_report(root, revision, out, NOW + timedelta(hours=2))
+    binding = load(out / 'attestations/latest/binding.json')
+    binding['payload']['health']['dataset_count'] = True
+    measured_binding = out / 'measurement-binding.json'
+    dump(measured_binding, binding)
+    with pytest.raises(SelectionError, match='digest/count/ids/observation'):
+        report_age(out / 'health/latest.json', measured_binding, NOW + timedelta(hours=2))
+
+
+def test_signed_receipt_with_different_artifact_hash_cannot_select_snapshot(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture,
+) -> None:
+    from scripts.attestation_sets import selected_directory, snapshot_content
+
+    root, _, _ = pinned_snapshot(tmp_path)
+    accepted_bytes = snapshot_content(root / selected_directory(root) / 'health.json.gz')
+    # The signature is valid, but it covers different raw artifact bytes.
+    write_snapshot_receipt(root, {'health_artifact_sha256': '0' * 64})
+    git(root, 'add', '-A')
+    git(root, 'commit', '-m', 'signed receipt covers a different artifact')
+    out = tmp_path / 'publication'
+    with caplog.at_level(logging.INFO):
+        result = select_report(root, git(root, 'rev-parse', 'HEAD'), out, NOW + timedelta(hours=2))
+    assert (out / 'health/latest.json').read_bytes() == accepted_bytes
+    assert 'observation_receipt_ref' not in result
+    assert 'Health selection source: receipt_absent_fallback (accepted_set)' in caplog.messages
+
+
+def test_receipt_only_commit_restores_its_pinned_observation_build(tmp_path: Path) -> None:
+    from scripts.select_accepted_health import restore_observation_build
+    from scripts.tests.test_deploy_cloudflare_pages_contract import _observation_build
+
+    root, _, _ = pinned_snapshot(tmp_path)
+    health_bytes = (root / 'health/latest.json').read_bytes()
+    _observation_build(root, '2026-08-15T02:00:00Z')
+    (root / 'health/latest.json').write_bytes(health_bytes)
+    write_snapshot_receipt(root)
+    git(root, 'add', '-A')
+    git(root, 'commit', '-m', 'complete newer observation build')
+    health_commit = git(root, 'rev-parse', 'HEAD')
+    receipt_path = write_snapshot_receipt(root)
+    receipt_bytes = receipt_path.read_bytes()
+    git(root, 'add', '-A')
+    git(root, 'commit', '-m', 'receipt only commit for unchanged health')
+    revision = git(root, 'rev-parse', 'HEAD')
+    assert revision != health_commit
+    out = tmp_path / 'publication'
+    result = select_report(root, revision, out, NOW + timedelta(hours=2))
+    assert result['observation_receipt_ref'] == receipt_path.relative_to(root).as_posix()
+    assert restore_observation_build(root, revision, out) == revision
+    assert receipt_path.read_bytes() == receipt_bytes
+    identity = load(out / 'publication-identity.json')
+    assert identity['observation_build_commit'] == revision
+    assert identity['served_lag_seconds'] == identity['served_lag_health_commits'] == 0
 
 
 @pytest.mark.parametrize('damage', ['missing', 'different_hash', 'bad_signature'])
 @pytest.mark.parametrize('snapshot_kind', ['daily', 'newer'])
-def test_selector_fails_closed_before_writing_snapshot(tmp_path: Path, damage: str, snapshot_kind: str) -> None:
+def test_uncovered_snapshot_falls_back_to_accepted_set(
+    tmp_path: Path, caplog: pytest.LogCaptureFixture, damage: str, snapshot_kind: str,
+) -> None:
+    from scripts.attestation_sets import selected_directory, snapshot_content
+
     root, _, receipt_path = pinned_snapshot(tmp_path)
     if snapshot_kind == 'daily':
-        from scripts.attestation_sets import selected_directory, snapshot_content
         content = snapshot_content(root / selected_directory(root) / 'health.json.gz')
         (root / 'health/latest.json').write_bytes(content)
         receipt_path = write_snapshot_receipt(root)
-    digest = hashlib.sha256((root / 'health/latest.json').read_bytes()).hexdigest()
+    accepted_path = selected_directory(root) + '/health.json.gz'
+    accepted_bytes = snapshot_content(root / accepted_path)
     if damage == 'missing':
         receipt_path.unlink()
     else:
@@ -117,11 +240,12 @@ def test_selector_fails_closed_before_writing_snapshot(tmp_path: Path, damage: s
     git(root, 'add', '-A')
     git(root, 'commit', '-m', 'damaged cycle evidence')
     out = tmp_path / 'publication'
-    with pytest.raises((SelectionError, ContractError)) as error:
-        select_report(root, git(root, 'rev-parse', 'HEAD'), out, NOW + timedelta(hours=2))
-    assert digest in str(error.value)
-    assert 'observation-receipts/days/2026-08-15.json' in str(error.value)
-    assert not (out / 'health/latest.json').exists()
+    with caplog.at_level(logging.INFO):
+        result = select_report(root, git(root, 'rev-parse', 'HEAD'), out, NOW + timedelta(hours=2))
+    assert (out / 'health/latest.json').read_bytes() == accepted_bytes
+    assert result['health_snapshot_ref'] == accepted_path
+    assert 'observation_receipt_ref' not in result
+    assert 'Health selection source: receipt_absent_fallback (accepted_set)' in caplog.messages
 
 
 @pytest.mark.parametrize('damage', ['missing', 'bad_signature', 'bad_chain', 'wrong_purpose',
