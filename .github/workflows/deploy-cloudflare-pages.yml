@@ -1004,6 +1004,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          # Production may still be an ancestor when this run was skipped.
+          fetch-depth: 0
           persist-credentials: false
       - name: Measure canonical production deployment age
         if: always()
@@ -1025,7 +1027,7 @@ jobs:
             fi
           fi
           status=0
-          verdict="$(python3 scripts/publication_freshness_gate.py --timestamp "$timestamp" --max-age-hours 24)" || status=$?
+          verdict="$(python3 scripts/publication_freshness_gate.py --deployment-age-only --timestamp "$timestamp" --max-age-hours 24)" || status=$?
           printf 'Deployment age (24h policy): %s\n' "$verdict" >> "$GITHUB_STEP_SUMMARY"
           case "$status" in
             0) echo "$verdict" ;;
@@ -1033,12 +1035,43 @@ jobs:
             2) echo "::warning title=Production publication freshness unknown::$verdict; Pages API credentials or deployment metadata may be unavailable. Freshness is not verified." ;;
             *) echo "::error title=Publication freshness gate failed::Unexpected gate exit $status"; exit "$status" ;;
           esac
+      - name: Compare served health with deployed commit
+        if: always()
+        run: |
+          set -Eeuo pipefail
+          trap 'status=$?; if (( status != 0 )); then echo "::error title=No verified served publication::Served content comparison failed (exit $status)."; fi' EXIT
+          comparison="$RUNNER_TEMP/served-comparison"
+          mkdir -p "$comparison"
+          rm -f "$comparison/verified" "$comparison/identity.json" "$comparison/health.json"
+          curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            -o "$comparison/identity.json" https://www.data-pulse.my/publication-identity.json
+          test -s "$comparison/identity.json"
+          deployed_sha="$(jq -er '.accepted_main_commit' "$comparison/identity.json")"
+          [[ "$deployed_sha" =~ ^[0-9a-f]{40}$ ]]
+          # Compare the consumer route to the actual deployed revision, not HEAD
+          # or the immutable signed report, which may intentionally be older.
+          repository_checked_at="$(git show "$deployed_sha:health/latest.json" | jq -er '.checked_at')"
+          curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            -o "$comparison/health.json" https://www.data-pulse.my/health/latest.json
+          test -s "$comparison/health.json"
+          served_checked_at="$(jq -er '.checked_at' "$comparison/health.json")"
+          status=0
+          verdict="$(python3 scripts/publication_freshness_gate.py \
+            --served-checked-at "$served_checked_at" \
+            --repository-checked-at "$repository_checked_at")" || status=$?
+          printf 'Content freshness: %s\n' "$verdict" >> "$GITHUB_STEP_SUMMARY"
+          echo "$verdict"
+          if (( status == 0 )); then printf 'verified\n' > "$comparison/verified"; fi
+          exit "$status"
+
       - name: Measure canonical production report age
         if: always()
         run: |
           set -Eeuo pipefail
+          trap 'status=$?; if (( status != 0 )); then echo "::error title=No verified served publication::Served report verification failed (exit $status)."; fi' EXIT
           report="$RUNNER_TEMP/served-report"
           mkdir -p "$report"
+          rm -f "$report/verified" "$report/identity.json" "$report/snapshot" "$report/binding.json"
           if http_status="$(curl --silent --show-error --connect-timeout 10 --max-time 30 \
             --write-out '%{http_code}' -o "$report/identity.json" \
             https://www.data-pulse.my/publication-identity.json)"; then
@@ -1059,12 +1092,15 @@ jobs:
               exit 1
               ;;
           esac
+          test -s "$report/identity.json"
           snapshot_ref="$(jq -er '.health_snapshot_ref' "$report/identity.json")"
           [[ "$snapshot_ref" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}(/revisions/[0-9a-f]{64})?/health\.json(\.gz)?$ ]]
           curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
             "https://www.data-pulse.my/$snapshot_ref" -o "$report/snapshot"
           curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
             https://www.data-pulse.my/attestations/latest/binding.json -o "$report/binding.json"
+          test -s "$report/snapshot"
+          test -s "$report/binding.json"
           # /health/latest.json belongs to the separate KV producer. Measure the
           # accepted report's immutable bytes, without changing that consumer route.
           python3 - "$report" "$snapshot_ref" <<'PY'
@@ -1080,14 +1116,17 @@ jobs:
               content = gzip.decompress(content)
           identity = json.loads((report / 'identity.json').read_bytes())
           binding = json.loads((report / 'binding.json').read_bytes())['payload']
-          assert hashlib.sha256(content).hexdigest() == identity['health_sha256']
-          assert binding['ed25519']['chain_head'] == identity['accepted_chain_head']
-          assert binding['health']['observed_at'] == identity['observed_at']
-          assert binding['published_at'] == identity['published_at']
+          if (hashlib.sha256(content).hexdigest() != identity['health_sha256']
+                  or binding['ed25519']['chain_head'] != identity['accepted_chain_head']
+                  or binding['health']['observed_at'] != identity['observed_at']
+                  or binding['published_at'] != identity['published_at']):
+              raise ValueError('served snapshot or binding disagrees with publication identity')
           (report / 'health.json').write_bytes(content)
           PY
           python3 scripts/select_accepted_health.py --measure-age \
             --health "$report/health.json" --binding "$report/binding.json"
+          # Only verified fetched bytes and a passing age policy can mint this proof.
+          printf 'verified\n' > "$report/verified"
 
       - name: Require verified served publication
         # A cancelled build can skip the entire promotion while the previous
@@ -1097,8 +1136,10 @@ jobs:
           DEPLOY_RESULT: ${{ needs.deploy.result }}
         run: |
           set -Eeuo pipefail
-          if [[ "$DEPLOY_RESULT" != "success" ]]; then
-            echo "::error title=No verified served publication::deploy result=${DEPLOY_RESULT:-missing}; production age checks do not prove this run published anything."
+          if [[ "${DEPLOY_RESULT:-missing}" != "success" \
+                || ! -s "$RUNNER_TEMP/served-comparison/verified" \
+                || ! -s "$RUNNER_TEMP/served-report/verified" ]]; then
+            echo "::error title=No verified served publication::deploy result=${DEPLOY_RESULT:-missing}; successful served content comparison and report verification are required."
             exit 1
           fi
 
