@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.64.4](https://github.com/r3dz4r/datapulse-my/compare/v3.64.3...v3.64.4) (2026-11-13)
+
+
+### Bug Fixes
+
+* **health:** publish the served snapshot from the deployed revision, receipt-gated ([7816460](https://github.com/r3dz4r/datapulse-my/commit/7816460d36d0f5491075d65e4d5252903b0a6143))
+* **publication:** judge served health against the signed artefact we published ([7970b43](https://github.com/r3dz4r/datapulse-my/commit/7970b43217e2e933704f1cde9756681c79d6280c))
+
 ## [3.64.3](https://github.com/r3dz4r/datapulse-my/compare/v3.64.2...v3.64.3) (2026-11-13)
 
 
