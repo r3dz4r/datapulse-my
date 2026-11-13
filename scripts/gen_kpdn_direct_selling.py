@@ -394,6 +394,10 @@ def register(root: Path, config: dict[str, Any], observation: dict[str, Any]) ->
         "breaking_changes": [],
         "licence": dataset["licence"],
         "attribution": dataset["attribution"],
+        "reproducibility": {
+            "url": health["url"],
+            "access_method": health["access_method"],
+        },
     }
     public = load_public_surfaces(root)
     base_url = public["origins"]["website"]
