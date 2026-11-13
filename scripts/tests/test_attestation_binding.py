@@ -397,7 +397,9 @@ def test_health_binding_mismatch_is_rejected(tmp_path: Path, field: str) -> None
         verify_contract(root, now=NOW + timedelta(hours=1))
 
 
-def test_publisher_accepts_newer_health_with_verified_signed_snapshot(tmp_path: Path) -> None:
+def test_publisher_requires_cycle_receipt_alongside_verified_daily_snapshot(tmp_path: Path) -> None:
+    from scripts.tests.test_receipt_snapshot_publication import write_snapshot_receipt
+
     root, key, rekor_reference = fixture_root_with_rekor(tmp_path)
     ga.generate(root, key, NOW, rekor_reference)
     signed_digest = load(root / "attestations/latest/binding.json")["payload"]["health"]["artifact_sha256"]
@@ -407,13 +409,22 @@ def test_publisher_accepts_newer_health_with_verified_signed_snapshot(tmp_path: 
     health["datasets"][0]["last_checked"] = health["checked_at"]
     dump(health_path, health)
 
-    with pytest.raises(ContractError, match="binding"):
+    with pytest.raises(ContractError, match="no matching|receipt day"):
         verify_contract(root, now=NOW + timedelta(hours=2), require_rekor=True)
+    # The old publisher bypass no longer admits an unsigned successor either.
+    with pytest.raises(ContractError, match="no matching|receipt day"):
+        verify_contract(root, now=NOW + timedelta(hours=2), require_rekor=True, allow_newer_health=True)
+    write_snapshot_receipt(root)
     result = verify_contract(
         root, now=NOW + timedelta(hours=2), require_rekor=True, allow_newer_health=True
     )
-    assert result["health"]["artifact_sha256"] == signed_digest
-    assert result["claims"]["rekor_witnessed"] is True
+    assert result["health"]["artifact_sha256"] == hashlib.sha256(health_path.read_bytes()).hexdigest()
+    assert result["daily_anchor"]["health"]["artifact_sha256"] == signed_digest
+    assert result['observation_receipt']['payload']['health_artifact_sha256'] == result['health']['artifact_sha256']
+    assert result["claims"]["rekor_witnessed"] is False
+    assert result['rekor'] is None
+    assert result['daily_anchor']['claims']['rekor_witnessed'] is True
+    assert result['daily_anchor']['rekor'] is not None
 
 
 @pytest.mark.parametrize("change", ("older_time", "different_dataset", "missing_snapshot"))
@@ -680,27 +691,22 @@ def worktrees(root: Path) -> int:
     return listing.count("worktree ")
 
 
-def test_probe_verifies_materialised_publication_where_raw_main_cannot(
+def test_probe_fallback_preserves_bound_health_without_cycle_receipt(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     root, accepted_health = probe_root(tmp_path)
     binding = load(root / "attestations/latest/binding.json")
-    assert "health_sha256" not in binding
-    accepted_sha256 = hashlib.sha256(accepted_health).hexdigest()
-    assert binding["payload"]["health"]["artifact_sha256"] == accepted_sha256
-    # The raw checkout is the permanent false alarm the probe replaces.
-    with pytest.raises(ContractError, match="does not match served health"):
+    assert binding["payload"]["health"]["artifact_sha256"] == hashlib.sha256(accepted_health).hexdigest()
+    with pytest.raises(ContractError, match="receipt day"):
         verify_contract(root, now=NOW + timedelta(hours=2))
 
     status, out = run_probe(root, capsys, "--revision", "main")
-
     assert status == 0, out
     result = json.loads(out)
-    assert result["status"] == "verified"
-    assert result["health_sha256"] == result["bound_health_sha256"] == accepted_sha256
-    assert result["accepted_main_commit"] == subprocess.run(
-        ["git", "rev-parse", "main"], cwd=root, check=True, capture_output=True, text=True
-    ).stdout.strip()
+    newer_snapshot_digest = hashlib.sha256((root / "health/latest.json").read_bytes()).hexdigest()
+    assert result["health_sha256"] == result["bound_health_sha256"]
+    assert result["materialisation"] == "select_accepted_health.select_report"
+    assert result["health_sha256"] != newer_snapshot_digest
     assert worktrees(root) == 1
 
 
