@@ -38,6 +38,7 @@ python3 scripts/gen_public_discovery.py
 python3 scripts/gen_dashboard_sections.py
 python3 scripts/gen_dashboard_filters.py
 python3 scripts/embed_dashboard_data.py
+python3 scripts/gen_jsonld_catalog.py
 python3 scripts/gen_readme.py
 python3 scripts/gen_llms_summary.py
 python3 scripts/gen_mcp_reference.py

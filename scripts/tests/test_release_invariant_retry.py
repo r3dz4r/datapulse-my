@@ -80,6 +80,8 @@ def _shadow_checkout(destination: Path) -> Path:
         ".attestations",
         "catalog-snapshot.json",
         "changelog.json",
+        "catalog-graph.json",
+        "datapulse_summary.json",
         "README.md", "data", "badges", "llms.txt", "mcp.json",
         "agent.json", "sitemap.xml", "robots.txt",
     }
@@ -141,6 +143,11 @@ def test_release_invariant_retry_corrected_index(tmp_path: Path) -> None:
     shadow = _shadow_checkout(tmp_path)
     prepared = subprocess.run(
         ["bash", "scripts/derive-estate.sh"], cwd=shadow,
+        env={
+            **os.environ,
+            "DATAPULSE_SOURCE_COMMIT_SHA": "0123456789abcdef0123456789abcdef01234567",
+            "DATAPULSE_SOURCE_COMMIT_DATE": "2026-08-08",
+        },
         capture_output=True, text=True, check=False,
     )
     assert prepared.returncode == 0, prepared.stderr
