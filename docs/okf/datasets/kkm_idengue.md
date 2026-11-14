@@ -8,7 +8,7 @@ sources:
   - {"id": "kkm","resource": "https://idengue.mysa.gov.my/","title": "KKM (Bahagian Kawalan Penyakit) + MYSA"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-13T09:46:35Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-12T09:26:20Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "KKM via iDengue portal (MYSA hosted)"
