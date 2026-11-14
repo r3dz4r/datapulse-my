@@ -8,7 +8,7 @@ sources:
   - {"id": "kkm","resource": "https://storage.data.gov.my/healthcare/covid_deaths_linelist.csv","title": "Ministry of Health Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-12T09:26:20Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-13T09:46:35Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Source: Ministry of Health Malaysia (Kementerian Kesihatan Malaysia)"
