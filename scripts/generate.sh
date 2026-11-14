@@ -256,7 +256,7 @@ printf 'Purpose: %s\n' "$description"
 
 command_for() {
   case "$1" in
-    public_surface_preflight) printf '%s' 'failures=0; for probe in "gen_mcp_reference.py --validate-only" "gen_llms_summary.py --validate-only" "gen_public_discovery.py --validate-only" "gen_readme.py --validate-only" "verify_distribution_sync.py"; do python3 "scripts/${probe%% *}" ${probe#* } || { echo "surface preflight FAILED: python3 scripts/${probe}" >&2; failures=1; }; done; exit $failures' ;;
+    public_surface_preflight) printf 'python3 scripts/gen_mcp_reference.py --validate-only && python3 scripts/gen_llms_summary.py --validate-only && python3 scripts/gen_public_discovery.py --validate-only && python3 scripts/gen_readme.py --validate-only && python3 scripts/verify_distribution_sync.py' ;;
     *.sh)
       printf 'DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" bash scripts/%s' "$1"
       ;;
