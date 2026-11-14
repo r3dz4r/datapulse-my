@@ -25,7 +25,7 @@ CHAIN = (
     # chain assertion. Its effect is covered by the parity and dashboard suites, which read the
     # register rows it writes; do not try to pin it here.
     "gen_public_discovery", "gen_dashboard_sections", "gen_dashboard_filters",
-    "gen_readme", "gen_llms_summary", "gen_mcp_reference",
+    "gen_jsonld_catalog", "gen_readme", "gen_llms_summary", "gen_mcp_reference",
     "gen_ai_catalog", "gen_json_envelope", "gen_changelog",
 )
 
