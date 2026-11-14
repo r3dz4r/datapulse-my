@@ -137,6 +137,7 @@ case "$profile" in
     description="$(profile_description "$profile")"
     generators=(
       "gen_health_trust_summary.py"
+      "gen_quality_profile.py"
       "gen_dynamic_manifest_urls.py"
       "gen_readme.py"
       "stamp_manifest_origin.py"
@@ -173,6 +174,7 @@ case "$profile" in
     )
     outputs=(
       "health/latest.json (manifest-scoped trust totals and unprobed onboarding rows)"
+      "health/latest.json per-dataset quality_profile blocks"
       "datapulse.json dynamic URLs; changed dataset JSON envelopes, JSON-LD, passports, and website pages"
       "README.md (dataset counts and trust-summary block)"
       'datapulse.json $schema canonical origin stamp'
