@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -54,9 +55,15 @@ PUBLIC_SURFACE_LINKS = {
     "/verify-datapulse-externally.md": ("Verify DataPulse externally", "Standalone public-HTTPS verification guide for DataPulse evidence."),
 }
 
+DATASET_COUNT_CLAIM = re.compile(
+    r"(?<!\w)\d{1,7}(?=\s*(?:[-–]\s*)?"
+    r"(?:(?:official|Malaysian|public|current|manifest|catalogue|catalog)\s+){0,4}datasets?\b)",
+    re.IGNORECASE,
+)
+
 
 def generate(root: Path, *, check: bool = False, validate_only: bool = False) -> bool:
-    """Render catalogue summary and curated datasets without broad substitutions."""
+    """Render catalogue facts and dataset counts from canonical inputs."""
     config = load_public_surfaces(root)
     datasets = load_json(root / "datapulse.json").get("datasets")
     if not isinstance(datasets, list) or not all(isinstance(row, dict) and isinstance(row.get("id"), str) for row in datasets):
@@ -102,6 +109,7 @@ def generate(root: Path, *, check: bool = False, validate_only: bool = False) ->
     updated = replace_owned_block(original, "catalog-summary", summary)
     updated = replace_owned_block(updated, "featured-datasets", featured)
     updated = replace_owned_block(updated, "public-artifacts", public_artifacts)
+    updated = DATASET_COUNT_CLAIM.sub(str(count), updated)
     if validate_only:
         return False
     return publish_text_outputs({path: updated}, check=check)

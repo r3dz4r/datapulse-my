@@ -8,6 +8,7 @@ import sys
 from pathlib import Path
 
 from scripts.gen_llms_summary import PUBLIC_SURFACE_LINKS
+from scripts.verify_distribution_sync import DATASET_CLAIM
 
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -151,6 +152,21 @@ def test_updates_count_from_manifest(tmp_path: Path) -> None:
     assert "[Learn](https://www.data-pulse.my/learn.html): Practical verification-first guidance for building with Malaysian public data." in artifacts
     assert "r3dz4r.github.io" not in artifacts
     assert "/docs/" not in artifacts
+
+
+def test_all_dataset_count_claims_follow_manifest(tmp_path: Path) -> None:
+    _write_fixture(tmp_path, count=3)
+    path = tmp_path / "llms.txt"
+    path.write_text((ROOT / "llms.txt").read_text(encoding="utf-8"), encoding="utf-8")
+    result = _run(tmp_path)
+    assert result.returncode == 0, result.stderr
+    first = path.read_bytes()
+    claims = DATASET_CLAIM.findall(first.decode("utf-8"))
+    assert len(claims) >= 4
+    assert set(claims) == {"3"}
+    result = _run(tmp_path)
+    assert result.returncode == 0, result.stderr
+    assert path.read_bytes() == first
 
 
 def test_idempotent_second_run(tmp_path: Path) -> None:

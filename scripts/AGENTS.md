@@ -1,6 +1,6 @@
 # AGENTS.md — `scripts/` (DataPulse MY pipeline)
 
-Working agreement for AI agents editing the 135 Python scripts that drive the datapulse-my pipeline.
+Working agreement for AI agents editing the 136 Python scripts that drive the datapulse-my pipeline.
 
 ## What this is
 

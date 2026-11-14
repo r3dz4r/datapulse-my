@@ -137,11 +137,12 @@ case "$profile" in
     description="$(profile_description "$profile")"
     generators=(
       "gen_health_trust_summary.py"
+      "gen_quality_profile.py"
       "gen_dynamic_manifest_urls.py"
       "gen_readme.py"
-      "public_surface_preflight"
       "stamp_manifest_origin.py"
       "gen_mcp_reference.py"
+      "gen_ai_catalog.py"
       "inject_openwiki_canonical_facts.py"
       "gen_llms_summary.py"
       "gen_public_discovery.py"
@@ -169,14 +170,16 @@ case "$profile" in
       "gen_health_methodology_html.py"
       "gen_landing_page.py"
       "gen_site_nav.py"
+      "public_surface_preflight"
     )
     outputs=(
       "health/latest.json (manifest-scoped trust totals and unprobed onboarding rows)"
+      "health/latest.json per-dataset quality_profile blocks"
       "datapulse.json dynamic URLs; changed dataset JSON envelopes, JSON-LD, passports, and website pages"
       "README.md (dataset counts and trust-summary block)"
-      "validation only (config, schemas, source identity, and all P5A markers)"
       'datapulse.json $schema canonical origin stamp'
       "mcp.json; agent.json; docs/mcp-reference.md; llms.txt MCP tools block; README.md MCP tools block; docs/mcp-deploy.md MCP tools block"
+      "docs/ai-catalog.json; docs/.well-known/ai-catalog.json; docs/mcp/cards/*.json"
       "openwiki/{quickstart,datasets,mcp,operations}.md canonical facts"
       "llms.txt catalog-summary and featured-datasets blocks"
       "sitemap.xml; robots.txt public-discovery block; README.md public-discovery block; llms.txt public-discovery block"
@@ -204,6 +207,7 @@ case "$profile" in
       "docs/health-methodology.html; docs/mcp-reference.html; docs/datapulse-intro.html; docs/privacy.html"
       "docs/{landing,dashboard,register}.html (static compatibility aliases to the canonical root register)"
       "docs/{index,npra,health-methodology,privacy,learn}.html site navigation"
+      "validation only (config, schemas, source identity, and all P5A markers)"
     )
     ;;
   *)

@@ -27,7 +27,7 @@ def run_discovery(repo: Path, caller: str) -> subprocess.CompletedProcess[str]:
     else:
         ci = (ROOT / ".github/workflows/ci.yml").read_text()
         step = ci.split("- name: Regenerate derived artefacts before validation", 1)[1].split("\n      - name:", 1)[0]
-        source = textwrap.dedent(step.split("run: |", 1)[1])
+        source = textwrap.dedent(step.split("run: |\n", 1)[1].split("\n      #", 1)[0])
     block = source.split("python3 - <<'PY'", 1)[1].split("\nPY", 1)[0]
     return subprocess.run(["python3", "-c", block], cwd=repo, text=True, capture_output=True)
 
@@ -70,6 +70,22 @@ def test_call_sites_share_discovery_before_aggregates() -> None:
         assert source.index("python3 - <<'PY'", source.index("per-dataset-derivation")) < source.index(aggregate)
 
 
+def test_ci_readme_generation_and_validators_follow_derivation() -> None:
+    ci = (ROOT / ".github/workflows/ci.yml").read_text()
+    lines = ci.splitlines()
+    marker = next(i for i, line in enumerate(lines) if "per-dataset-derivation" in line)
+    # The --check precheck exits early when README is unchanged, before comparing derived prose.
+    readme_runs = [i for i, line in enumerate(lines) if "python3 scripts/gen_readme.py" in line and "--check" not in line]
+    assert readme_runs
+    assert all(i > marker for i in readme_runs)
+    step = ci.split("- name: Regenerate derived artefacts before validation", 1)[1].split("\n      - name:", 1)[0]
+    assert "if: env.FULL_VERIFICATION == 'true'" in step
+    assert "python3 scripts/gen_readme.py\n" in step
+    for validator in ("verify_doc_claims.py", "verify_distribution_sync.py"):
+        positions = [i for i, line in enumerate(lines) if validator in line]
+        assert positions and all(i > marker for i in positions)
+
+
 def test_release_build_stops_before_aggregates_on_dataset_failure(repo: Path) -> None:
     manifest(repo, "broken")
     shutil.copy(ROOT / "scripts/generate.sh", repo / "scripts/generate.sh")
@@ -97,10 +113,27 @@ def test_dataset_runs_before_first_aggregate(repo: Path, caller: str) -> None:
     else:
         ci = (ROOT / ".github/workflows/ci.yml").read_text()
         step = ci.split("- name: Regenerate derived artefacts before validation", 1)[1].split("\n      - name:", 1)[0]
-        commands = textwrap.dedent(step.split("run: |", 1)[1])
+        commands = textwrap.dedent(step.split("run: |\n", 1)[1].split("\n      #", 1)[0])
         first_commands = commands.split("python3 scripts/gen_health_trust_summary.py", 1)[0] + "python3 scripts/gen_health_trust_summary.py"
         command = ["bash", "-c", first_commands]
     result = subprocess.run(command, cwd=repo, text=True, capture_output=True)
     if caller == "ci":
         assert result.returncode == 0, result.stderr
     assert (repo / "order").read_text() == "dataset\naggregate\n"
+
+
+def test_release_public_preflight_follows_surface_generators() -> None:
+    result = subprocess.run(
+        ["bash", "scripts/generate.sh", "release-build", "--list"],
+        cwd=ROOT, text=True, capture_output=True, check=True,
+    )
+    commands = [line for line in result.stdout.splitlines() if line[:1].isdigit()]
+    preflight = next(i for i, line in enumerate(commands) if "verify_distribution_sync.py" in line)
+    for generator in (
+        "gen_readme.py", "gen_mcp_reference.py", "gen_ai_catalog.py",
+        "gen_llms_summary.py", "gen_public_discovery.py", "embed_dashboard_data.py",
+        "gen_site_nav.py",
+    ):
+        positions = [i for i, line in enumerate(commands) if f"scripts/{generator}" in line]
+        assert positions, generator
+        assert positions[0] < preflight, generator

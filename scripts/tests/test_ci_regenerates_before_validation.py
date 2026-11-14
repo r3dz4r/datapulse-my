@@ -20,7 +20,11 @@ DERIVED_CLOCK_GENERATORS = ("gen_trends", "gen_drift", "gen_reconciliation")
 CHAIN = (
     "gen_health_trust_summary", "gen_quality_profile", "gen_trends", "gen_drift",
     "gen_reconciliation", "gen_public_summary", "gen_catalog_snapshot", "gen_catalog_graph",
-    "gen_public_discovery", "gen_readme", "gen_llms_summary", "gen_mcp_reference",
+    # _invoked matches only `gen_*` scripts, so embed_dashboard_data.py is not visible to this
+    # chain assertion. Its effect is covered by the parity and dashboard suites, which read the
+    # register rows it writes; do not try to pin it here.
+    "gen_public_discovery", "gen_dashboard_sections", "gen_dashboard_filters",
+    "gen_readme", "gen_llms_summary", "gen_mcp_reference",
     "gen_ai_catalog", "gen_json_envelope", "gen_changelog",
 )
 

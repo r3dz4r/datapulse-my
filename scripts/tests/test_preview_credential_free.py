@@ -44,6 +44,8 @@ UNSIGNED_MESSAGE = (
 # producer runs unchanged, including its calls to the surface generators.
 PYTHON_GENERATORS = (
     "gen_health_trust_summary.py",
+    "gen_quality_profile.py",
+    "gen_ai_catalog.py",
     "gen_readme.py",
     "stamp_manifest_origin.py",
     "gen_mcp_reference.py",

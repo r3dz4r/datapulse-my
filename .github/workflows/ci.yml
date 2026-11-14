@@ -175,9 +175,6 @@ jobs:
           python3 -m jsonschema -i datapulse.json datapulse.schema.json
           python3 -m jsonschema -i health/latest.json health.schema.json
 
-      - name: Verify live documentation counts
-        run: python3 scripts/verify_doc_claims.py
-
       - name: Verify signed chain-head monotonicity
         run: python3 -m pytest -q scripts/tests/test_chain_head_monotonicity.py
 
@@ -213,13 +210,37 @@ jobs:
               raise SystemExit("legacy release proof format: missing " + "; ".join(missing))
           PY
 
-      - name: Verify README matches its template before regeneration
+      - name: Detect README changes for the template precheck
+        id: readme_precheck
         if: env.FULL_VERIFICATION == 'true'
-        run: python3 scripts/gen_readme.py --check
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            diff_args=("${BEFORE_SHA}" HEAD)
+          else
+            BASE_SHA=$(git rev-parse --verify 'HEAD^1^{commit}') || {
+              echo "::error::Cannot resolve the README precheck base (HEAD^1)" >&2
+              exit 1
+            }
+            diff_args=("${BASE_SHA}" HEAD)
+          fi
+          changed_paths=$(git diff --name-only "${diff_args[@]}")
+          if printf '%s\n' "$changed_paths" | grep -Fxq README.md; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            # readme-precheck-source-only
+            echo "README precheck skipped because this run does not modify README"
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Generate README from canonical inputs
-        if: env.FULL_VERIFICATION == 'true'
-        run: python3 scripts/gen_readme.py
+      # The precheck keeps its own single-command step: the --check-before-generate contract is
+      # asserted from this step's run string, so the skip condition belongs on the guard above,
+      # not folded into this run.
+      - name: Verify README matches its template before regeneration
+        if: env.FULL_VERIFICATION == 'true' && steps.readme_precheck.outputs.changed == 'true'
+        run: python3 scripts/gen_readme.py --check
 
       # Trade, stated plainly: from this step on, the job validates generator self-consistency —
       # that this checkout's sources, run through its own generators, yield artefacts every later
@@ -268,12 +289,32 @@ jobs:
           python3 scripts/gen_catalog_snapshot.py
           python3 scripts/gen_catalog_graph.py
           python3 scripts/gen_public_discovery.py
+          # dashboard-after-derivation: docs/index.html is read by the parity tests as their
+          # served fixture, and nothing regenerated it here. A source-only PR therefore left it
+          # at main's dataset count and every parity test compared 448 against a stale 447.
+          # Carrying the file was what made this pass before; deriving it does the same without
+          # the churn, so its three producers run in the same order the release profile uses.
+          python3 scripts/gen_dashboard_sections.py
+          python3 scripts/gen_dashboard_filters.py
+          python3 scripts/embed_dashboard_data.py
           python3 scripts/gen_readme.py
           python3 scripts/gen_llms_summary.py
           python3 scripts/gen_mcp_reference.py
           python3 scripts/gen_ai_catalog.py
           python3 scripts/gen_json_envelope.py --force
           python3 scripts/gen_changelog.py
+
+      # readme-after-regeneration: the README generator keeps its own named step so the
+      # --check-before-generate contract stays greppable, but it now runs AFTER the
+      # derivation that populates health from the manifest. Running it at its old position,
+      # ahead of the derivation, made every dataset addition fail here.
+      - name: Generate README from canonical inputs
+        if: env.FULL_VERIFICATION == 'true'
+        run: python3 scripts/gen_readme.py
+
+      # doccounts-after-regeneration
+      - name: Verify live documentation counts
+        run: python3 scripts/verify_doc_claims.py
 
       - name: Run repository-contract and MCP tests
         if: env.FULL_VERIFICATION == 'true'
