@@ -21,10 +21,10 @@ def test_projection_refresh_workflow_contract() -> None:
         ("declares schedule trigger", "  schedule:" in text),
         ("declares workflow_dispatch trigger", "  workflow_dispatch:" in text),
         ("runs --check before branch push", text.index("gen_attestation_projections.py --check") < push_at),
-        ("detects binding and scores refresh", all(
-            path in diff_line for path in ("attestations/latest/binding.json", "attestations/latest/scores.json"))),
-        ("stages binding and scores", all(
-            path in add_line for path in ("attestations/latest/binding.json", "attestations/latest/scores.json"))),
+        ("detects binding refresh", "attestations/latest/binding.json" in diff_line),
+        ("stages binding", "attestations/latest/binding.json" in add_line),
+        ("leaves live scores to the health pipeline", "attestations/latest/scores.json" not in diff_line
+         and "attestations/latest/scores.json" not in add_line),
         ("does not copy latest scores outside the writer", "frozen_scores" not in text and "cp --" not in text),
         ("mints and uses App token for push and PR",
          "uses: actions/create-github-app-token@v1" in text

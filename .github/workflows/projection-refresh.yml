@@ -64,7 +64,7 @@ jobs:
             echo "::error::Projection refresh failed with exit $result."
             exit "$result"
           fi
-          if git diff --quiet -- .attestations/chain_head.json attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json attestations/latest/binding.json attestations/latest/scores.json; then
+          if git diff --quiet -- .attestations/chain_head.json attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json attestations/latest/binding.json; then
             echo 'UNCHANGED: there was nothing to refresh.'
             echo 'changed=false' >> "$GITHUB_OUTPUT"
             exit 0
@@ -109,7 +109,7 @@ jobs:
             echo '::error title=Projection verification failed::Generated projections did not pass --check; no branch was pushed.'
             exit 1
           fi
-          git add -- .attestations/chain_head.json attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json attestations/latest/binding.json attestations/latest/scores.json
+          git add -- .attestations/chain_head.json attestations/latest/index.json attestations/latest/chain_head.json attestations/chain-index.json attestations/latest/binding.json
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git commit -m 'chore(attestations): refresh accepted projections'
