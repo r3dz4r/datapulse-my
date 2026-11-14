@@ -337,6 +337,7 @@ def _stage_source(tmp_path: Path) -> Path:
     _write_json(scripts / "probe-policy.json", {"datasets": {}})
     shutil.copytree(ROOT / "scripts/templates", scripts / "templates")
     shutil.copy2(ROOT / "scripts/generate.sh", scripts / "generate.sh")
+    shutil.copy2(ROOT / "scripts/derive_per_dataset.sh", scripts / "derive_per_dataset.sh")
     shutil.copy2(ROOT / "scripts/public_surface_generation.py", scripts / "public_surface_generation.py")
     shutil.copy2(ROOT / "scripts/artifact_modes.py", scripts / "artifact_modes.py")
     for generator in GENERATORS:

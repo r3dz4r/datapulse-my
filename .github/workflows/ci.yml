@@ -238,6 +238,8 @@ jobs:
         if: env.FULL_VERIFICATION == 'true'
         run: |
           set -Eeuo pipefail
+          # per-dataset-derivation: populate dataset surfaces before aggregate generators.
+          bash scripts/derive_per_dataset.sh
           python3 scripts/gen_health_trust_summary.py
           python3 scripts/gen_quality_profile.py
           checked_at=$(python3 -c 'import json; print(json.load(open("health/latest.json"))["checked_at"])')

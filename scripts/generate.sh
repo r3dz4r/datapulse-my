@@ -349,6 +349,11 @@ run_step() (
   esac
 )
 
+if [[ "$profile" == "release-build" ]]; then
+  # per-dataset-derivation: populate dataset surfaces before aggregate generators.
+  DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" bash scripts/derive_per_dataset.sh
+fi
+
 failed_steps=()
 failed_commands=()
 failed_codes=()
