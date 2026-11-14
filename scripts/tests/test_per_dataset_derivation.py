@@ -27,7 +27,7 @@ def run_discovery(repo: Path, caller: str) -> subprocess.CompletedProcess[str]:
     else:
         ci = (ROOT / ".github/workflows/ci.yml").read_text()
         step = ci.split("- name: Regenerate derived artefacts before validation", 1)[1].split("\n      - name:", 1)[0]
-        source = textwrap.dedent(step.split("run: |", 1)[1])
+        source = textwrap.dedent(step.split("run: |\n", 1)[1].split("\n      #", 1)[0])
     block = source.split("python3 - <<'PY'", 1)[1].split("\nPY", 1)[0]
     return subprocess.run(["python3", "-c", block], cwd=repo, text=True, capture_output=True)
 
@@ -97,10 +97,27 @@ def test_dataset_runs_before_first_aggregate(repo: Path, caller: str) -> None:
     else:
         ci = (ROOT / ".github/workflows/ci.yml").read_text()
         step = ci.split("- name: Regenerate derived artefacts before validation", 1)[1].split("\n      - name:", 1)[0]
-        commands = textwrap.dedent(step.split("run: |", 1)[1])
+        commands = textwrap.dedent(step.split("run: |\n", 1)[1].split("\n      #", 1)[0])
         first_commands = commands.split("python3 scripts/gen_health_trust_summary.py", 1)[0] + "python3 scripts/gen_health_trust_summary.py"
         command = ["bash", "-c", first_commands]
     result = subprocess.run(command, cwd=repo, text=True, capture_output=True)
     if caller == "ci":
         assert result.returncode == 0, result.stderr
     assert (repo / "order").read_text() == "dataset\naggregate\n"
+
+
+def test_release_public_preflight_follows_surface_generators() -> None:
+    result = subprocess.run(
+        ["bash", "scripts/generate.sh", "release-build", "--list"],
+        cwd=ROOT, text=True, capture_output=True, check=True,
+    )
+    commands = [line for line in result.stdout.splitlines() if line[:1].isdigit()]
+    preflight = next(i for i, line in enumerate(commands) if "verify_distribution_sync.py" in line)
+    for generator in (
+        "gen_readme.py", "gen_mcp_reference.py", "gen_ai_catalog.py",
+        "gen_llms_summary.py", "gen_public_discovery.py", "embed_dashboard_data.py",
+        "gen_site_nav.py",
+    ):
+        positions = [i for i, line in enumerate(commands) if f"scripts/{generator}" in line]
+        assert positions, generator
+        assert positions[0] < preflight, generator

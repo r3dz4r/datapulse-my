@@ -24,7 +24,7 @@ Form fields: Company Name · Website URL · Description (max 25 words) · Catego
 |---|---|
 | Company Name | DataPulse MY |
 | Website URL | https://www.data-pulse.my |
-| Description (limit 25 words) | Open-source AI-ready trust layer for 447 official Malaysian public datasets, with freshness, licences, and a public read-only MCP server. No API key. |
+| Description (limit 25 words) | Open-source AI-ready trust layer for official Malaysian public datasets, with freshness, licences, and a public read-only MCP server. No API key. |
 | Category | AI Products (id=1) |
 
 Description word count: **22 words** ✅ (within the 25-word cap)
@@ -99,7 +99,7 @@ The 2026-09-01 note recorded Glama as stale/unhealthy with a last test of 2026-0
 
 **Sync check.** `server.json` advertises name `io.github.r3dz4r/datapulse-my`, version matching `VERSION.txt`, description matching the Glama listing, and the same remote URL. Ownership, endpoint, tool count and description all agree, so the listing reflects current state.
 
-**Standing staleness risk.** The listing description embeds a dataset count ("447 Malaysian public datasets") in `server.json`. When the catalogue changes, the listing and the registry record go stale together until a new registry publish. Treat that count as a generated value to refresh at publish time, not hand-authored copy.
+**Standing staleness risk.** Avoid embedding a dataset count in the listing or `server.json`: catalogue changes can make a published registry record stale. Derive any count needed at publish time rather than adding it to hand-authored copy.
 
 **What is not fixable from here.** Glama's test cadence, uptime history and TDQS score are its own measurements. The only lever this repository has is keeping the endpoint healthy and the metadata accurate, both of which currently hold.
 
