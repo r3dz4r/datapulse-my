@@ -8,7 +8,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts import gen_kpdn_direct_selling as kpdn
+from scripts import gen_kpdn_direct_selling_licences as kpdn
 
 
 ROOT = Path(__file__).resolve().parents[2]
