@@ -32,6 +32,8 @@ GENERATORS = (
     "gen_status_legend.sh",
     "gen_readme.py",
     "gen_health_trust_summary.py",
+    "gen_quality_profile.py",
+    "gen_ai_catalog.py",
     "gen_llms_summary.py",
     "gen_public_discovery.py",
     "stamp_manifest_origin.py",
@@ -301,7 +303,11 @@ def _stage_source(tmp_path: Path) -> Path:
         ),
         "docs/index.html": (),
         "docs/learn.html": (
-            ("19 read-only tools", "0 read-only tools"),
+            # The profile regenerates mcp.json from this fixture's server and the surface preflight
+            # now runs after that, so this number must equal what the fixture server advertises
+            # (5), not zero. It was 0 while nothing re-derived the file, which is why moving the
+            # preflight to the end of the profile surfaced it.
+            ("19 read-only tools", "5 read-only tools"),
         ),
     }.items():
         path = source / relative
@@ -341,6 +347,15 @@ def _stage_source(tmp_path: Path) -> Path:
     shutil.copy2(ROOT / "scripts/artifact_modes.py", scripts / "artifact_modes.py")
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
+    # gen_ai_catalog.py rejects a corpus naming tools the manifest does not advertise, and this
+    # fixture's mcp.json carries its own (minimal) tool set, so the corpus is filtered to it rather
+    # than copied whole. Deriving it here keeps the two in step whatever the fixture advertises.
+    corpus = json.loads((ROOT / "scripts/mcp-representative-queries.json").read_text(encoding="utf-8"))
+    advertised = {tool["name"] for tool in json.loads((RELEASE_FIXTURE / "mcp.json").read_text(encoding="utf-8"))["tools"]}
+    (scripts / "mcp-representative-queries.json").write_text(
+        json.dumps({name: queries for name, queries in corpus.items() if name in advertised}, indent=2) + "\n",
+        encoding="utf-8",
+    )
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", scripts)
     shutil.copy2(ROOT / "scripts/attestation_sets.py", scripts)
     shutil.copy2(ROOT / "scripts/validate_at_runtime.py", scripts)
