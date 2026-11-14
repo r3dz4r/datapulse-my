@@ -289,6 +289,14 @@ jobs:
           python3 scripts/gen_catalog_snapshot.py
           python3 scripts/gen_catalog_graph.py
           python3 scripts/gen_public_discovery.py
+          # dashboard-after-derivation: docs/index.html is read by the parity tests as their
+          # served fixture, and nothing regenerated it here. A source-only PR therefore left it
+          # at main's dataset count and every parity test compared 448 against a stale 447.
+          # Carrying the file was what made this pass before; deriving it does the same without
+          # the churn, so its three producers run in the same order the release profile uses.
+          python3 scripts/gen_dashboard_sections.py
+          python3 scripts/gen_dashboard_filters.py
+          python3 scripts/embed_dashboard_data.py
           python3 scripts/gen_readme.py
           python3 scripts/gen_llms_summary.py
           python3 scripts/gen_mcp_reference.py
