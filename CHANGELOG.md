@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.65.0](https://github.com/r3dz4r/datapulse-my/compare/v3.64.4...v3.65.0) (2026-11-14)
+
+
+### Features
+
+* **ci:** derive per-dataset surfaces before the aggregates, by convention ([#3411](https://github.com/r3dz4r/datapulse-my/issues/3411)) ([8712a5b](https://github.com/r3dz4r/datapulse-my/commit/8712a5bbc6bbccb86f7300a5aa8906ff4c43ee0f))
+
 ## [3.64.4](https://github.com/r3dz4r/datapulse-my/compare/v3.64.3...v3.64.4) (2026-11-13)
 
 
