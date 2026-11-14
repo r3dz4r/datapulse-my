@@ -136,35 +136,20 @@ case "$profile" in
   release-build)
     description="$(profile_description "$profile")"
     generators=(
-      "gen_health_trust_summary.py"
-      "gen_quality_profile.py"
+      "derive-estate.sh"
       "gen_dynamic_manifest_urls.py"
-      "gen_readme.py"
       "stamp_manifest_origin.py"
-      "gen_mcp_reference.py"
-      "gen_ai_catalog.py"
       "inject_openwiki_canonical_facts.py"
-      "gen_llms_summary.py"
-      "gen_public_discovery.py"
-      "gen_dashboard_sections.py"
       "gen_data_reports.sh"
       "gen_health_methodology.py"
       "gen_badges.sh"
       "gen_rss.sh"
-      "gen_catalog_snapshot.py"
       "gen_health_history.py"
-      "gen_trends.py"
-      "gen_drift.py"
-      "gen_reconciliation.py"
       "gen_attestations.py"
       "gen_dataset_deltas.py"
       "gen_record_evidence.py"
       "gen_evidence_coverage.py"
-      "gen_catalog_graph.py"
-      "gen_json_envelope.py"
       "gen_jsonld_catalog.py"
-      "gen_dashboard_filters.py"
-      "embed_dashboard_data.py"
       "check_url_drift.py"
       "gen_trust_snapshot.py"
       "gen_health_methodology_html.py"
@@ -173,35 +158,20 @@ case "$profile" in
       "public_surface_preflight"
     )
     outputs=(
-      "health/latest.json (manifest-scoped trust totals and unprobed onboarding rows)"
-      "health/latest.json per-dataset quality_profile blocks"
+      "per-dataset surfaces and canonical derived estate"
       "datapulse.json dynamic URLs; changed dataset JSON envelopes, JSON-LD, passports, and website pages"
-      "README.md (dataset counts and trust-summary block)"
       'datapulse.json $schema canonical origin stamp'
-      "mcp.json; agent.json; docs/mcp-reference.md; llms.txt MCP tools block; README.md MCP tools block; docs/mcp-deploy.md MCP tools block"
-      "docs/ai-catalog.json; docs/.well-known/ai-catalog.json; docs/mcp/cards/*.json"
       "openwiki/{quickstart,datasets,mcp,operations}.md canonical facts"
-      "llms.txt catalog-summary and featured-datasets blocks"
-      "sitemap.xml; robots.txt public-discovery block; README.md public-discovery block; llms.txt public-discovery block"
-      "docs/.dashboard_sections.json"
       "data/<id>.md"
       "docs/health-methodology.md"
       "badges/<id>.svg; badges/status-*.svg; badges/index.svg"
       "feed.xml"
-      "catalog-snapshot.json; changelog.json (deprecated alias)"
       "health/history.jsonl; health/history_daily.json; health/probe_counts.json"
-      "health/trends.json"
-      "health/drift.json"
-      "health/reconciliation.json"
       "attestations/<date>/{<id>.json,index.json,chain_head.json,binding.json,scores.json} or attestations/<date>/revisions/<head>/*; append-only chain-index entries; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "health/evidence-coverage.json"
-      "catalog-graph.json"
-      "data/json/<id>.json"
       "data/jsonld/<id>.json; data/jsonld/catalog.json"
-      "docs/.dashboard_filters.json"
-      "docs/{index,npra}.html (embedded manifest, health, filters, sections, and marker-owned public facts)"
       "URL drift and cadence audit"
       "docs/trust-snapshot-<date>.{md,json}"
       "docs/health-methodology.html; docs/mcp-reference.html; docs/datapulse-intro.html; docs/privacy.html"
@@ -352,29 +322,6 @@ run_step() (
       ;;
   esac
 )
-
-if [[ "$profile" == "release-build" ]]; then
-  # per-dataset-derivation: populate dataset surfaces before aggregate generators.
-  DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" python3 - <<'PY'
-import json
-import re
-import subprocess
-import sys
-from pathlib import Path
-
-manifest = json.loads(Path('datapulse.json').read_text(encoding='utf-8'))
-for dataset in manifest['datasets']:
-    dataset_id = dataset['id']
-    if not isinstance(dataset_id, str) or not re.fullmatch(r'[a-z0-9][a-z0-9_-]*', dataset_id):
-        raise ValueError(f'Invalid dataset id: {dataset_id!r}')
-    generator = Path('scripts') / f'gen_{dataset_id}.py'
-    if generator.is_file():
-        result = subprocess.run([sys.executable, str(generator)], check=False)
-        if result.returncode:
-            print(f'Per-dataset generator failed for {dataset_id}: {generator} (exit {result.returncode})', file=sys.stderr)
-            sys.exit(1)
-PY
-fi
 
 failed_steps=()
 failed_commands=()

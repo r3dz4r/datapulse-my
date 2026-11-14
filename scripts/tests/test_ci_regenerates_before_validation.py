@@ -16,6 +16,7 @@ JOB = "deterministic-safety-net"
 TEST_STEP = "Run repository-contract and MCP tests"
 INVARIANT_STEP = "Verify local release invariants"
 README_CHECK = "python3 scripts/gen_readme.py --check"
+ENTRY = ROOT / "scripts/derive-estate.sh"
 DERIVED_CLOCK_GENERATORS = ("gen_trends", "gen_drift", "gen_reconciliation")
 CHAIN = (
     "gen_health_trust_summary", "gen_quality_profile", "gen_trends", "gen_drift",
@@ -39,7 +40,7 @@ def _invoked(step: dict) -> list[str]:
 
 def _regeneration_index(steps: list[dict]) -> int | None:
     matches = [index for index, step in enumerate(steps)
-               if set(DERIVED_CLOCK_GENERATORS) <= set(_invoked(step))]
+               if step.get("name", "").startswith("Regenerate derived artefacts before validation")]
     return matches[0] if len(matches) == 1 else None
 
 
@@ -57,9 +58,13 @@ def _violations(workflow: dict) -> list[str]:
             problems.append(f"validation step {name!r} is missing")
         elif names.index(name) < index:
             problems.append(f"regeneration runs after {name!r}")
-    if _invoked(step) != list(CHAIN):
-        problems.append(f"generator chain is {_invoked(step)}, not {list(CHAIN)}")
-    if not (step.get("run") or "").lstrip().startswith("set -Eeuo pipefail"):
+    if step.get("run") != "bash scripts/derive-estate.sh":
+        problems.append("regeneration does not invoke the entry point")
+    script = ENTRY.read_text(encoding="utf-8")
+    if _invoked({"run": script}) != list(CHAIN):
+        problems.append("generator chain differs from the canonical order")
+    assert script.index("python3 scripts/gen_dashboard_filters.py") < script.index("python3 scripts/embed_dashboard_data.py") < script.index("python3 scripts/gen_readme.py")
+    if "set -Eeuo pipefail" not in script:
         problems.append("a failing generator would not fail the step")
     if step.get("continue-on-error"):
         problems.append("regeneration is allowed to fail")
@@ -80,7 +85,7 @@ def test_required_job_regenerates_before_it_validates() -> None:
 
 def test_regeneration_never_assumes_the_gitignored_raw_history() -> None:
     steps = _workflow()["jobs"][JOB]["steps"]
-    run = steps[_regeneration_index(steps)]["run"]
+    run = ENTRY.read_text(encoding="utf-8")
     for generator in ("gen_trends", "gen_drift"):
         line = next(line for line in run.splitlines() if f"scripts/{generator}.py" in line)
         assert "--history /dev/null" in line and "--daily health/history_daily.json" in line
@@ -109,15 +114,6 @@ def _move_after(target: str):
     return mutate
 
 
-def _drop(generator: str):
-    def mutate(workflow: dict) -> None:
-        steps = workflow["jobs"][JOB]["steps"]
-        step = steps[_regeneration_index(steps)]
-        step["run"] = "\n".join(line for line in step["run"].splitlines()
-                                if f"scripts/{generator}.py" not in line)
-    return mutate
-
-
 def _disable(workflow: dict) -> None:
     steps = workflow["jobs"][JOB]["steps"]
     steps[_regeneration_index(steps)]["if"] = "false"
@@ -125,9 +121,8 @@ def _disable(workflow: dict) -> None:
 
 @pytest.mark.parametrize("mutate", [
     _remove, _move_after(TEST_STEP), _move_after(INVARIANT_STEP),
-    _drop("gen_trends"), _drop("gen_drift"), _drop("gen_reconciliation"), _disable,
-], ids=["removed", "after-tests", "after-invariants", "no-trends", "no-drift",
-        "no-reconciliation", "disabled"])
+    _disable,
+], ids=["removed", "after-tests", "after-invariants", "disabled"])
 def test_the_guard_rejects_a_retired_or_reordered_step(mutate) -> None:
     workflow = copy.deepcopy(_workflow())
     mutate(workflow)

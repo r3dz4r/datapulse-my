@@ -36,6 +36,8 @@ GENERATORS = (
     "gen_ai_catalog.py",
     "gen_llms_summary.py",
     "gen_public_discovery.py",
+    "gen_public_summary.py",
+    "gen_changelog.py",
     "stamp_manifest_origin.py",
     "gen_rss.sh",
     "gen_catalog_snapshot.py",
@@ -185,6 +187,7 @@ def _stage_source(tmp_path: Path) -> Path:
     _write_json(source / "reconciliation_groups.json", {"schema": "datapulse/v1/reconciliation-groups", "groups": []})
 
     health = json.loads(HEALTH_FIXTURE.read_text(encoding="utf-8"))
+    health["_trust_summary"]["checked_at"] = health["checked_at"]
     for row in health["datasets"]:
         dataset_id = row["dataset_id"]
         row.update(
@@ -343,6 +346,7 @@ def _stage_source(tmp_path: Path) -> Path:
     _write_json(scripts / "probe-policy.json", {"datasets": {}})
     shutil.copytree(ROOT / "scripts/templates", scripts / "templates")
     shutil.copy2(ROOT / "scripts/generate.sh", scripts / "generate.sh")
+    shutil.copy2(ROOT / "scripts/derive-estate.sh", scripts / "derive-estate.sh")
     shutil.copy2(ROOT / "scripts/public_surface_generation.py", scripts / "public_surface_generation.py")
     shutil.copy2(ROOT / "scripts/artifact_modes.py", scripts / "artifact_modes.py")
     for generator in GENERATORS:
@@ -491,7 +495,9 @@ def test_runtime_ownership_listing_matches_release_profile_steps() -> None:
         listed_steps = _run_listing("--list", profile)
         assert listed_steps.returncode == 0, listed_steps.stderr
         for record in expected:
-            assert Path(record["generator"]).name in listed_steps.stdout
+            assert (Path(record["generator"]).name in listed_steps.stdout
+                    or (profile == "release-build" and Path(record["generator"]).name
+                        in (ROOT / "scripts/derive-estate.sh").read_text()))
 
 
 def test_clean_fixture_stages_attestation_binding_helper(tmp_path: Path) -> None:
