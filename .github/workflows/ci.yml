@@ -233,10 +233,6 @@ jobs:
           fi
           python3 scripts/gen_readme.py --check
 
-      - name: Generate README from canonical inputs
-        if: env.FULL_VERIFICATION == 'true'
-        run: python3 scripts/gen_readme.py
-
       # Trade, stated plainly: from this step on, the job validates generator self-consistency —
       # that this checkout's sources, run through its own generators, yield artefacts every later
       # test and invariant accepts. It no longer proves the committed copies are current; committed

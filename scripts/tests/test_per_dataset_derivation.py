@@ -70,6 +70,22 @@ def test_call_sites_share_discovery_before_aggregates() -> None:
         assert source.index("python3 - <<'PY'", source.index("per-dataset-derivation")) < source.index(aggregate)
 
 
+def test_ci_readme_generation_and_validators_follow_derivation() -> None:
+    ci = (ROOT / ".github/workflows/ci.yml").read_text()
+    lines = ci.splitlines()
+    marker = next(i for i, line in enumerate(lines) if "per-dataset-derivation" in line)
+    # The --check precheck exits early when README is unchanged, before comparing derived prose.
+    readme_runs = [i for i, line in enumerate(lines) if "python3 scripts/gen_readme.py" in line and "--check" not in line]
+    assert readme_runs
+    assert all(i > marker for i in readme_runs)
+    step = ci.split("- name: Regenerate derived artefacts before validation", 1)[1].split("\n      - name:", 1)[0]
+    assert "if: env.FULL_VERIFICATION == 'true'" in step
+    assert "python3 scripts/gen_readme.py\n" in step
+    for validator in ("verify_doc_claims.py", "verify_distribution_sync.py"):
+        positions = [i for i, line in enumerate(lines) if validator in line]
+        assert positions and all(i > marker for i in positions)
+
+
 def test_release_build_stops_before_aggregates_on_dataset_failure(repo: Path) -> None:
     manifest(repo, "broken")
     shutil.copy(ROOT / "scripts/generate.sh", repo / "scripts/generate.sh")
