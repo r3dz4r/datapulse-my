@@ -2147,13 +2147,55 @@ def _bounded_verifier_output(completed: subprocess.CompletedProcess[str]) -> str
     return output[:4096]
 
 
+_COSIGN_UNAVAILABLE_OUTPUT = "cosign verifier is unavailable; verification fails closed"
+RECEIPT_COVERAGE_PATH = "data/receipts-manifest.json"
+RECEIPT_COVERAGE_SCHEMA = "datapulse/v1/receipt-coverage"
+# Machine-readable verify_dataset outcomes. ``signed`` is true only for VERIFIED.
+RECEIPT_VERIFIED = "verified"
+RECEIPT_VERIFICATION_FAILED = "verification_failed"
+RECEIPT_NOT_PUBLISHED = "receipt_not_published"
+RECEIPT_COVERAGE_UNAVAILABLE = "coverage_manifest_unavailable"
+RECEIPT_VERIFIER_UNAVAILABLE = "verifier_unavailable"
+
+
+async def _load_receipt_coverage() -> dict[str, Any] | None:
+    """Return the validated per-dataset receipt coverage manifest, or ``None``.
+
+    The manifest is read like every other published artefact (colocated copy
+    first, then the published site). Anything unreadable or malformed counts
+    as unavailable rather than as a statement about any dataset.
+    """
+    try:
+        document = await _fetch_json(RECEIPT_COVERAGE_PATH)
+    except (httpx.HTTPError, json.JSONDecodeError, ValueError, OSError, _ToolBudgetExceeded):
+        return None
+    if not isinstance(document, dict) or document.get("schema") != RECEIPT_COVERAGE_SCHEMA:
+        return None
+    signed = document.get("signed")
+    unsigned = document.get("unsigned")
+    if not isinstance(signed, list) or not all(isinstance(item, str) for item in signed):
+        return None
+    if not isinstance(unsigned, list) or not all(
+        isinstance(item, dict) and isinstance(item.get("id"), str) and isinstance(item.get("reason"), str)
+        for item in unsigned
+    ):
+        return None
+    generated_at = document.get("generated_at")
+    return {
+        "generated_at": generated_at if isinstance(generated_at, str) else None,
+        "signed": frozenset(signed),
+        # Reasons are a closed vocabulary upstream; bound them anyway.
+        "unsigned": {item["id"]: item["reason"][:64] for item in unsigned},
+    }
+
+
 def _verify_sigstore_receipt(
     *, evidence: dict[str, Any], bundle: bytes
 ) -> tuple[bool, str]:
     """Run the Phase 3 Cosign verification flow in an isolated temporary directory."""
     cosign = shutil.which("cosign")
     if cosign is None:
-        return False, "cosign verifier is unavailable; verification fails closed"
+        return False, _COSIGN_UNAVAILABLE_OUTPUT
     with tempfile.TemporaryDirectory(prefix="datapulse-receipt-") as directory:
         root = Path(directory)
         evidence_path = root / "receipt.evidence.json"
@@ -2219,47 +2261,126 @@ async def verify_dataset(
     canonical_evidence = canonical_evidence_row(health_row, entry)
     receipt_digest = _published_receipt_digest(health_row, entry)
     statement = generate_per_dataset_statement(dataset_id, canonical_evidence)
-    bundle_ref = f"{DATA_BASE}/data/{dataset_id}.receipt.sigstore.json"
-    statement_ref = f"{DATA_BASE}/data/{dataset_id}.receipt.statement.json"
-    provenance_artifact_url = f"{DATA_BASE}/data/{dataset_id}.receipt.evidence.json"
+    bundle_ref: str | None = f"{DATA_BASE}/data/{dataset_id}.receipt.sigstore.json"
+    statement_ref: str | None = f"{DATA_BASE}/data/{dataset_id}.receipt.statement.json"
+    provenance_artifact_url: str | None = f"{DATA_BASE}/data/{dataset_id}.receipt.evidence.json"
     verifier_output = ""
     signed = False
-    try:
-        bundle = await _fetch_bytes(f"data/{dataset_id}.receipt.sigstore.json")
-        decoded_bundle = json.loads(bundle)
-        if not isinstance(decoded_bundle, dict):
-            raise BundleError("bundle must be a JSON object")
-        if _decode_payload(decoded_bundle) != receipt_statement_bytes(statement):
-            raise BundleError("bundle DSSE payload differs from canonical per-dataset statement")
-        signed, verifier_output = await asyncio.to_thread(
-            _verify_sigstore_receipt, evidence=canonical_evidence, bundle=bundle
-        )
-    except _ToolBudgetExceeded:
-        verifier_output = (
-            "receipt verification failed closed: unverified within the "
-            f"{TOOL_HANDLER_BUDGET_SECONDS:g}s per-tool budget"
-        )
-    except httpx.TimeoutException as exc:
-        verifier_output = (
-            "receipt verification failed closed: unverified within the "
-            f"{UPSTREAM_READ_TIMEOUT_SECONDS:g}s read per-call budget ({exc.__class__.__name__})"
-        )
-    except (httpx.HTTPError, json.JSONDecodeError, BundleError, OSError, subprocess.SubprocessError) as exc:
-        verifier_output = f"receipt verification failed closed: {exc.__class__.__name__}"
 
-    return {
-        "dataset_id": dataset_id,
-        "dataset": entry,
-        "health": health_row,
-        "evidence": _project_evidence(health_row, EVIDENCE_FIELDS),
-        "receipt_digest": receipt_digest,
-        "signed": signed,
-        "verifier_output": verifier_output[:4096] if include_proof_steps else None,
-        "bundle_ref": bundle_ref,
-        "statement_ref": statement_ref,
-        "certificate_identity": SIGSTORE_CERTIFICATE_IDENTITY,
-        "certificate_oidc_issuer": SIGSTORE_CERTIFICATE_OIDC_ISSUER,
-        "verification_hint": (
+    # The coverage manifest says which receipts this publication carries, so an
+    # absent receipt is reported as absent instead of as a failed signature.
+    coverage = await _load_receipt_coverage()
+    if coverage is None:
+        coverage_view: dict[str, Any] = {"state": "unavailable", "generated_at": None, "unsigned_reason": None}
+    elif dataset_id in coverage["signed"]:
+        coverage_view = {"state": "listed_signed", "generated_at": coverage["generated_at"], "unsigned_reason": None}
+    else:
+        coverage_view = {
+            "state": "listed_unsigned" if dataset_id in coverage["unsigned"] else "not_listed",
+            "generated_at": coverage["generated_at"],
+            "unsigned_reason": coverage["unsigned"].get(dataset_id),
+        }
+    coverage_view["manifest_ref"] = f"{DATA_BASE}/{RECEIPT_COVERAGE_PATH}"
+
+    if coverage is not None and dataset_id not in coverage["signed"]:
+        unsigned_reason = coverage["unsigned"].get(dataset_id)
+        code = RECEIPT_NOT_PUBLISHED
+        message = (
+            "No signed receipt is published for this dataset: the coverage manifest records it "
+            f"as unsigned ({unsigned_reason}). This reflects the publisher's signing run, "
+            "not a failed signature, and says nothing about the data itself."
+            if unsigned_reason
+            else "No signed receipt is published for this dataset: the coverage manifest does not list it."
+        )
+        verifier_output = message
+        bundle_ref = statement_ref = provenance_artifact_url = None
+    else:
+        code, message = RECEIPT_VERIFICATION_FAILED, ""
+        bundle: bytes | None = None
+        try:
+            bundle = await _fetch_bytes(f"data/{dataset_id}.receipt.sigstore.json")
+        except _ToolBudgetExceeded:
+            verifier_output = (
+                "receipt verification failed closed: unverified within the "
+                f"{TOOL_HANDLER_BUDGET_SECONDS:g}s per-tool budget"
+            )
+            code = RECEIPT_VERIFIER_UNAVAILABLE
+            message = "The receipt could not be checked within the per-tool time budget; verification fails closed."
+        except (httpx.HTTPError, OSError) as exc:
+            if isinstance(exc, httpx.TimeoutException):
+                verifier_output = (
+                    "receipt verification failed closed: unverified within the "
+                    f"{UPSTREAM_READ_TIMEOUT_SECONDS:g}s read per-call budget ({exc.__class__.__name__})"
+                )
+            else:
+                verifier_output = f"receipt verification failed closed: {exc.__class__.__name__}"
+            if coverage is None:
+                code = RECEIPT_COVERAGE_UNAVAILABLE
+                message = (
+                    "The receipt coverage manifest is unavailable and the receipt bundle could not be "
+                    f"fetched ({exc.__class__.__name__}); whether a receipt is published for this dataset "
+                    "is unknown, so verification fails closed."
+                )
+            else:
+                message = (
+                    "The coverage manifest lists a signed receipt for this dataset but its bundle could "
+                    f"not be fetched ({exc.__class__.__name__}); verification fails closed."
+                )
+        if bundle is not None:
+            try:
+                decoded_bundle = json.loads(bundle)
+                if not isinstance(decoded_bundle, dict):
+                    raise BundleError("bundle must be a JSON object")
+                if _decode_payload(decoded_bundle) != receipt_statement_bytes(statement):
+                    raise BundleError("bundle DSSE payload differs from canonical per-dataset statement")
+            except (json.JSONDecodeError, UnicodeDecodeError, BundleError) as exc:
+                verifier_output = f"receipt verification failed closed: {exc.__class__.__name__}"
+                message = (
+                    "The published receipt bundle does not bind the canonical per-dataset statement "
+                    f"({exc.__class__.__name__}); it is not trusted."
+                )
+            else:
+                try:
+                    signed, verifier_output = await asyncio.to_thread(
+                        _verify_sigstore_receipt, evidence=canonical_evidence, bundle=bundle
+                    )
+                except _ToolBudgetExceeded:
+                    verifier_output = (
+                        "receipt verification failed closed: unverified within the "
+                        f"{TOOL_HANDLER_BUDGET_SECONDS:g}s per-tool budget"
+                    )
+                    code = RECEIPT_VERIFIER_UNAVAILABLE
+                    message = "The receipt could not be checked within the per-tool time budget; verification fails closed."
+                except (OSError, subprocess.SubprocessError) as exc:
+                    verifier_output = f"receipt verification failed closed: {exc.__class__.__name__}"
+                    code = RECEIPT_VERIFIER_UNAVAILABLE
+                    message = (
+                        f"The signature verifier could not complete ({exc.__class__.__name__}); "
+                        "verification fails closed and says nothing about the receipt itself."
+                    )
+                else:
+                    signed = signed is True
+                    if signed:
+                        code = RECEIPT_VERIFIED
+                        message = (
+                            "The published receipt binds the canonical per-dataset statement and its "
+                            "Sigstore signature verified for the expected identity and issuer."
+                        )
+                    elif verifier_output == _COSIGN_UNAVAILABLE_OUTPUT:
+                        code = RECEIPT_VERIFIER_UNAVAILABLE
+                        message = (
+                            "The receipt is published but this server has no cosign verifier; "
+                            "verification fails closed and says nothing about the receipt itself."
+                        )
+                    else:
+                        message = (
+                            "The published receipt's Sigstore signature did not verify for the expected "
+                            "identity and issuer; it is not trusted."
+                        )
+
+    verification_hint = None
+    if bundle_ref is not None:
+        verification_hint = (
             "(\n"
             "  tmpdir=$(mktemp -d) || exit 1\n"
             "  trap 'rm -rf \"$tmpdir\"' EXIT\n"
@@ -2272,7 +2393,25 @@ async def verify_dataset(
             f"--certificate-oidc-issuer {SIGSTORE_CERTIFICATE_OIDC_ISSUER} "
             f"--type {PER_DATASET_RECEIPT_PREDICATE_TYPE} \"$tmpdir/receipt.evidence.json\"\n"
             ")"
-        ),
+        )
+
+    return {
+        "dataset_id": dataset_id,
+        "dataset": entry,
+        "health": health_row,
+        "evidence": _project_evidence(health_row, EVIDENCE_FIELDS),
+        "receipt_digest": receipt_digest,
+        "signed": signed,
+        # Always present, independent of include_proof_steps, which governs
+        # only the verbose verifier_output diagnostics below.
+        "reason": {"code": code, "message": message},
+        "receipt_coverage": coverage_view,
+        "verifier_output": verifier_output[:4096] if include_proof_steps else None,
+        "bundle_ref": bundle_ref,
+        "statement_ref": statement_ref,
+        "certificate_identity": SIGSTORE_CERTIFICATE_IDENTITY,
+        "certificate_oidc_issuer": SIGSTORE_CERTIFICATE_OIDC_ISSUER,
+        "verification_hint": verification_hint,
         "provenance_artifact_url": provenance_artifact_url,
     }
 
