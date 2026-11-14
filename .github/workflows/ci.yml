@@ -215,7 +215,26 @@ jobs:
 
       - name: Verify README matches its template before regeneration
         if: env.FULL_VERIFICATION == 'true'
-        run: python3 scripts/gen_readme.py --check
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -Eeuo pipefail
+          if [[ "${GITHUB_EVENT_NAME}" == "push" ]]; then
+            diff_args=("${BEFORE_SHA}" HEAD)
+          else
+            BASE_SHA=$(git rev-parse --verify 'HEAD^1^{commit}') || {
+              echo "::error::Cannot resolve the README precheck base (HEAD^1)" >&2
+              exit 1
+            }
+            diff_args=("${BASE_SHA}" HEAD)
+          fi
+          changed_paths=$(git diff --name-only "${diff_args[@]}")
+          if ! printf '%s\n' "$changed_paths" | grep -Fxq README.md; then
+            # readme-precheck-source-only
+            echo "README precheck skipped because this run does not modify README"
+            exit 0
+          fi
+          python3 scripts/gen_readme.py --check
 
       - name: Generate README from canonical inputs
         if: env.FULL_VERIFICATION == 'true'
