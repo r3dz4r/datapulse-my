@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=lfs_qtr_state","title": "dosm"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-13T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-15T04:46:27Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:37:31Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/lfs_qtr_state.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-11-16T00:00:00Z"
+stale_after: "2026-08-17T00:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Quarterly Principal Labour Force Statistics by State is published by dosm and tr
 
 - `column_count`: `8`
 - `first_row_hash`: `shape-v1:c9081c116548d453e19047f3343a4433889848d3ff0a8cb040ace3f22d700f34`
-- `record_count`: `624`
+- `record_count`: `608`
 
 # Quirks
 
