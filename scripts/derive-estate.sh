@@ -1,8 +1,20 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+# Release builds enumerate aggregates directly and delegate only discovery.
+# The default invocation retains the standalone CI derivation.
+derive_mode="${1:-}"
+case "$derive_mode" in
+  ""|--per-dataset-only|--list-per-dataset) ;;
+  *) printf 'derive-estate.sh: unknown option: %s\n' "$derive_mode" >&2; exit 2 ;;
+esac
+export DATAPULSE_LIST_DERIVATION=0
+if [[ "$derive_mode" == "--list-per-dataset" ]]; then
+  export DATAPULSE_LIST_DERIVATION=1
+fi
 # per-dataset-derivation: populate dataset surfaces before aggregate generators.
 python3 - <<'PY'
 import json
+import os
 import re
 import subprocess
 import sys
@@ -15,11 +27,17 @@ for dataset in manifest['datasets']:
         raise ValueError(f'Invalid dataset id: {dataset_id!r}')
     generator = Path('scripts') / f'gen_{dataset_id}.py'
     if generator.is_file():
+        if os.environ.get('DATAPULSE_LIST_DERIVATION') == '1':
+            print(f'python3 {generator}')
+            continue
         result = subprocess.run([sys.executable, str(generator)], check=False)
         if result.returncode:
             print(f'Per-dataset generator failed for {dataset_id}: {generator} (exit {result.returncode})', file=sys.stderr)
             sys.exit(1)
 PY
+if [[ -n "$derive_mode" ]]; then
+  exit 0
+fi
 python3 scripts/gen_health_trust_summary.py
 python3 scripts/gen_quality_profile.py
 checked_at=$(python3 -c 'import json; print(json.load(open("health/latest.json"))["checked_at"])')
