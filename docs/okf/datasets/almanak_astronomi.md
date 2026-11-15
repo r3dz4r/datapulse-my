@@ -8,7 +8,7 @@ sources:
   - {"id": "met","resource": "https://api.data.gov.my/data-catalogue?id=almanak_astronomi","title": "Malaysian Meteorological Department"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-12T09:26:20Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-13T09:46:35Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Malaysian Space Agency"
