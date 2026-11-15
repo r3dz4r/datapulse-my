@@ -8,27 +8,27 @@ sources:
   - {"id": "bnm","resource": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1700","title": "BNM"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-13T05:05:51Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-15T06:05:57Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Bank Negara Malaysia"
-datapulse:real_status: "fresh"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/exchangerates_daily_1700.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-11-13T00:00:00Z"
+stale_after: "2026-11-16T00:00:00Z"
 datapulse:stale_after_basis: "weekday_cadence"
 ---
 
 # Summary
 
-BNM Daily Exchange Rates (1700) is published by BNM and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+BNM Daily Exchange Rates (1700) is published by BNM and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
 - `column_count`: `29`
-- `first_row_hash`: `shape-v1:ae037e077b4a2042bcd6c23f51572ffc68f4d4269db02aff5c1e51e649a8e5bc`
-- `record_count`: `17346`
+- `first_row_hash`: `shape-v1:f55dd70c5f7e6baf0e5c309f7a1d3748189b8bede932a71850330a6d42c2ddc8`
+- `record_count`: `17349`
 
 # Quirks
 
