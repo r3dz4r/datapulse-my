@@ -241,7 +241,8 @@ if [[ "$list_owned_outputs" == true ]]; then
 fi
 
 if [[ "$list_runtime_ownership" == true ]]; then
-  python3 - "$profile" <<'PY'
+  DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
+    env "${environment[@]}" python3 - "$profile" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -297,7 +298,8 @@ if [[ "$list_only" == true ]]; then
     command_for "${generators[$index]}"
     printf '\n   owns: %s\n' "${outputs[$index]}"
     if [[ "${generators[$index]}" == "derive-estate.sh" ]]; then
-      preparation=$(bash scripts/derive-estate.sh --list-per-dataset)
+      preparation=$(DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
+        env "${environment[@]}" bash scripts/derive-estate.sh --list-per-dataset)
       while IFS= read -r command; do
         printf '   prepares: %s\n' "$command"
       done <<< "$preparation"
@@ -319,7 +321,8 @@ run_step() (
       if [[ "$profile" == "release-build" ]]; then
         history_args=(--history /dev/null --daily health/history_daily.json)
         if [[ "$generator" == "gen_trends.py" ]]; then
-          checked_at=$(python3 -c 'import json; print(json.load(open("health/latest.json"))["checked_at"])')
+          checked_at=$(DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
+            env "${environment[@]}" python3 -c 'import json; print(json.load(open("health/latest.json"))["checked_at"])')
           history_args+=(--now "$checked_at")
         fi
       fi
