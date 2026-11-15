@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/labour/lfs_qtr.csv","title": "DOSM Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:37:31Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-15T04:46:27Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_lfs_qtr.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-08-17T00:00:00Z"
+stale_after: "2026-11-16T00:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ OpenDOSM Quarterly Labour Force Statistics is published by DOSM Malaysia and tra
 
 - `column_count`: `8`
 - `first_row_hash`: `shape-v1:af7d2905be69979a98e3e54a08a9c1f0e899c3d0c6e9eef396fe5a2b06fb36d2`
-- `record_count`: `66`
+- `record_count`: `67`
 
 # Quirks
 
