@@ -1,12 +1,12 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "lfs_year",
-  "status": "stale",
-  "last_checked": "2026-10-05T06:46:30Z",
-  "freshness_days": 1401,
+  "status": "aging",
+  "last_checked": "2026-11-05T03:33:57Z",
+  "freshness_days": 683,
   "next_expected_update": null,
   "refresh_frequency": "annual",
-  "record_count": 40,
+  "record_count": 42,
   "date_range": null,
   "fields": [
     {
@@ -51,12 +51,12 @@
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Probe measured 40 record(s)"
+      "method": "Probe measured 42 record(s)"
     },
     {
       "name": "freshness",
-      "status": "fail",
-      "method": "Health snapshot classifies the dataset as stale"
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as aging"
     },
     {
       "name": "schema_stable",

@@ -1,29 +1,29 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "drug_addicts_drugtype",
-  "status": "stale",
-  "last_checked": "2026-10-05T06:46:30Z",
-  "freshness_days": 1401,
+  "status": "aging",
+  "last_checked": "2026-11-05T08:19:42Z",
+  "freshness_days": 683,
   "next_expected_update": null,
   "refresh_frequency": "annual",
-  "record_count": 93,
+  "record_count": 709,
   "date_range": null,
   "fields": [
     {
-      "name": "date",
+      "name": "negeri",
+      "type": "string"
+    },
+    {
+      "name": "tarikh",
       "type": "date"
     },
     {
-      "name": "drugs",
-      "type": "string"
-    },
-    {
-      "name": "state",
-      "type": "string"
-    },
-    {
-      "name": "addicts",
+      "name": "bilangan",
       "type": "integer"
+    },
+    {
+      "name": "kategori dadah",
+      "type": "string"
     }
   ],
   "checks": [
@@ -35,17 +35,17 @@
     {
       "name": "row_count",
       "status": "pass",
-      "method": "Probe measured 93 record(s)"
+      "method": "Probe measured 709 record(s)"
     },
     {
       "name": "freshness",
-      "status": "fail",
-      "method": "Health snapshot classifies the dataset as stale"
+      "status": "warn",
+      "method": "Health snapshot classifies the dataset as aging"
     },
     {
       "name": "schema_stable",
       "status": "pass",
-      "method": "Probe observed 11 column(s) with no content-shape change"
+      "method": "Probe observed 4 column(s) with no content-shape change"
     }
   ],
   "known_quirks": [
