@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=lfs_qtr_tru_age","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-08T04:37:31Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-15T04:46:27Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_lfs_qtr_tru_age.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 350
-stale_after: "2026-08-17T00:00:00Z"
+stale_after: "2026-11-16T00:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Quarterly Time-Related Underemployment by Age is published by Department of Stat
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:a4c7abe804db35dda42bccfaf70537073136bf4f312ab01a24d2514413fcfc88`
-- `record_count`: `380`
+- `record_count`: `390`
 
 # Quirks
 
