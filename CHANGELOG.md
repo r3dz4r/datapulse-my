@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.66.0](https://github.com/r3dz4r/datapulse-my/compare/v3.65.0...v3.66.0) (2026-11-16)
+
+
+### Features
+
+* **data:** register kpdn_direct_selling_licences as the 448th dataset ([#3384](https://github.com/r3dz4r/datapulse-my/issues/3384)) ([7072fc1](https://github.com/r3dz4r/datapulse-my/commit/7072fc104bb2dd8c2fc48b23b194ab7843e7703c))
+
 ## [3.65.0](https://github.com/r3dz4r/datapulse-my/compare/v3.64.4...v3.65.0) (2026-11-14)
 
 
