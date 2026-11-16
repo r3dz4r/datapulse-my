@@ -116,11 +116,17 @@ log() {
 }
 
 telemetry() {
-  local stage="$1" duration_ms="$2" status="$3" extra="${4-}"
+  STAGE_TIMING "$@"
+}
+
+# Stage callers measure their own boundaries, including failures and sub-stages.
+# Keep those measurements rather than timing the telemetry writer itself.
+STAGE_TIMING() {
+  local stage="$1" elapsed_ms="$2" status="$3" extra="${4-}"
   [ -z "$extra" ] && extra='{}'
   if ! DATAPULSE_TELEMETRY_FILE="$telemetry_file" DATAPULSE_CYCLE="$cycle" \
     ${PYTHON_BIN} "$run_dir/scripts/check_heartbeat.py" append \
-      --stage "$stage" --duration "$duration_ms" --status "$status" \
+      --stage "$stage" --duration "$elapsed_ms" --status "$status" \
       --extra-json "$extra"; then
     log "telemetry write failed for stage $stage"
   fi
@@ -2604,8 +2610,60 @@ run_pipeline_receipt() {
       --source-commit "${source_snapshot:-$snapshot}" \
       --health-commit "$health_commit"; then
     log "pipeline receipt written to $receipt_file"
+    # The receipt historically calls the measured field duration_ms. Preserve it
+    # for consumers while exposing elapsed_ms without changing the schema ID.
+    if ! "$PYTHON_BIN" - "$run_dir/scripts" "$receipt_file" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+sys.path.insert(0, sys.argv[1])
+from artifact_modes import replace_file
+
+path = Path(sys.argv[2])
+receipt = json.loads(path.read_text(encoding="utf-8"))
+for stage in receipt["stages"].values():
+    stage["elapsed_ms"] = stage["duration_ms"]
+replace_file(path, (json.dumps(receipt, indent=2, sort_keys=True) + "\n").encode("utf-8"))
+PY
+    then
+      log "pipeline stage timing aliases failed; retaining measured duration_ms"
+    fi
   else
     log "pipeline receipt failed; continuing health cycle"
+  fi
+  return 0
+}
+
+log_stage_timing_summary() {
+  local receipt_file timing_summary
+  [[ -n "${cycle_started:-}" ]] || return 0
+  receipt_file="${DATAPULSE_RECEIPT_FILE:-$repo/var/log/pipeline-latest.json}"
+  # Use the cycle start carried through the spool, so handoff waiting and final
+  # reconciliation count too. The receipt's timestamp span excludes both ends.
+  if timing_summary="$("$PYTHON_BIN" - "$receipt_file" "$cycle" \
+      "$(( $(milliseconds) - cycle_started ))" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+receipt = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+if receipt["cycle"] != sys.argv[2]:
+    raise ValueError("receipt does not describe the completed cycle")
+# publish.duration_ms is cumulative publication lag, not a stage measurement.
+# Parent stages and their sub-stages overlap; these durations are never summed.
+stages = sorted(
+    ((name, stage["duration_ms"]) for name, stage in receipt["stages"].items()
+     if name != "publish" and stage["status"] != "skipped"),
+    key=lambda item: (-item[1], item[0]),
+)[:3]
+slowest = ",".join(f"{name}:{elapsed}ms" for name, elapsed in stages) or "none"
+print(f"cycle timing cycle={sys.argv[2]} elapsed_ms={sys.argv[3]} slowest3={slowest}")
+PY
+  )"; then
+    log "$timing_summary"
+  else
+    log "cycle timing cycle=$cycle elapsed_ms=$(( $(milliseconds) - cycle_started )) slowest3=unavailable"
   fi
   return 0
 }
@@ -3512,6 +3570,7 @@ publisher_post_publish() {
   fi
   spool_control retire
   run_dir=""
+  log_stage_timing_summary
   log "publisher completed remote push cycle=$cycle; merge and served publication are separate"
 }
 
