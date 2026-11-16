@@ -70,6 +70,17 @@ Record:
 
 Prefer a pinned release, snapshot, digest, or evidence object over an unqualified “latest” URL.
 
+## Workflow 7 — Verify the served publication
+
+**Intent:** Pair the count of datasets served with the accepted revision behind those bytes.
+
+1. Read [publication-identity.json](https://www.data-pulse.my/publication-identity.json), the site's own statement of which accepted revision is published.
+2. Compare `dataset_count` (the count actually served) with the manifest count in `datapulse.json`; a lower served count makes a publication behind the repository visible.
+3. Read `served_lag_status` and `served_lag_seconds` for the distance between the served observation and the current main health clock; `within_append_cadence` is the normal state between daily appends.
+4. Record `accepted_chain_head`, which names the accepted revision the served bytes came from, to tie the answer to its supporting evidence.
+
+**Stop condition:** Publication identity or manifest count cannot be read, or the served count and manifest count differ.
+
 ## Workflow 6 — Refuse to overclaim
 
 **Intent:** Handle insufficient evidence safely.
