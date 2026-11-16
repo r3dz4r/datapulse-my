@@ -2,43 +2,33 @@
   "schema": "datapulse/v1/attestation-binding-envelope",
   "payload": {
     "schema": "datapulse/v1/attestation-binding",
-    "date": "2026-11-15",
-    "published_at": "2026-11-15T10:52:30Z",
+    "date": "2026-11-16",
+    "published_at": "2026-11-16T03:23:37Z",
     "freshness": {
       "max_age_seconds": 129600
     },
     "health": {
       "artifact_ref": "health/latest.json",
-      "artifact_sha256": "65a6007a6beff9c97ca249d5a004b82ba248e4fd9dbcf1c8da37e35234e0a1a5",
-      "dataset_count": 447,
-      "dataset_ids_sha256": "971d03e9fe309649dc83c048328ab83215eaf7c12277bfe9522ba48de53f606a",
-      "observed_at": "2026-11-15T09:06:00Z"
+      "artifact_sha256": "fc3bf2729192dd80e7a755462066280d3d72be420dcac8b4088b63f958d04fb8",
+      "dataset_count": 448,
+      "dataset_ids_sha256": "38bc29f3473d471dfab1e25fd6516dc36baf29a7cfa303e89a111e7b898fd517",
+      "observed_at": "2026-11-16T00:25:52Z"
     },
     "ed25519": {
-      "chain_head_ref": "attestations/2026-11-15/revisions/c8d96e2ccc681f276b199f89be84c4a2170c09a6e434691b8c3f9d4ca6e382db/chain_head.json",
-      "chain_head": "c8d96e2ccc681f276b199f89be84c4a2170c09a6e434691b8c3f9d4ca6e382db",
+      "chain_head_ref": "attestations/2026-11-16/revisions/bb228dfb3457390e553a34367dfec59b983e250d591fa7283ab356bae77bbb33/chain_head.json",
+      "chain_head": "bb228dfb3457390e553a34367dfec59b983e250d591fa7283ab356bae77bbb33",
       "key_id": "ed25519-a829715828ba0f88",
       "key_status": "active"
-    },
-    "correction": {
-      "schema": "datapulse/v1/attestation-correction",
-      "revision_id": "f19ac45e26097e64d14dfe954bd3b5690625064b714f39a52d3977a70fc549eb",
-      "reason": "health artifact bytes changed",
-      "original_chain_head": "d8b01fd28eae00203cd354f056e4b41bd2d1340b7167a3cc1c222b65ae5eb3f1",
-      "supersedes_chain_head": "d8b01fd28eae00203cd354f056e4b41bd2d1340b7167a3cc1c222b65ae5eb3f1",
-      "previous_health_sha256": "ecd2a237679b38b746d4431eeb564d6d363ffee1086d62d378a3deb374dec938",
-      "health_sha256": "65a6007a6beff9c97ca249d5a004b82ba248e4fd9dbcf1c8da37e35234e0a1a5",
-      "health_snapshot_ref": "attestations/2026-11-15/revisions/f19ac45e26097e64d14dfe954bd3b5690625064b714f39a52d3977a70fc549eb/health.json.gz"
     }
   },
-  "signature_base64": "2w2uCDXsymFcWlITnLpQb1XPLSpkC2eU8Ja4/F2aCW15Nwu4sHp8HSpTWqCrRkuqfXSv8eUOao1aEsP+ubUIAw==",
+  "signature_base64": "q45sgPgFIR1hbIfM/oBuS96+o3dR19dtWICxQdOo+EYGV/zaM1TOcAwRYNlAiJNSFp9caeWtnVYuKl5a35c6CQ==",
   "claims": {
     "artifact_signed": true,
     "rekor_witnessed": true,
     "source_truth_verified": false
   },
   "rekor": {
-    "reference_ref": "attestations/rekor/2026-11-15/reference.65ac0e26b5be33348e05cbc688905a7fdc48c0760c624f8cfa7a5712127ce5e4.json",
-    "bundle_ref": "attestations/rekor/2026-11-15/health.65ac0e26b5be33348e05cbc688905a7fdc48c0760c624f8cfa7a5712127ce5e4.sigstore.bundle.json"
+    "reference_ref": "attestations/rekor/2026-11-16/reference.84cf6d7994091cf213d5d421eaa22a1031798e7658bf21bd8f4c7dc35fa93b7f.json",
+    "bundle_ref": "attestations/rekor/2026-11-16/health.84cf6d7994091cf213d5d421eaa22a1031798e7658bf21bd8f4c7dc35fa93b7f.sigstore.bundle.json"
   }
 }
