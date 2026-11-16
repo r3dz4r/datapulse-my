@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.66.2](https://github.com/r3dz4r/datapulse-my/compare/v3.66.1...v3.66.2) (2026-11-16)
+
+
+### Bug Fixes
+
+* **pipeline:** expose stage timings and cycle duration ([#3527](https://github.com/r3dz4r/datapulse-my/issues/3527)) ([c1da1f3](https://github.com/r3dz4r/datapulse-my/commit/c1da1f3d3b5ccb6c993e06848b969be03018fb1f))
+* **pipeline:** prevent stale OKF bundle replay ([#3526](https://github.com/r3dz4r/datapulse-my/issues/3526)) ([efcdf13](https://github.com/r3dz4r/datapulse-my/commit/efcdf138a73b91edbe6fae0643bd29ed935723e6))
+
 ## [3.66.1](https://github.com/r3dz4r/datapulse-my/compare/v3.66.0...v3.66.1) (2026-11-16)
 
 
