@@ -12,7 +12,7 @@ verified:
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Source: Bank Negara Malaysia"
-datapulse:real_status: "fresh"
+datapulse:real_status: "aging"
 datapulse:health_report: "/data/exchangerates.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 1755
@@ -22,7 +22,7 @@ datapulse:stale_after_basis: "cadence"
 
 # Summary
 
-Monthly Exchange Rates is published by Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `fresh`.
+Monthly Exchange Rates is published by Bank Negara Malaysia and tracked by DataPulse. The latest published probe classifies it as `aging`.
 
 # Schema
 
