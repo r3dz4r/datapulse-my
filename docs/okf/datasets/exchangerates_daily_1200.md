@@ -8,27 +8,27 @@ sources:
   - {"id": "bnm","resource": "https://api.data.gov.my/data-catalogue?id=exchangerates_daily_1200","title": "BNM"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-15T06:05:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-16T05:01:01Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Bank Negara Malaysia"
-datapulse:real_status: "aging"
+datapulse:real_status: "degraded"
 datapulse:health_report: "/data/exchangerates_daily_1200.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-11-16T00:00:00Z"
+stale_after: "2026-11-17T00:00:00Z"
 datapulse:stale_after_basis: "weekday_cadence"
 ---
 
 # Summary
 
-BNM Daily Exchange Rates (1200) is published by BNM and tracked by DataPulse. The latest published probe classifies it as `aging`.
+BNM Daily Exchange Rates (1200) is published by BNM and tracked by DataPulse. The latest published probe classifies it as `degraded`.
 
 # Schema
 
 - `column_count`: `29`
-- `first_row_hash`: `shape-v1:cb3717f543cc453743d475507a7ee68054277963bde60e4a8f59ee2e31dba576`
-- `record_count`: `18880`
+- `first_row_hash`: `shape-v1:13f660c4f6f9f45dcccbe6aaa992df67dd0e0a8fc7f8a58d9da9e9eeb5172e11`
+- `record_count`: `18883`
 
 # Quirks
 
