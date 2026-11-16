@@ -8,7 +8,7 @@ sources:
   - {"id": "bnm","resource": "https://api.bnm.gov.my/public/interest-rate","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-15T21:25:56Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-08T20:51:43Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Bank Negara Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/bnm_interest_rate.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 3
-stale_after: "2026-12-29T12:00:00Z"
+stale_after: "2026-12-22T12:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
