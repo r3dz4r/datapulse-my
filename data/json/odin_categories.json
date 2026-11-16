@@ -1,12 +1,12 @@
 {
   "schema": "datapulse/v0.1/dataset-health",
   "id": "odin_categories",
-  "status": "unknown-freshness",
-  "last_checked": null,
+  "status": "reference",
+  "last_checked": "2026-11-08T16:36:56Z",
   "freshness_days": null,
   "next_expected_update": null,
   "refresh_frequency": "as-required",
-  "record_count": null,
+  "record_count": 23,
   "date_range": null,
   "fields": [
     {
@@ -69,23 +69,23 @@
   "checks": [
     {
       "name": "file_reachable",
-      "status": "warn",
-      "method": "Not probed; provisional onboarding status."
+      "status": "pass",
+      "method": "Probe received HTTP 200 via direct curl GET"
     },
     {
       "name": "row_count",
-      "status": "warn",
-      "method": "The underlying probe has not produced this measurement."
+      "status": "pass",
+      "method": "Probe measured 23 record(s)"
     },
     {
       "name": "freshness",
       "status": "warn",
-      "method": "Health snapshot classifies the dataset as unknown-freshness"
+      "method": "Health snapshot classifies the dataset as reference"
     },
     {
       "name": "schema_stable",
-      "status": "warn",
-      "method": "The underlying probe has not produced this measurement."
+      "status": "pass",
+      "method": "Probe observed 14 column(s) with no content-shape change"
     }
   ],
   "known_quirks": [],

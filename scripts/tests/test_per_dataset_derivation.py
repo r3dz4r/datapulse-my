@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import shutil
 import subprocess
-import textwrap
 from pathlib import Path
 
 import pytest
@@ -22,12 +21,7 @@ def manifest(repo: Path, *ids: str) -> None:
 
 
 def run_discovery(repo: Path, caller: str) -> subprocess.CompletedProcess[str]:
-    if caller == "release":
-        source = (ROOT / "scripts/generate.sh").read_text()
-    else:
-        ci = (ROOT / ".github/workflows/ci.yml").read_text()
-        step = ci.split("- name: Regenerate derived artefacts before validation", 1)[1].split("\n      - name:", 1)[0]
-        source = textwrap.dedent(step.split("run: |", 1)[1])
+    source = (ROOT / "scripts/derive-estate.sh").read_text()
     block = source.split("python3 - <<'PY'", 1)[1].split("\nPY", 1)[0]
     return subprocess.run(["python3", "-c", block], cwd=repo, text=True, capture_output=True)
 
@@ -61,18 +55,43 @@ def test_no_matching_generator_is_quiet(repo: Path, caller: str) -> None:
     assert result.stdout == result.stderr == ""
 
 
+def test_invalid_dataset_id_is_rejected(repo: Path) -> None:
+    manifest(repo, "../bad")
+    result = run_discovery(repo, "ci")
+    assert result.returncode != 0
+    assert "Invalid dataset id" in result.stderr
+
+
 def test_call_sites_share_discovery_before_aggregates() -> None:
-    generate = (ROOT / "scripts/generate.sh").read_text()
+    source = (ROOT / "scripts/derive-estate.sh").read_text()
     ci = (ROOT / ".github/workflows/ci.yml").read_text()
+    generate = (ROOT / "scripts/generate.sh").read_text()
+    assert source.index("python3 - <<'PY'") < source.index("python3 scripts/gen_health_trust_summary.py")
+    assert "bash scripts/derive-estate.sh" in ci
+    assert '"derive-estate.sh"' in generate
+
+
+def test_ci_readme_generation_and_validators_follow_derivation() -> None:
+    ci = (ROOT / ".github/workflows/ci.yml").read_text()
+    lines = ci.splitlines()
+    marker = next(i for i, line in enumerate(lines) if "bash scripts/derive-estate.sh" in line)
+    # The --check precheck exits early when README is unchanged, before comparing derived prose.
+    readme_runs = [i for i, line in enumerate(lines) if "python3 scripts/gen_readme.py" in line and "--check" not in line]
+    assert readme_runs
+    assert all(i > marker for i in readme_runs)
     step = ci.split("- name: Regenerate derived artefacts before validation", 1)[1].split("\n      - name:", 1)[0]
-    for source, aggregate in [(generate, 'for index in "${!generators[@]}"; do\n  generator='), (step, "python3 scripts/gen_health_trust_summary.py")]:
-        assert "per-dataset-derivation" in source
-        assert source.index("python3 - <<'PY'", source.index("per-dataset-derivation")) < source.index(aggregate)
+    assert "if: env.FULL_VERIFICATION == 'true'" in step
+    assert "bash scripts/derive-estate.sh" in step
+    assert "python3 scripts/gen_readme.py\n" in (ROOT / "scripts/derive-estate.sh").read_text()
+    for validator in ("verify_doc_claims.py", "verify_distribution_sync.py"):
+        positions = [i for i, line in enumerate(lines) if validator in line]
+        assert positions and all(i > marker for i in positions)
 
 
 def test_release_build_stops_before_aggregates_on_dataset_failure(repo: Path) -> None:
     manifest(repo, "broken")
     shutil.copy(ROOT / "scripts/generate.sh", repo / "scripts/generate.sh")
+    shutil.copy(ROOT / "scripts/derive-estate.sh", repo / "scripts/derive-estate.sh")
     (repo / "scripts/gen_broken.py").write_text("raise SystemExit(7)\n")
     (repo / "scripts/gen_health_trust_summary.py").write_text("from pathlib import Path\nPath('aggregate-ran').touch()\n")
     result = subprocess.run(["bash", "scripts/generate.sh", "release-build"], cwd=repo, text=True, capture_output=True)
@@ -85,6 +104,7 @@ def test_release_build_stops_before_aggregates_on_dataset_failure(repo: Path) ->
 def test_dataset_runs_before_first_aggregate(repo: Path, caller: str) -> None:
     manifest(repo, "example")
     shutil.copy(ROOT / "scripts/generate.sh", repo / "scripts/generate.sh")
+    shutil.copy(ROOT / "scripts/derive-estate.sh", repo / "scripts/derive-estate.sh")
     (repo / "scripts/gen_example.py").write_text(
         "from pathlib import Path\nPath('order').write_text('dataset\\n')\n"
     )
@@ -92,15 +112,21 @@ def test_dataset_runs_before_first_aggregate(repo: Path, caller: str) -> None:
         "from pathlib import Path\n"
         "p = Path('order')\np.write_text(p.read_text() + 'aggregate\\n')\n"
     )
-    if caller == "release":
-        command = ["bash", "scripts/generate.sh", "release-build"]
-    else:
-        ci = (ROOT / ".github/workflows/ci.yml").read_text()
-        step = ci.split("- name: Regenerate derived artefacts before validation", 1)[1].split("\n      - name:", 1)[0]
-        commands = textwrap.dedent(step.split("run: |", 1)[1])
-        first_commands = commands.split("python3 scripts/gen_health_trust_summary.py", 1)[0] + "python3 scripts/gen_health_trust_summary.py"
-        command = ["bash", "-c", first_commands]
+    source = (ROOT / "scripts/derive-estate.sh").read_text()
+    first_commands = source.split("python3 scripts/gen_health_trust_summary.py", 1)[0] + "python3 scripts/gen_health_trust_summary.py"
+    command = ["bash", "-c", first_commands]
     result = subprocess.run(command, cwd=repo, text=True, capture_output=True)
-    if caller == "ci":
-        assert result.returncode == 0, result.stderr
+    assert result.returncode == 0, result.stderr
     assert (repo / "order").read_text() == "dataset\naggregate\n"
+
+
+def test_release_public_preflight_follows_surface_generators() -> None:
+    result = subprocess.run(
+        ["bash", "scripts/generate.sh", "release-build", "--list"],
+        cwd=ROOT, text=True, capture_output=True, check=True,
+    )
+    commands = [line for line in result.stdout.splitlines() if line[:1].isdigit()]
+    preflight = next(i for i, line in enumerate(commands) if "verify_distribution_sync.py" in line)
+    derive = next(i for i, line in enumerate(commands) if "derive-estate.sh" in line)
+    assert derive < preflight
+    assert next(i for i, line in enumerate(commands) if "gen_site_nav.py" in line) < preflight

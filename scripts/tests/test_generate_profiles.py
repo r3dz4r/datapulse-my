@@ -32,8 +32,12 @@ GENERATORS = (
     "gen_status_legend.sh",
     "gen_readme.py",
     "gen_health_trust_summary.py",
+    "gen_quality_profile.py",
+    "gen_ai_catalog.py",
     "gen_llms_summary.py",
     "gen_public_discovery.py",
+    "gen_public_summary.py",
+    "gen_changelog.py",
     "stamp_manifest_origin.py",
     "gen_rss.sh",
     "gen_catalog_snapshot.py",
@@ -183,6 +187,7 @@ def _stage_source(tmp_path: Path) -> Path:
     _write_json(source / "reconciliation_groups.json", {"schema": "datapulse/v1/reconciliation-groups", "groups": []})
 
     health = json.loads(HEALTH_FIXTURE.read_text(encoding="utf-8"))
+    health["_trust_summary"]["checked_at"] = health["checked_at"]
     for row in health["datasets"]:
         dataset_id = row["dataset_id"]
         row.update(
@@ -301,7 +306,11 @@ def _stage_source(tmp_path: Path) -> Path:
         ),
         "docs/index.html": (),
         "docs/learn.html": (
-            ("19 read-only tools", "0 read-only tools"),
+            # The profile regenerates mcp.json from this fixture's server and the surface preflight
+            # now runs after that, so this number must equal what the fixture server advertises
+            # (5), not zero. It was 0 while nothing re-derived the file, which is why moving the
+            # preflight to the end of the profile surfaced it.
+            ("19 read-only tools", "5 read-only tools"),
         ),
     }.items():
         path = source / relative
@@ -337,10 +346,20 @@ def _stage_source(tmp_path: Path) -> Path:
     _write_json(scripts / "probe-policy.json", {"datasets": {}})
     shutil.copytree(ROOT / "scripts/templates", scripts / "templates")
     shutil.copy2(ROOT / "scripts/generate.sh", scripts / "generate.sh")
+    shutil.copy2(ROOT / "scripts/derive-estate.sh", scripts / "derive-estate.sh")
     shutil.copy2(ROOT / "scripts/public_surface_generation.py", scripts / "public_surface_generation.py")
     shutil.copy2(ROOT / "scripts/artifact_modes.py", scripts / "artifact_modes.py")
     for generator in GENERATORS:
         shutil.copy2(ROOT / "scripts" / generator, scripts / generator)
+    # gen_ai_catalog.py rejects a corpus naming tools the manifest does not advertise, and this
+    # fixture's mcp.json carries its own (minimal) tool set, so the corpus is filtered to it rather
+    # than copied whole. Deriving it here keeps the two in step whatever the fixture advertises.
+    corpus = json.loads((ROOT / "scripts/mcp-representative-queries.json").read_text(encoding="utf-8"))
+    advertised = {tool["name"] for tool in json.loads((RELEASE_FIXTURE / "mcp.json").read_text(encoding="utf-8"))["tools"]}
+    (scripts / "mcp-representative-queries.json").write_text(
+        json.dumps({name: queries for name, queries in corpus.items() if name in advertised}, indent=2) + "\n",
+        encoding="utf-8",
+    )
     shutil.copy2(ROOT / "scripts/verify_attestation_binding.py", scripts)
     shutil.copy2(ROOT / "scripts/attestation_sets.py", scripts)
     shutil.copy2(ROOT / "scripts/validate_at_runtime.py", scripts)
@@ -476,7 +495,9 @@ def test_runtime_ownership_listing_matches_release_profile_steps() -> None:
         listed_steps = _run_listing("--list", profile)
         assert listed_steps.returncode == 0, listed_steps.stderr
         for record in expected:
-            assert Path(record["generator"]).name in listed_steps.stdout
+            assert (Path(record["generator"]).name in listed_steps.stdout
+                    or (profile == "release-build" and Path(record["generator"]).name
+                        in (ROOT / "scripts/derive-estate.sh").read_text()))
 
 
 def test_clean_fixture_stages_attestation_binding_helper(tmp_path: Path) -> None:

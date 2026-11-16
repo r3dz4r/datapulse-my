@@ -136,74 +136,84 @@ case "$profile" in
   release-build)
     description="$(profile_description "$profile")"
     generators=(
+      "derive-estate.sh"
       "gen_health_trust_summary.py"
-      "gen_dynamic_manifest_urls.py"
-      "gen_readme.py"
-      "public_surface_preflight"
-      "stamp_manifest_origin.py"
-      "gen_mcp_reference.py"
-      "inject_openwiki_canonical_facts.py"
-      "gen_llms_summary.py"
+      "gen_quality_profile.py"
+      "gen_trends.py"
+      "gen_drift.py"
+      "gen_reconciliation.py"
+      "gen_public_summary.py"
+      "gen_catalog_snapshot.py"
+      "gen_catalog_graph.py"
       "gen_public_discovery.py"
       "gen_dashboard_sections.py"
+      "gen_dashboard_filters.py"
+      "embed_dashboard_data.py"
+      "gen_jsonld_catalog.py"
+      "gen_readme.py"
+      "gen_llms_summary.py"
+      "gen_mcp_reference.py"
+      "gen_ai_catalog.py"
+      "gen_json_envelope.py"
+      "gen_changelog.py"
+      "gen_dynamic_manifest_urls.py"
+      "stamp_manifest_origin.py"
+      "inject_openwiki_canonical_facts.py"
       "gen_data_reports.sh"
       "gen_health_methodology.py"
       "gen_badges.sh"
       "gen_rss.sh"
-      "gen_catalog_snapshot.py"
       "gen_health_history.py"
-      "gen_trends.py"
-      "gen_drift.py"
-      "gen_reconciliation.py"
       "gen_attestations.py"
       "gen_dataset_deltas.py"
       "gen_record_evidence.py"
       "gen_evidence_coverage.py"
-      "gen_catalog_graph.py"
-      "gen_json_envelope.py"
-      "gen_jsonld_catalog.py"
-      "gen_dashboard_filters.py"
-      "embed_dashboard_data.py"
       "check_url_drift.py"
       "gen_trust_snapshot.py"
       "gen_health_methodology_html.py"
       "gen_landing_page.py"
       "gen_site_nav.py"
+      "public_surface_preflight"
     )
     outputs=(
-      "health/latest.json (manifest-scoped trust totals and unprobed onboarding rows)"
-      "datapulse.json dynamic URLs; changed dataset JSON envelopes, JSON-LD, passports, and website pages"
-      "README.md (dataset counts and trust-summary block)"
-      "validation only (config, schemas, source identity, and all P5A markers)"
-      'datapulse.json $schema canonical origin stamp'
-      "mcp.json; agent.json; docs/mcp-reference.md; llms.txt MCP tools block; README.md MCP tools block; docs/mcp-deploy.md MCP tools block"
-      "openwiki/{quickstart,datasets,mcp,operations}.md canonical facts"
-      "llms.txt catalog-summary and featured-datasets blocks"
-      "sitemap.xml; robots.txt public-discovery block; README.md public-discovery block; llms.txt public-discovery block"
+      "per-dataset surfaces selected by datapulse.json"
+      "health/latest.json trust summary"
+      "health/latest.json quality profile"
+      "health/trends.json"
+      "health/drift.json"
+      "health/reconciliation.json"
+      "datapulse_summary.json"
+      "catalog-snapshot.json; changelog.json (deprecated alias)"
+      "catalog-graph.json"
+      "README.md, llms.txt, robots.txt public-discovery markers; sitemap.xml"
       "docs/.dashboard_sections.json"
+      "docs/.dashboard_filters.json"
+      "docs/index.html embedded dashboard data"
+      "data/jsonld/<id>.json; data/jsonld/catalog.json"
+      "README.md (dataset counts and trust-summary block)"
+      "llms.txt catalog-summary, featured-datasets, public-artifacts markers"
+      "mcp.json; agent.json; MCP reference and tool markers"
+      "docs/ai-catalog.json"
+      "data/json/<id>.json"
+      "changelog.json"
+      "datapulse.json dynamic URLs; changed dataset JSON envelopes, JSON-LD, passports, and website pages"
+      'datapulse.json $schema canonical origin stamp'
+      "openwiki/{quickstart,datasets,mcp,operations}.md canonical facts"
       "data/<id>.md"
       "docs/health-methodology.md"
       "badges/<id>.svg; badges/status-*.svg; badges/index.svg"
       "feed.xml"
-      "catalog-snapshot.json; changelog.json (deprecated alias)"
       "health/history.jsonl; health/history_daily.json; health/probe_counts.json"
-      "health/trends.json"
-      "health/drift.json"
-      "health/reconciliation.json"
       "attestations/<date>/{<id>.json,index.json,chain_head.json,binding.json,scores.json} or attestations/<date>/revisions/<head>/*; append-only chain-index entries; attestations/latest/*; datapulse.json attestation_ref/methodology_version"
       "deltas/<cycle>.json"
       "record-evidence/<vertical-id>/<run-date>.json; record-evidence/<vertical-id>/latest.json (opt-in)"
       "health/evidence-coverage.json"
-      "catalog-graph.json"
-      "data/json/<id>.json"
-      "data/jsonld/<id>.json; data/jsonld/catalog.json"
-      "docs/.dashboard_filters.json"
-      "docs/{index,npra}.html (embedded manifest, health, filters, sections, and marker-owned public facts)"
       "URL drift and cadence audit"
       "docs/trust-snapshot-<date>.{md,json}"
       "docs/health-methodology.html; docs/mcp-reference.html; docs/datapulse-intro.html; docs/privacy.html"
       "docs/{landing,dashboard,register}.html (static compatibility aliases to the canonical root register)"
       "docs/{index,npra,health-methodology,privacy,learn}.html site navigation"
+      "validation only (config, schemas, source identity, and all P5A markers)"
     )
     ;;
   *)
@@ -231,7 +241,8 @@ if [[ "$list_owned_outputs" == true ]]; then
 fi
 
 if [[ "$list_runtime_ownership" == true ]]; then
-  python3 - "$profile" <<'PY'
+  DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
+    env "${environment[@]}" python3 - "$profile" <<'PY'
 import json
 import sys
 from pathlib import Path
@@ -252,6 +263,18 @@ printf 'Purpose: %s\n' "$description"
 
 command_for() {
   case "$1" in
+    derive-estate.sh)
+      printf 'DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" bash scripts/%s --per-dataset-only' "$1"
+      ;;
+    gen_trends.py|gen_drift.py)
+      printf 'python3 scripts/%s' "$1"
+      if [[ "$profile" == "release-build" ]]; then
+        printf ' --history /dev/null --daily health/history_daily.json'
+        if [[ "$1" == "gen_trends.py" ]]; then
+          printf ' --now "$checked_at" (from health/latest.json)'
+        fi
+      fi
+      ;;
     public_surface_preflight) printf 'python3 scripts/gen_mcp_reference.py --validate-only && python3 scripts/gen_llms_summary.py --validate-only && python3 scripts/gen_public_discovery.py --validate-only && python3 scripts/gen_readme.py --validate-only && python3 scripts/verify_distribution_sync.py' ;;
     *.sh)
       printf 'DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" bash scripts/%s' "$1"
@@ -274,6 +297,13 @@ if [[ "$list_only" == true ]]; then
     printf '%d. ' "$step_number"
     command_for "${generators[$index]}"
     printf '\n   owns: %s\n' "${outputs[$index]}"
+    if [[ "${generators[$index]}" == "derive-estate.sh" ]]; then
+      preparation=$(DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
+        env "${environment[@]}" bash scripts/derive-estate.sh --list-per-dataset)
+      while IFS= read -r command; do
+        printf '   prepares: %s\n' "$command"
+      done <<< "$preparation"
+    fi
   done
   exit 0
 fi
@@ -282,6 +312,23 @@ run_step() (
   set -e
   generator="$1"
   case "$generator" in
+    derive-estate.sh)
+      DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
+        env "${environment[@]}" bash scripts/derive-estate.sh --per-dataset-only
+      ;;
+    gen_trends.py|gen_drift.py)
+      history_args=()
+      if [[ "$profile" == "release-build" ]]; then
+        history_args=(--history /dev/null --daily health/history_daily.json)
+        if [[ "$generator" == "gen_trends.py" ]]; then
+          checked_at=$(DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
+            env "${environment[@]}" python3 -c 'import json; print(json.load(open("health/latest.json"))["checked_at"])')
+          history_args+=(--now "$checked_at")
+        fi
+      fi
+      DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" \
+        env "${environment[@]}" python3 "scripts/$generator" "${history_args[@]}"
+      ;;
     public_surface_preflight)
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" python3 scripts/gen_mcp_reference.py --validate-only
       DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" python3 scripts/gen_llms_summary.py --validate-only
@@ -349,29 +396,6 @@ run_step() (
   esac
 )
 
-if [[ "$profile" == "release-build" ]]; then
-  # per-dataset-derivation: populate dataset surfaces before aggregate generators.
-  DATAPULSE_REPO_ROOT="${DATAPULSE_REPO_ROOT:-$PWD}" env "${environment[@]}" python3 - <<'PY'
-import json
-import re
-import subprocess
-import sys
-from pathlib import Path
-
-manifest = json.loads(Path('datapulse.json').read_text(encoding='utf-8'))
-for dataset in manifest['datasets']:
-    dataset_id = dataset['id']
-    if not isinstance(dataset_id, str) or not re.fullmatch(r'[a-z0-9][a-z0-9_-]*', dataset_id):
-        raise ValueError(f'Invalid dataset id: {dataset_id!r}')
-    generator = Path('scripts') / f'gen_{dataset_id}.py'
-    if generator.is_file():
-        result = subprocess.run([sys.executable, str(generator)], check=False)
-        if result.returncode:
-            print(f'Per-dataset generator failed for {dataset_id}: {generator} (exit {result.returncode})', file=sys.stderr)
-            sys.exit(1)
-PY
-fi
-
 failed_steps=()
 failed_commands=()
 failed_codes=()
@@ -397,6 +421,10 @@ for index in "${!generators[@]}"; do
     failed_steps+=("$step_number")
     failed_commands+=("$(command_for "$generator")")
     failed_codes+=("$step_status")
+    # Aggregate health must never be generated from failed dataset preparation.
+    if [[ "$generator" == "derive-estate.sh" ]]; then
+      break
+    fi
   fi
 done
 

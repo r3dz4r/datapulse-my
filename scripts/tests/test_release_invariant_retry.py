@@ -38,20 +38,9 @@ def test_local_gate_accepts_readme_prepared_source_without_binding() -> None:
         )
         try:
             shutil.copy2(VERIFY_SCRIPT, worktree / "scripts/verify_release_invariants.sh")
-            snapshot = subprocess.run(
-                [sys.executable, "scripts/gen_catalog_snapshot.py"],
-                cwd=worktree,
-                capture_output=True,
-                text=True,
-                check=False,
-            )
-            assert snapshot.returncode == 0, snapshot.stderr
             prepared = subprocess.run(
-                [sys.executable, "scripts/gen_readme.py"],
-                cwd=worktree,
-                capture_output=True,
-                text=True,
-                check=False,
+                ["bash", "scripts/derive-estate.sh"],
+                cwd=worktree, capture_output=True, text=True, check=False,
             )
             assert prepared.returncode == 0, prepared.stderr
             completed = subprocess.run(
@@ -91,7 +80,10 @@ def _shadow_checkout(destination: Path) -> Path:
         ".attestations",
         "catalog-snapshot.json",
         "changelog.json",
-        "README.md",
+        "catalog-graph.json",
+        "datapulse_summary.json",
+        "README.md", "data", "badges", "llms.txt", "mcp.json",
+        "agent.json", "sitemap.xml", "robots.txt",
     }
     for entry in ROOT.iterdir():
         if entry.name == ".git" or entry.name in mutable:
@@ -105,6 +97,7 @@ def _shadow_checkout(destination: Path) -> Path:
         "drift.json",
         "reconciliation.json",
         "history.jsonl",
+        "history_daily.json",
         "probe_counts.json",
     ):
         source = ROOT / "health" / name
@@ -114,7 +107,9 @@ def _shadow_checkout(destination: Path) -> Path:
     shutil.copytree(ROOT / "scripts", shadow / "scripts")
     (shadow / "attestations").mkdir()
     shutil.copytree(ROOT / ".attestations", shadow / ".attestations")
-    for name in ("catalog-snapshot.json", "changelog.json", "README.md"):
+    for name in ("data", "badges"):
+        shutil.copytree(ROOT / name, shadow / name)
+    for name in ("catalog-snapshot.json", "changelog.json", "README.md", "llms.txt", "mcp.json", "agent.json", "sitemap.xml", "robots.txt"):
         source = ROOT / name
         if source.is_file():
             shutil.copy2(source, shadow / name)
@@ -146,6 +141,16 @@ def test_release_invariant_retry_corrected_index(tmp_path: Path) -> None:
     gen_attestations.py produces and verify_attestation_binding.py accepts.
     """
     shadow = _shadow_checkout(tmp_path)
+    prepared = subprocess.run(
+        ["bash", "scripts/derive-estate.sh"], cwd=shadow,
+        env={
+            **os.environ,
+            "DATAPULSE_SOURCE_COMMIT_SHA": "0123456789abcdef0123456789abcdef01234567",
+            "DATAPULSE_SOURCE_COMMIT_DATE": "2026-08-08",
+        },
+        capture_output=True, text=True, check=False,
+    )
+    assert prepared.returncode == 0, prepared.stderr
     signing_root, key = fixture_root(tmp_path / "signing")
     shutil.copy2(
         signing_root / "docs/.well-known/datapulse-probe-keys.json",
@@ -163,16 +168,6 @@ def test_release_invariant_retry_corrected_index(tmp_path: Path) -> None:
         r"attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}/revisions/[0-9a-f]{64}/chain_head\.json",
         corrected_ref,
     ), corrected_ref
-
-    for generator in ("gen_catalog_snapshot.py", "gen_readme.py"):
-        prepared = subprocess.run(
-            [sys.executable, f"scripts/{generator}"],
-            cwd=shadow,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-        assert prepared.returncode == 0, prepared.stderr
 
     completed = subprocess.run(
         ["bash", "scripts/verify_release_invariants.sh", "--local"],
@@ -666,8 +661,8 @@ def test_release_build_generates_readme_before_public_surface_preflight() -> Non
     generate_sh = (ROOT / "scripts/generate.sh").read_text(encoding="utf-8")
     release_profile = generate_sh.split('  release-build)\n', 1)[1].split('  *)\n', 1)[0]
 
-    assert release_profile.index('"gen_readme.py"') < release_profile.index('"public_surface_preflight"')
-    assert release_profile.count('"gen_readme.py"') == 1
+    assert release_profile.index('"derive-estate.sh"') < release_profile.index('"public_surface_preflight"')
+    assert "python3 scripts/gen_readme.py" in (ROOT / "scripts/derive-estate.sh").read_text()
     assert "python3 scripts/gen_readme.py --validate-only" in generate_sh
 
 

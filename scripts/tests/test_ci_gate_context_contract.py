@@ -241,6 +241,11 @@ def test_artifact_only_fast_path_preserves_required_verification() -> None:
             "Verify signed chain-head monotonicity",
             "Verify immutable attestation append against accepted base",
             "Verify attestation workflow contract",
+            # Carries a second condition by design: the precheck must skip when the run does not
+            # modify README, because a source-only dataset PR judges main's committed README before
+            # any generator can refresh it. The git-diff guard lives in its own preceding step and
+            # publishes `changed`, so this step keeps a single-command run while its `if` is a pair.
+            "Verify README matches its template before regeneration",
         }:
             continue
         assert step["if"] == "env.FULL_VERIFICATION == 'true'", name

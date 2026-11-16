@@ -40,43 +40,13 @@ UNSIGNED_MESSAGE = (
     "this release-build is UNSIGNED"
 )
 
-# Other generators are stubs to focus on the attestation branch. The dynamic-URL
-# producer runs unchanged, including its calls to the surface generators.
-PYTHON_GENERATORS = (
-    "gen_health_trust_summary.py",
-    "gen_readme.py",
-    "stamp_manifest_origin.py",
-    "gen_mcp_reference.py",
-    "inject_openwiki_canonical_facts.py",
-    "gen_llms_summary.py",
-    "gen_public_discovery.py",
-    "gen_dashboard_sections.py",
-    "gen_health_methodology.py",
-    "gen_catalog_snapshot.py",
-    "gen_health_history.py",
-    "gen_trends.py",
-    "gen_drift.py",
-    "gen_reconciliation.py",
-    "gen_attestations.py",
-    "gen_dataset_deltas.py",
-    "gen_record_evidence.py",
-    "gen_evidence_coverage.py",
-    "gen_catalog_graph.py",
-    "gen_json_envelope.py",
-    "gen_jsonld_catalog.py",
-    "gen_dataset_passports.py",
-    "gen_dataset_pages.py",
-    "gen_okf_bundle.py",
-    "gen_dashboard_filters.py",
-    "embed_dashboard_data.py",
-    "check_url_drift.py",
-    "gen_trust_snapshot.py",
-    "gen_health_methodology_html.py",
-    "gen_landing_page.py",
-    "gen_site_nav.py",
-    "verify_distribution_sync.py",
-)
-SHELL_GENERATORS = ("gen_data_reports.sh", "gen_badges.sh", "gen_rss.sh")
+def _profile_scripts(root: Path) -> list[str]:
+    """Read the runnable order, including delegated stages and validators."""
+    listed = subprocess.run(
+        ["bash", "scripts/generate.sh", "release-build", "--list"],
+        cwd=root, capture_output=True, text=True, check=True,
+    )
+    return re.findall(r"scripts/([A-Za-z0-9_-]+\.(?:py|sh))", listed.stdout)
 
 ATTESTATION_STUB = """\
 from __future__ import annotations
@@ -91,7 +61,16 @@ if log:
 raise SystemExit(int(os.environ.get("STUB_ATTESTATION_EXIT", "0")))
 """
 
-NOOP_STUB = "raise SystemExit(0)\n"
+NOOP_STUB = """\
+import json
+import os
+import sys
+from pathlib import Path
+
+if os.environ.get("STUB_STAGE_LOG"):
+    with Path(os.environ["STUB_STAGE_LOG"]).open("a") as stream:
+        stream.write(json.dumps([Path(sys.argv[0]).name, sys.argv[1:]]) + "\\n")
+"""
 
 
 def _stage_stub_repo(tmp_path: Path, *, registry: bool = True) -> Path:
@@ -100,11 +79,17 @@ def _stage_stub_repo(tmp_path: Path, *, registry: bool = True) -> Path:
     scripts = source / "scripts"
     scripts.mkdir(parents=True)
     (scripts / "generate.sh").write_text(GENERATE_SH.read_text(encoding="utf-8"), encoding="utf-8")
-    for name in PYTHON_GENERATORS:
-        content = ATTESTATION_STUB if name == "gen_attestations.py" else NOOP_STUB
+    # Dynamic URL refresh also calls these renderers internally; they are not
+    # standalone profile stages. Keep only that producer-specific set here.
+    producer_renderers = ("gen_dataset_passports.py", "gen_dataset_pages.py", "gen_okf_bundle.py")
+    for name in set(_profile_scripts(ROOT)) | set(producer_renderers):
+        if name.endswith(".py"):
+            content = ATTESTATION_STUB if name == "gen_attestations.py" else NOOP_STUB
+        else:
+            content = "#!/usr/bin/env bash\nexit 0\n"
         (scripts / name).write_text(content, encoding="utf-8")
-    for name in SHELL_GENERATORS:
-        (scripts / name).write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    # Keep orchestration real so the rehearsal exercises its nested order.
+    shutil.copy2(ROOT / "scripts/derive-estate.sh", scripts)
     shutil.copy2(ROOT / "scripts/gen_dynamic_manifest_urls.py", scripts)
     # Use the existing policy unchanged and a confirmed monthly rollover. This
     # exercises the producer's update and refresh branches without network I/O.
@@ -121,6 +106,7 @@ def _stage_stub_repo(tmp_path: Path, *, registry: bool = True) -> Path:
             }],
         },
         "health/latest.json": {
+            "checked_at": "2026-10-01T00:00:00Z",
             "datasets": [{
                 "dataset_id": "pricecatcher",
                 "url": observed,
@@ -138,6 +124,43 @@ def _stage_stub_repo(tmp_path: Path, *, registry: bool = True) -> Path:
         well_known.mkdir(parents=True)
         (well_known / "datapulse-probe-keys.json").write_text("{}\n", encoding="utf-8")
     return source
+
+
+def test_release_listing_matches_execution_without_duplicate_generators(tmp_path: Path) -> None:
+    source = _stage_stub_repo(tmp_path)
+    # This check isolates profile stages from the URL producer's conditional
+    # surface refresh, which is exercised unchanged by the attestation tests.
+    (source / "scripts/gen_dynamic_manifest_urls.py").write_text(NOOP_STUB, encoding="utf-8")
+    (source / "scripts/gen_pricecatcher.py").write_text(NOOP_STUB, encoding="utf-8")
+    stage_log = source / "stages.jsonl"
+    result = subprocess.run(
+        ["bash", "scripts/generate.sh", "release-build"], cwd=source,
+        env={"PATH": os.environ.get("PATH", os.defpath),
+             "DATAPULSE_ALLOW_UNSIGNED_BUILD": "1",
+             "DATAPULSE_ARCHIVES_DIR": str(source / ".archives"),
+             "STUB_STAGE_LOG": str(stage_log)},
+        capture_output=True, text=True, check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    executed = [json.loads(line) for line in stage_log.read_text().splitlines()]
+    listed = [name for name in _profile_scripts(source)
+              if name.endswith(".py") and name != "gen_attestations.py"]
+    assert [name for name, _ in executed] == listed
+    generators = [name for name, args in executed if "--validate-only" not in args]
+    assert len(generators) == len(set(generators)), generators
+    assert generators.index("gen_pricecatcher.py") < generators.index("gen_health_trust_summary.py")
+    assert generators.count("gen_jsonld_catalog.py") == 1
+    # Standalone CI derivation must retain the same aggregate order exposed by
+    # the release profile, even though the release runner owns those stages.
+    stage_log.unlink()
+    standalone = subprocess.run(
+        ["bash", "scripts/derive-estate.sh"], cwd=source,
+        env={"PATH": os.environ.get("PATH", os.defpath), "STUB_STAGE_LOG": str(stage_log)},
+        capture_output=True, text=True, check=False,
+    )
+    assert standalone.returncode == 0, standalone.stdout + standalone.stderr
+    derived = [json.loads(line)[0] for line in stage_log.read_text().splitlines()]
+    assert derived == generators[:generators.index("gen_dynamic_manifest_urls.py")]
 
 
 def _run_generate(

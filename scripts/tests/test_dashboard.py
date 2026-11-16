@@ -404,13 +404,17 @@ def test_register_labels_the_canonical_ten_status_taxonomy() -> None:
 
 
 def test_release_build_generates_and_embeds_dashboard_data_before_deploy() -> None:
-    generate = (ROOT / "scripts/generate.sh").read_text(encoding="utf-8")
+    listed = subprocess.run(
+        ["bash", "scripts/generate.sh", "release-build", "--list"],
+        cwd=ROOT, capture_output=True, text=True, check=True,
+    )
+    generate = listed.stdout
     build_workflow = (ROOT / ".github/workflows" / ("publish-" + "publication.yml")).read_text(encoding="utf-8")
     deploy_workflow = (ROOT / ".github/workflows/deploy-cloudflare-pages.yml").read_text(encoding="utf-8")
 
-    sections = generate.index('"gen_dashboard_sections.py"')
-    filters = generate.index('"gen_dashboard_filters.py"')
-    injector = generate.index('"embed_dashboard_data.py"')
+    sections = generate.index("gen_dashboard_sections.py")
+    filters = generate.index("gen_dashboard_filters.py")
+    injector = generate.index("embed_dashboard_data.py")
     assert sections < injector
     assert filters < injector
     assert "bash scripts/generate.sh release-build" in build_workflow
