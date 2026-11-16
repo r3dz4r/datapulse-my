@@ -8,7 +8,7 @@ sources:
   - {"id": "bnm","resource": "https://api.bnm.gov.my/public/kl-usd-reference-rate","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-15T06:05:57Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-16T06:36:01Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Bank Negara Malaysia"
