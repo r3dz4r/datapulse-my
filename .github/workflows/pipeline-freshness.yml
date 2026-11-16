@@ -19,8 +19,9 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE"
           python3 - <<'EOF'
-          import json, subprocess, sys
+          import json, re, subprocess, sys
           from datetime import datetime, timezone
+          from pathlib import Path
 
           def check(ok, message):
               print(f"[{'PASS' if ok else 'FAIL'}] {message}")
@@ -40,15 +41,28 @@ jobs:
 
           rows = list(rows.values()) if isinstance(rows, dict) else rows
           try:
+              producer = Path(".github/workflows/health-automation-merge.yml").read_text(encoding="utf-8")
+              schedule = re.search(r"(?m)^  schedule:\n((?:    .*\n)+)", producer)
+              cron = re.fullmatch(r"""    - cron: (["'])([0-9]{1,2}) \* \* \* \*\1[ \t]*\n""", schedule[1]) if schedule else None
+              if not cron or not 0 <= int(cron[2]) < 60:
+                  raise ValueError("expected a single fixed-minute hourly cron in producer schedule")
+              producer_interval = 60  # A fixed minute in every hour means a 60-minute interval.
+              # One interval plus half the next lets a late run finish; two missed cycles fail.
+              freshness_bound = producer_interval * 1.5
+          except (OSError, UnicodeError, ValueError) as exc:
+              print(f"[FAIL] producer schedule in .github/workflows/health-automation-merge.yml is readable and supported: {exc}")
+              sys.exit(1)
+
+          try:
               stamp = subprocess.run(["git", "log", "-1", "--format=%ct", "--", "health/latest.json"], capture_output=True, text=True, check=True).stdout.strip()
               if not stamp or not stamp.isdigit():
                   raise ValueError("missing or non-integer commit time")
               age = (datetime.now(timezone.utc).timestamp() - int(stamp)) / 60
-              liveness_ok = age <= 30
+              liveness_ok = age <= freshness_bound
           except (OSError, subprocess.CalledProcessError, ValueError) as exc:
               age, liveness_ok = float("inf"), False
               print(f"[FAIL] health/latest.json commit time is valid: {exc}")
-          results.append(check(liveness_ok, f"health/latest.json commit is within 30m ({age:.1f}m)"))
+          results.append(check(liveness_ok, f"health/latest.json commit is within {freshness_bound:g}m ({age:.1f}m; producer interval {producer_interval}m)"))
           results.append(check(len(rows) >= 300, f"dataset count is at least 300 ({len(rows)})"))
           known = {"fresh", "aging", "stale", "discontinued", "degraded", "browser-dependent", "unreachable", "unknown", "unknown-freshness", "reference"}
           unknown = sorted({row.get("status") for row in rows if not isinstance(row, dict) or row.get("status") not in known})
