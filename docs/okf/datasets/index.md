@@ -314,6 +314,7 @@
 * [KKMNOW Healthcare Resources/Facilities Directory](kkmnow_facilities.md) - github.com/MoH-Malaysia/kkmnow-data.
 * [KKMNOW Organ Donation Pledges and Deaths](kkmnow_organ.md) - github.com/MoH-Malaysia/kkmnow-data.
 * [KKMNOW PeKa B40 Daily Health Screenings by State](kkmnow_pekab40.md) - github.com/MoH-Malaysia/kkmnow-data.
+* [KPDN Direct Selling AJL Licence Register (Act 500)](kpdn_direct_selling_licences.md) - KPDN.
 * [Lecturers in Public Universities by Citizenship & Sex](lecturers_uni.md) - data.gov.my (OpenAPI).
 * [Legal Advisory Services by Branch](legal_advisory_branch.md) - data.gov.my.
 * [Legal Advisory Services by Branch & Case Type](legal_advisory_case_type.md) - data.gov.my.
