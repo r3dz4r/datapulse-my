@@ -47,6 +47,7 @@ def _write_public_surface_fixture(
                 "/llms.txt",
                 "/datapulse.json",
                 "/datapulse_summary.json",
+                "/publication-identity.json",
                 "/datapulse.schema.json",
                 "/health/latest.json",
                 "/health/trends.json",

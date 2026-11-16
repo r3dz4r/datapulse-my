@@ -37,6 +37,7 @@ PUBLIC_SURFACE_LINKS = {
     "/llms.txt": ("LLM index", "Machine-readable discovery index for agents."),
     "/datapulse.json": ("Dataset manifest", "Full machine-readable dataset manifest."),
     "/datapulse_summary.json": ("Public summary", "Compact rolled-up health and capability facts for downstream consumers."),
+    "/publication-identity.json": ("Publication identity", "Accepted publication revision, dataset count served, and served-lag status and bound."),
     "/datapulse.schema.json": ("Manifest JSON Schema", "Machine-readable schema for the dataset manifest."),
     "/health/latest.json": ("Latest health snapshot", "Current published dataset health evidence."),
     "/health/trends.json": ("Published trends", "Per-dataset freshness trend and reliability evidence."),
