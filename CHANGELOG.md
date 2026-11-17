@@ -14,6 +14,21 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.67.0](https://github.com/r3dz4r/datapulse-my/compare/v3.66.2...v3.67.0) (2026-11-17)
+
+
+### Features
+
+* **pipeline:** attribute health cycle gaps with monotonic boundaries ([fd8ee05](https://github.com/r3dz4r/datapulse-my/commit/fd8ee05868f89f56bc0943a6dcbe560c4cba5259))
+* **pipeline:** wake the publisher when remote main moves ([aed630c](https://github.com/r3dz4r/datapulse-my/commit/aed630c098906122455de8bdce0f5357317d3fe2))
+
+
+### Bug Fixes
+
+* **pipeline:** attribute cycle gaps with monotonic boundaries ([32e156f](https://github.com/r3dz4r/datapulse-my/commit/32e156f9a661bed6a6b0459a5512cd8b12eef795))
+* **pipeline:** name the real publish unit in the wake default ([58e8069](https://github.com/r3dz4r/datapulse-my/commit/58e8069312f468dba1c093d4f15afc1d1ba4b36b))
+* **pipeline:** wake publisher when remote main changes ([91de5a6](https://github.com/r3dz4r/datapulse-my/commit/91de5a6f8988965a19f966c1c1069b00ca46f99d))
+
 ## [3.66.2](https://github.com/r3dz4r/datapulse-my/compare/v3.66.1...v3.66.2) (2026-11-16)
 
 
