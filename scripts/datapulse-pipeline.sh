@@ -802,9 +802,18 @@ abort_cycle_rebase() {
 # producer_takes_owned_version_on_conflict: replay only the cycle's commits on
 # current main. A conflict on any path outside the declared managed set leaves
 # the original branch and pending-base ref untouched.
+# --refuse-conflicts shares the rebase/rollback machinery with preflight, but
+# accepts only a clean replay and leaves the pending-base ref untouched.
 reconcile_cycle_before_push() {
   local base="$1" original="$2" path changed joined pending_ref
+  local mode="${3:-}"
   local -a conflicts=() outside=()
+  local -a rebase_options=()
+
+  if [[ "$mode" == --refuse-conflicts ]]; then
+    # Retain observations even when upstream already carries their patch.
+    rebase_options=(--reapply-cherry-picks --empty=keep)
+  fi
 
   git_repo merge-base --is-ancestor "$fetched_origin" "$original" && return 0
   [[ -n "$base" ]] || die "publish reconcile refused: missing cycle base"
@@ -818,7 +827,11 @@ reconcile_cycle_before_push() {
   if ! GIT_EDITOR=true GIT_SEQUENCE_EDITOR=true GIT_TERMINAL_PROMPT=0 \
       timeout 60s git -C "$repo" -c commit.gpgsign=false -c rerere.enabled=false \
         -c rebase.autostash=false -c rebase.updateRefs=false \
-        rebase --merge --onto "$fetched_origin" "$base"; then
+        rebase --merge "${rebase_options[@]}" --onto "$fetched_origin" "$base"; then
+    if [[ "$mode" == --refuse-conflicts ]]; then
+      abort_cycle_rebase "$original"
+      return 1
+    fi
     if ! cycle_rebase_in_progress; then
       abort_cycle_rebase "$original"
       die "publish reconcile refused: rebase failed before it could be aborted"
@@ -868,6 +881,14 @@ reconcile_cycle_before_push() {
     abort_cycle_rebase "$original"
     die "publish reconcile refused: cycle commit was not replayed on origin/main"
   fi
+  if [[ "$mode" == --refuse-conflicts ]]; then
+    if ! (assert_managed_commits "$fetched_origin") \
+        || [[ -n "$(git_repo status --porcelain --untracked-files=all)" ]]; then
+      abort_cycle_rebase "$original"
+      return 1
+    fi
+    return 0
+  fi
   while IFS= read -r changed; do
     [[ -n "$changed" ]] || continue
     if ! path_is_managed_artifact "$changed"; then
@@ -880,6 +901,20 @@ reconcile_cycle_before_push() {
       || { abort_cycle_rebase "$original"; die "publish reconcile refused: pending base could not be updated"; }
   fi
   log "publish reconcile cycle ready at $(git_repo rev-parse HEAD)"
+}
+
+# Last resort only: resetting would discard the unpublished observation the
+# publisher needs, turning this divergence refusal into a missing-commit refusal.
+# Rebase preserves that observation on current main; any conflict must roll back.
+RECONCILE_DIVERGED_REBASE() {
+  local base="$1" original="$2"
+
+  [[ -n "$base" ]] || return 1
+  (assert_managed_commits "$base") || return 1
+  # Isolate existing die calls so the caller retains its divergence refusal.
+  (reconcile_cycle_before_push "$base" "$original" --refuse-conflicts) || return 1
+  log "control-plane RECONCILE_DIVERGED_REBASE recovered $original -> $(git_repo rev-parse HEAD) (merge base $base)"
+  return 0
 }
 
 # Keep the leased transport shared with checkout recovery. Its caller supplies
@@ -1290,6 +1325,7 @@ preflight() {
       return 0
     fi
     merge_base="$(git_repo merge-base "$head" "$fetched_origin" || :)"
+    RECONCILE_DIVERGED_REBASE "$merge_base" "$head" && return 0
     die "control-plane degraded: HEAD and origin/main diverged at ${merge_base:-no-common-ancestor}"
   fi
 
@@ -1417,6 +1453,7 @@ preflight() {
     return 0
   fi
 
+  RECONCILE_DIVERGED_REBASE "$merge_base" "$head" && return 0
   die "control-plane degraded: HEAD and origin/main diverged at ${merge_base:-no-common-ancestor}"
 }
 
