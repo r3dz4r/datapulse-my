@@ -126,6 +126,7 @@ telemetry() {
 # Keep those measurements rather than timing the telemetry writer itself.
 STAGE_TIMING() {
   local stage="$1" elapsed_ms="$2" status="$3" extra="${4-}"
+  STAGE_GAP_TIMING "$stage" end
   [ -z "$extra" ] && extra='{}'
   if ! DATAPULSE_TELEMETRY_FILE="$telemetry_file" DATAPULSE_CYCLE="$cycle" \
     ${PYTHON_BIN} "$run_dir/scripts/check_heartbeat.py" append \
@@ -133,6 +134,37 @@ STAGE_TIMING() {
       --extra-json "$extra"; then
     log "telemetry write failed for stage $stage"
   fi
+}
+
+# Keep a separate boundary trace: telemetry timestamps have second precision,
+# and duration_ms cannot locate waits or disambiguate overlapping parent stages.
+# This sidecar survives producer/publisher processes and subshells without
+# changing the frozen payload or its handoff manifest. The single-slot spool
+# admits the next cycle only after this trace has been consumed. Only boundary names
+# and clock/cycle identities enter it, never command output or environment data.
+STAGE_GAP_TIMING() {
+  local stage="$1" phase="${2:-point}"
+  [[ -n "$telemetry_file" && -n "$cycle" ]] || return 0
+  if ! "$PYTHON_BIN" - "${telemetry_file}.boundaries.jsonl" "$cycle" "$stage" "$phase" <<'PY'
+import json
+import sys
+import time
+from pathlib import Path
+
+stamp = time.monotonic_ns()
+boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip()
+path = Path(sys.argv[1])
+path.parent.mkdir(parents=True, exist_ok=True)
+event = dict(cycle=sys.argv[2], stage=sys.argv[3], phase=sys.argv[4],
+             monotonic_ns=stamp, boot_id=boot)
+mode = "w" if (event["stage"], event["phase"]) == ("cycle", "start") else "a"
+with path.open(mode, encoding="utf-8") as out:
+    out.write(json.dumps(event, separators=(",", ":")) + "\n")
+PY
+  then
+    log "stage boundary timing failed for $stage:$phase; interval unavailable"
+  fi
+  return 0
 }
 
 milliseconds() { date +%s%3N; }
@@ -1875,6 +1907,7 @@ run_mcp_sync() {
   local -a sync_args
 
   stage_started="$(milliseconds)"
+  STAGE_GAP_TIMING mcp-sync start
   result_file="$run_dir/.mcp-sync-result"
   source_sha="$(sha256sum "$run_dir/mcp/server.py" | awk '{print $1}')"
   max_failures="${DATAPULSE_MCP_SYNC_MAX_FAILURES:-3}"
@@ -2208,6 +2241,7 @@ run_okf_refresh() {
   local stage_started rc output line
 
   stage_started="$(milliseconds)"
+  STAGE_GAP_TIMING deltas.gen_okf_bundle start
   rm -f -- "$run_dir/.okf-refresh-complete"
 
   if ! okf_refresh_due; then
@@ -2539,6 +2573,7 @@ run_observation_capture() {
   local -a pilot_args
 
   stage_started="$(milliseconds)"
+  STAGE_GAP_TIMING observation-capture start
   store_root="${DATAPULSE_OBSERVATION_STORE:-${HOME}/runtime/datapulse-observations}"
   timeout_seconds="${DATAPULSE_OBSERVATION_CAPTURE_TIMEOUT_SECONDS:-300}"
   if ! [[ "$timeout_seconds" =~ ^[1-9][0-9]*$ ]]; then
@@ -2683,18 +2718,93 @@ PY
 log_stage_timing_summary() {
   local receipt_file timing_summary
   [[ -n "${cycle_started:-}" ]] || return 0
+  STAGE_GAP_TIMING cycle end
   receipt_file="${DATAPULSE_RECEIPT_FILE:-$repo/var/log/pipeline-latest.json}"
   # Use the cycle start carried through the spool, so handoff waiting and final
   # reconciliation count too. The receipt's timestamp span excludes both ends.
   if timing_summary="$("$PYTHON_BIN" - "$receipt_file" "$cycle" \
-      "$(( $(milliseconds) - cycle_started ))" <<'PY'
+      "$(( $(milliseconds) - cycle_started ))" "${telemetry_file}.boundaries.jsonl" <<'PY'
 import json
+import os
 import sys
+import tempfile
 from pathlib import Path
 
 receipt = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 if receipt["cycle"] != sys.argv[2]:
     raise ValueError("receipt does not describe the completed cycle")
+# Use measured consecutive boundaries, never duration subtraction. Splitting at
+# every start/end gives exclusive stage coverage even for nested deltas stages.
+# Point boundaries name work outside the existing stage timers (including the
+# producer/publisher wait); publish's cumulative lag is only an end boundary.
+trace = Path(sys.argv[4])
+events = []
+if trace.exists():
+    for line in trace.read_text(encoding="utf-8").splitlines():
+        event = json.loads(line)
+        if event["cycle"] == sys.argv[2]:
+            if (event["stage"], event["phase"]) == ("cycle", "start"):
+                events = []
+            events.append(event)
+intervals = []
+unmeasured = []
+active = set()
+previous = None
+for event in events:
+    boundary = f'{event["stage"]}:{event["phase"]}'
+    if previous is not None:
+        name = f'{previous["stage"]}:{previous["phase"]}->{boundary}'
+        duration = None
+        if event["boot_id"] != previous["boot_id"]:
+            unmeasured.append(dict(name=name, reason="monotonic_clock_reboot"))
+        elif event["monotonic_ns"] < previous["monotonic_ns"]:
+            unmeasured.append(dict(name=name, reason="monotonic_clock_regressed"))
+        else:
+            # Quantize endpoints, so integer-ms intervals telescope exactly.
+            duration = event["monotonic_ns"] // 1_000_000 - previous["monotonic_ns"] // 1_000_000
+        intervals.append(dict(name=name, duration_ms=duration,
+                              kind="stage" if active else "gap",
+                              active_stages=sorted(active)))
+    if event["stage"] != "cycle":
+        if event["phase"] == "start":
+            active.add(event["stage"])
+        elif event["phase"] == "end":
+            active.discard(event["stage"])
+    previous = event
+if not events or (events[0]["stage"], events[0]["phase"]) != ("cycle", "start"):
+    first = f'{events[0]["stage"]}:{events[0]["phase"]}' if events else "cycle:end"
+    unmeasured.append(dict(name=f"cycle:start->{first}", reason="missing_cycle_start"))
+if active:
+    unmeasured.append(dict(name="open_stages->cycle:end", reason="missing_stage_end",
+                          stages=sorted(active)))
+stage_ms = sum(row["duration_ms"] for row in intervals
+               if row["kind"] == "stage" and row["duration_ms"] is not None)
+gap_ms = sum(row["duration_ms"] for row in intervals
+             if row["kind"] == "gap" and row["duration_ms"] is not None)
+total_ms = None
+if events and not unmeasured:
+    total_ms = events[-1]["monotonic_ns"] // 1_000_000 - events[0]["monotonic_ns"] // 1_000_000
+receipt["stage_gap_timing"] = dict(
+    clock="monotonic_ns", boundaries=events, intervals=intervals,
+    total_elapsed_ms=total_ms, stage_elapsed_ms=stage_ms, gap_elapsed_ms=gap_ms,
+    residual_ms=None if total_ms is None else total_ms - stage_ms - gap_ms,
+    unmeasured_intervals=unmeasured,
+)
+# Finalize after reconciliation and spool retirement, when the frozen scripts
+# have gone. Preserve the receipt's mode and all existing fields, including the
+# duration_ms/elapsed_ms alias, while replacing the file atomically.
+path = Path(sys.argv[1])
+fd, temporary = tempfile.mkstemp(prefix=f".{path.name}.", dir=path.parent)
+try:
+    os.fchmod(fd, path.stat().st_mode & 0o777)
+    with os.fdopen(fd, "w", encoding="utf-8") as out:
+        out.write(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+        out.flush()
+        os.fsync(out.fileno())
+    os.replace(temporary, path)
+finally:
+    if os.path.exists(temporary):
+        os.unlink(temporary)
 # publish.duration_ms is cumulative publication lag, not a stage measurement.
 # Parent stages and their sub-stages overlap; these durations are never summed.
 stages = sorted(
@@ -2703,12 +2813,17 @@ stages = sorted(
     key=lambda item: (-item[1], item[0]),
 )[:3]
 slowest = ",".join(f"{name}:{elapsed}ms" for name, elapsed in stages) or "none"
-print(f"cycle timing cycle={sys.argv[2]} elapsed_ms={sys.argv[3]} slowest3={slowest}")
+gaps = sorted((row for row in intervals if row["kind"] == "gap" and row["duration_ms"] is not None),
+              key=lambda row: (-row["duration_ms"], row["name"]))
+largest_gap = f'{gaps[0]["name"]}:{gaps[0]["duration_ms"]}ms' if gaps else "none"
+if unmeasured:
+    largest_gap += ";unmeasured=" + ",".join(row["name"] for row in unmeasured)
+print(f"cycle timing cycle={sys.argv[2]} elapsed_ms={sys.argv[3]} slowest3={slowest} largest_gap={largest_gap}")
 PY
   )"; then
     log "$timing_summary"
   else
-    log "cycle timing cycle=$cycle elapsed_ms=$(( $(milliseconds) - cycle_started )) slowest3=unavailable"
+    log "cycle timing cycle=$cycle elapsed_ms=$(( $(milliseconds) - cycle_started )) slowest3=unavailable largest_gap=unavailable"
   fi
   return 0
 }
@@ -2817,6 +2932,7 @@ snapshot_shadow_work() {
 run_shadow_snapshot() {
   local started status extra
   started="$(milliseconds)"
+  STAGE_GAP_TIMING snapshot.shadow start
   if snapshot_shadow_work "$1" "$2"; then
     status=success
   else
@@ -3142,12 +3258,14 @@ run_pipeline() {
   telemetry_file="${DATAPULSE_TELEMETRY_FILE:-$repo/var/log/stages.jsonl}"
   cycle="$(date -u +'%Y-%m-%dT%H:%M')"
   cycle_started="$(milliseconds)"
+  STAGE_GAP_TIMING cycle start
   spool_control begin "$cycle"
   run_dir="$spool_root/building"
   run_dir_owned=true
 
   log "probe snapshot $snapshot"
   stage_started="$(milliseconds)"
+  STAGE_GAP_TIMING snapshot start
   git_repo archive "$snapshot" | tar -x -C "$run_dir"
   seed_buffered_artifacts
   seed_committed_okf_bundle
@@ -3175,6 +3293,7 @@ run_pipeline() {
     # heartbeat-FAIL watchdog removed: self-blocking; replaced by external alert path
     stage_started="$(milliseconds)"
     stage_name=probe
+    STAGE_GAP_TIMING probe start
     log "probe started at $(date -Iseconds)"
     bash scripts/check.sh --due > "$health_tmp"
     jq -e . "$health_tmp" >/dev/null
@@ -3190,16 +3309,19 @@ run_pipeline() {
     stage_name=""
     stage_started="$(milliseconds)"
     stage_name=validate
+    STAGE_GAP_TIMING validate start
     ${PYTHON_BIN} scripts/validate_at_runtime.py --input "$run_dir" --schemas "$run_dir"
     telemetry validate "$(( $(milliseconds) - stage_started ))" success
     stage_name=""
     stage_started="$(milliseconds)"
     stage_name=history
+    STAGE_GAP_TIMING history start
     ${PYTHON_BIN} scripts/gen_health_history.py --cycle "$cycle" --compact
     telemetry history "$(( $(milliseconds) - stage_started ))" success
     stage_name=""
     stage_started="$(milliseconds)"
     stage_name=evidence
+    STAGE_GAP_TIMING evidence start
     ${PYTHON_BIN} scripts/gen_trends.py
     ${PYTHON_BIN} scripts/gen_drift.py
     ${PYTHON_BIN} scripts/gen_reconciliation.py
@@ -3207,6 +3329,7 @@ run_pipeline() {
     stage_name=""
   )
   probe_finished_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+  STAGE_GAP_TIMING producer.handoff
   spool_control handoff "$snapshot" "$cycle" "$cycle_started" "$probe_finished_at"
   run_dir_owned=false
   run_dir="$spool_root/pending"
@@ -3239,6 +3362,7 @@ run_publisher() {
   cycle="$(jq -er .cycle "$run_dir/.handoff/READY")"
   cycle_started="$(jq -er .cycle_started "$run_dir/.handoff/READY")"
   probe_finished_at="$(jq -er .probe_finished_at "$run_dir/.handoff/READY")"
+  STAGE_GAP_TIMING publisher.resume
   recover_spool_transaction
   preflight
   fetch_origin
@@ -3292,42 +3416,53 @@ run_publisher() {
     # gen_catalog_snapshot, gen_record_evidence, gen_evidence_coverage,
     # gen_catalog_graph, and gen_public_summary.
     stage_name=deltas
+    STAGE_GAP_TIMING deltas start
     command_started="$(milliseconds)"
+    STAGE_GAP_TIMING deltas.gen_badges start
     bash scripts/gen_badges.sh
     telemetry deltas.gen_badges "$(( $(milliseconds) - command_started ))" success
     command_started="$(milliseconds)"
+    STAGE_GAP_TIMING deltas.gen_rss start
     bash scripts/gen_rss.sh
     telemetry deltas.gen_rss "$(( $(milliseconds) - command_started ))" success
     command_started="$(milliseconds)"
+    STAGE_GAP_TIMING deltas.gen_readme_summary start
     bash scripts/gen_readme_summary.sh
     telemetry deltas.gen_readme_summary "$(( $(milliseconds) - command_started ))" success
     command_started="$(milliseconds)"
+    STAGE_GAP_TIMING deltas.gen_catalog_snapshot start
     ${PYTHON_BIN} scripts/gen_catalog_snapshot.py
     telemetry deltas.gen_catalog_snapshot "$(( $(milliseconds) - command_started ))" success
     command_started="$(milliseconds)"
+    STAGE_GAP_TIMING deltas.gen_record_evidence start
     ${PYTHON_BIN} scripts/gen_record_evidence.py
     telemetry deltas.gen_record_evidence "$(( $(milliseconds) - command_started ))" success
     command_started="$(milliseconds)"
+    STAGE_GAP_TIMING deltas.gen_evidence_coverage start
     ${PYTHON_BIN} scripts/gen_evidence_coverage.py
     telemetry deltas.gen_evidence_coverage "$(( $(milliseconds) - command_started ))" success
     command_started="$(milliseconds)"
+    STAGE_GAP_TIMING deltas.gen_catalog_graph start
     ${PYTHON_BIN} scripts/gen_catalog_graph.py
     telemetry deltas.gen_catalog_graph "$(( $(milliseconds) - command_started ))" success
     # Public rollup of the snapshot written in the probe stage. It is a served surface
     # published from git, so it is generated here and committed with health/latest.json
     # in the same cycle instead of going stale silently.
     command_started="$(milliseconds)"
+    STAGE_GAP_TIMING deltas.gen_public_summary start
     ${PYTHON_BIN} scripts/gen_public_summary.py
     telemetry deltas.gen_public_summary "$(( $(milliseconds) - command_started ))" success
     telemetry deltas "$(( $(milliseconds) - derivative_started ))" success
     stage_name=""
     derivative_started="$(milliseconds)"
     stage_name=passports
+    STAGE_GAP_TIMING passports start
     ${PYTHON_BIN} scripts/gen_dataset_passports.py
     telemetry passports "$(( $(milliseconds) - derivative_started ))" success
     stage_name=""
     derivative_started="$(milliseconds)"
     stage_name=deltas.gen_dataset_pages
+    STAGE_GAP_TIMING deltas.gen_dataset_pages start
     ${PYTHON_BIN} scripts/gen_dataset_pages.py
     telemetry deltas.gen_dataset_pages "$(( $(milliseconds) - derivative_started ))" success
     stage_name=""
@@ -3339,6 +3474,7 @@ run_publisher() {
     run_okf_refresh
     derivative_started="$(milliseconds)"
     stage_name=kv-index
+    STAGE_GAP_TIMING kv-index start
     # KV is a dashboard acceleration only. Preserve its explicit result in the
     # service log, but never let an auxiliary write block health publication.
     if publish_output="$(${PYTHON_BIN} scripts/publish_health_index.py 2>&1)"; then
@@ -3374,12 +3510,16 @@ PY
   )
   probed="$(jq -r '.datasets | length' "$run_dir/health/latest.json")"
   log "probe finished at $(date -Iseconds); $probed datasets probed"
+  STAGE_GAP_TIMING publish.validate-output
   validate_staged_output
+  STAGE_GAP_TIMING publish.validated-output
   # observation-receipts/ is a managed artifact, so stage_artifacts() below needs
   # the path to exist. Seed it from the live checkout now; the signer then runs
   # after the artifact commit and appends to this same chain. Signing here would
   # be too early to name the commit that carries the artifact.
+  STAGE_GAP_TIMING publish.prepare-receipts
   prepare_observation_receipts "$(milliseconds)"
+  STAGE_GAP_TIMING publish.prepared-receipts
   heartbeat="$(git_repo show "$snapshot:health/latest.json" | jq -r '._trust_summary.pipeline_heartbeat_at // empty')"
   if [[ -n "$heartbeat" ]]; then
     jq --arg heartbeat "$heartbeat" '._trust_summary.pipeline_heartbeat_at = $heartbeat' "$run_dir/health/latest.json" > "$run_dir/health/.latest-with-heartbeat.json"
@@ -3396,6 +3536,7 @@ PY
   # step's own cost so a receipt can attribute the publish path instead of
   # reading the whole cycle as "publishing".
   stage_started="$(milliseconds)"
+  STAGE_GAP_TIMING publish.gate start
   fetch_origin
   publication_admission_guard || {
     if [[ "$publication_waiting" == true ]]; then
@@ -3463,6 +3604,7 @@ PY
   begin_publish_checkout
   log "publish staging validated artifacts into live checkout"
   stage_started="$(milliseconds)"
+  STAGE_GAP_TIMING publish.stage-artifacts start
   stage_artifacts
   telemetry publish.stage-artifacts "$(( $(milliseconds) - stage_started ))" success
 
@@ -3470,12 +3612,14 @@ PY
   # shared `git add -A`, so publish.swap is emitted inside each branch once the
   # last swap for that branch has run.
   stage_started="$(milliseconds)"
+  STAGE_GAP_TIMING publish.swap start
   swap_artifacts
   git_repo_index_retry add -A -- "${publish_artifact_paths[@]}"
 
   if git_repo diff --cached --quiet -- "${publish_artifact_paths[@]}"; then
     telemetry publish.swap "$(( $(milliseconds) - stage_started ))" success
     stage_started="$(milliseconds)"
+    STAGE_GAP_TIMING publish.add start
     heartbeat="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
     health_tmp="$(mktemp "$repo/health/.heartbeat.XXXXXX.json")"
     jq --arg heartbeat "$heartbeat" \
@@ -3485,6 +3629,7 @@ PY
     git_repo_index_retry add -- health/latest.json
     telemetry publish.add "$(( $(milliseconds) - stage_started ))" success
     stage_started="$(milliseconds)"
+    STAGE_GAP_TIMING publish.commit start
     git_repo update-ref "$PENDING_BASE_REF" "$snapshot"
     pending_ref_created=true
     git_repo_index_retry -c user.name="Redza Halim" -c user.email="r3dz4r@gmail.com" \
@@ -3493,6 +3638,7 @@ PY
     publish_swapped=false
     record_spool_commit
     stage_started="$(milliseconds)"
+    STAGE_GAP_TIMING publish.push start
     if [[ "$publication_buffered" == true ]]; then
       push_head --force
     else
@@ -3507,6 +3653,7 @@ PY
     log "publish committing changed artifacts"
     telemetry publish.swap "$(( $(milliseconds) - stage_started ))" success
     stage_started="$(milliseconds)"
+    STAGE_GAP_TIMING publish.add start
     heartbeat="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
     health_tmp="$(mktemp "$repo/health/.heartbeat.XXXXXX.json")"
     jq --arg heartbeat "$heartbeat" \
@@ -3516,6 +3663,7 @@ PY
     git_repo_index_retry add -- health/latest.json
     telemetry publish.add "$(( $(milliseconds) - stage_started ))" success
     stage_started="$(milliseconds)"
+    STAGE_GAP_TIMING publish.commit start
     git_repo update-ref "$PENDING_BASE_REF" "$snapshot"
     pending_ref_created=true
     git_repo_index_retry -c user.name="Redza Halim" -c user.email="r3dz4r@gmail.com" \
@@ -3524,6 +3672,7 @@ PY
     publish_swapped=false
     record_spool_commit
     stage_started="$(milliseconds)"
+    STAGE_GAP_TIMING publish.push start
     if [[ "$publication_buffered" == true ]]; then
       push_head --force
     else
@@ -3602,24 +3751,32 @@ publisher_post_publish() {
   # never turn an evidence problem into a health outage. It runs before the
   # post-publish stages so the top-level stage order (and the capture test that
   # pins it) is unchanged.
+  STAGE_GAP_TIMING post.signing
   run_observation_signing
+  STAGE_GAP_TIMING post.signed
 
   run_mcp_sync
   run_observation_capture
+  STAGE_GAP_TIMING post.shadow-health
   run_shadow_health_publication
+  STAGE_GAP_TIMING post.receipt
   run_pipeline_receipt
+  STAGE_GAP_TIMING post.receipted
 
   # Publish succeeded, and every post-publish stage has finished binding to
   # HEAD and the live artifact tree; only now is it safe to return the checkout
   # to agreement with origin/main. Reconciling earlier in the flow would reset
   # health/latest.json out from under observation signing's staged-vs-live
   # digest check and shadow health's comparison.
+  STAGE_GAP_TIMING post.reconcile
   reconcile_after_publish
+  STAGE_GAP_TIMING post.reconciled
   if [[ -n "$publish_root" ]]; then
     rm -rf -- "$publish_root"
     publish_root=""
     rm -f -- "$run_dir/.handoff/transaction.json"
   fi
+  STAGE_GAP_TIMING post.retire
   spool_control retire
   run_dir=""
   log_stage_timing_summary
