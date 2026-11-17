@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.68.0](https://github.com/r3dz4r/datapulse-my/compare/v3.67.0...v3.68.0) (2026-11-17)
+
+
+### Features
+
+* **pipeline:** retain a bounded per-cycle interval history ([86d6a1d](https://github.com/r3dz4r/datapulse-my/commit/86d6a1d7be884523ccb96e69ae4386a6effea5be))
+* **pipeline:** retain bounded cycle interval accounting ([18c4abb](https://github.com/r3dz4r/datapulse-my/commit/18c4abb35115a2d4243f19e0d231e14560fb3b44))
+
 ## [3.67.0](https://github.com/r3dz4r/datapulse-my/compare/v3.66.2...v3.67.0) (2026-11-17)
 
 
