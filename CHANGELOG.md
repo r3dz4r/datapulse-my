@@ -14,6 +14,14 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.68.1](https://github.com/r3dz4r/datapulse-my/compare/v3.68.0...v3.68.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* **pipeline:** recover a clean unpublished commit from an upstream divergence ([e2bd41b](https://github.com/r3dz4r/datapulse-my/commit/e2bd41b2c1c1d087e20686edc7c5f26f0ff7c598))
+* **pipeline:** recover clean unpublished commit divergence ([a403dbd](https://github.com/r3dz4r/datapulse-my/commit/a403dbd92d576ba7e292d6af207f19ad6010ca83))
+
 ## [3.68.0](https://github.com/r3dz4r/datapulse-my/compare/v3.67.0...v3.68.0) (2026-11-17)
 
 
