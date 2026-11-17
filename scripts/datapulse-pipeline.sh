@@ -2716,19 +2716,25 @@ PY
 }
 
 log_stage_timing_summary() {
-  local receipt_file timing_summary
+  local receipt_file timing_summary CYCLE_INTERVAL_HISTORY
   [[ -n "${cycle_started:-}" ]] || return 0
   STAGE_GAP_TIMING cycle end
   receipt_file="${DATAPULSE_RECEIPT_FILE:-$repo/var/log/pipeline-latest.json}"
+  CYCLE_INTERVAL_HISTORY="${DATAPULSE_CYCLE_INTERVAL_HISTORY:-$repo/var/log/cycle-interval-history.jsonl}"
   # Use the cycle start carried through the spool, so handoff waiting and final
   # reconciliation count too. The receipt's timestamp span excludes both ends.
   if timing_summary="$("$PYTHON_BIN" - "$receipt_file" "$cycle" \
-      "$(( $(milliseconds) - cycle_started ))" "${telemetry_file}.boundaries.jsonl" <<'PY'
+      "$(( $(milliseconds) - cycle_started ))" "${telemetry_file}.boundaries.jsonl" "$CYCLE_INTERVAL_HISTORY" <<'PY'
 import json
 import os
 import sys
 import tempfile
+from collections import deque
 from pathlib import Path
+
+# At the five-minute cadence, 4096 cycles retain about fourteen days of detail
+# without relying on service-log rotation or keeping raw boundary events.
+CYCLE_INTERVAL_HISTORY_MAX_RECORDS = 4096
 
 receipt = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
 if receipt["cycle"] != sys.argv[2]:
@@ -2815,6 +2821,47 @@ stages = sorted(
 slowest = ",".join(f"{name}:{elapsed}ms" for name, elapsed in stages) or "none"
 gaps = sorted((row for row in intervals if row["kind"] == "gap" and row["duration_ms"] is not None),
               key=lambda row: (-row["duration_ms"], row["name"]))
+try:
+    history_path = Path(sys.argv[5])
+    record = dict(
+        schema="datapulse-cycle-interval-history", schema_version=1, cycle=sys.argv[2],
+        total_elapsed_ms=total_ms, stage_elapsed_ms=stage_ms, gap_elapsed_ms=gap_ms,
+        intervals=intervals, unmeasured_intervals=unmeasured,
+        largest_gap=dict(name=gaps[0]["name"], duration_ms=gaps[0]["duration_ms"]) if gaps else None,
+    )
+    line = (json.dumps(record, separators=(",", ":")) + "\n").encode("utf-8")
+    history_path.parent.mkdir(parents=True, exist_ok=True)
+    # The cycle lock serializes writers; one unbuffered append exposes one line.
+    with history_path.open("ab", buffering=0) as out:
+        original_size = out.tell()
+        try:
+            if out.write(line) != len(line):
+                raise OSError("short cycle interval history write")
+        except OSError:
+            out.truncate(original_size)
+            raise
+    retained = deque(maxlen=CYCLE_INTERVAL_HISTORY_MAX_RECORDS)
+    count = 0
+    with history_path.open("rb") as source:
+        for existing in source:
+            retained.append(existing)
+            count += 1
+    if count > CYCLE_INTERVAL_HISTORY_MAX_RECORDS:
+        history_fd, history_temporary = tempfile.mkstemp(
+            prefix=f".{history_path.name}.", dir=history_path.parent)
+        try:
+            os.fchmod(history_fd, history_path.stat().st_mode & 0o777)
+            with os.fdopen(history_fd, "wb") as out:
+                out.writelines(retained)
+                out.flush()
+                os.fsync(out.fileno())
+            os.replace(history_temporary, history_path)
+        finally:
+            if os.path.exists(history_temporary):
+                os.unlink(history_temporary)
+except Exception:
+    print(f"datapulse-health: cycle interval history write failed; continuing health cycle cycle={sys.argv[2]}",
+          file=sys.stderr)
 largest_gap = f'{gaps[0]["name"]}:{gaps[0]["duration_ms"]}ms' if gaps else "none"
 if unmeasured:
     largest_gap += ";unmeasured=" + ",".join(row["name"] for row in unmeasured)
