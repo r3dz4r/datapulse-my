@@ -4,7 +4,7 @@ set -Eeuo pipefail
 # Installed copies need no arguments or working-directory configuration.
 # Path overrides should be absolute; defaults share the pipeline's runtime tree.
 readonly REPO="${DATAPULSE_REPO:-/srv/datapulse-my}"
-readonly PUBLISH_UNIT="${DATAPULSE_PUBLISH_UNIT:-datapulse-publish.service}"
+readonly PUBLISH_UNIT="${DATAPULSE_PUBLISH_UNIT:-datapulse-health-publish.service}"
 readonly PUBLICATION_STATE="${DATAPULSE_PUBLICATION_STATE:-$REPO/var/log/publication-in-flight.sha}"
 readonly PUBLISH_WAKE_STATE="${DATAPULSE_PUBLISH_WAKE_STATE:-$REPO/var/log/publish-wake-main.sha}"
 

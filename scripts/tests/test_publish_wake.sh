@@ -31,7 +31,7 @@ cat > "$fixture/bin/systemctl" <<'SH'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 printf '%s\n' "$*" >> "$WAKE_FIXTURE/starts"
-[[ "$*" == "--no-block start ${DATAPULSE_PUBLISH_UNIT:-datapulse-publish.service}" ]]
+[[ "$*" == "--no-block start ${EXPECTED_UNIT:-fixture-publish.service}" ]]
 # State must be recorded before the asynchronous request.
 [[ "$(cat "${DATAPULSE_PUBLISH_WAKE_STATE:-$DATAPULSE_REPO/var/log/publish-wake-main.sha}")" == "$REMOTE_HEAD" ]]
 exit "$START_STATUS"
@@ -108,7 +108,8 @@ unset DATAPULSE_PUBLICATION_STATE DATAPULSE_PUBLISH_WAKE_STATE DATAPULSE_PUBLISH
 # Keep the assertion paths in the harness without exporting them to the script.
 DATAPULSE_PUBLICATION_STATE="$DATAPULSE_REPO/var/log/publication-in-flight.sha"
 DATAPULSE_PUBLISH_WAKE_STATE="$DATAPULSE_REPO/var/log/publish-wake-main.sha"
-DATAPULSE_PUBLISH_UNIT=datapulse-publish.service
+# The script must supply this default itself, so the stub is told what to expect.
+export EXPECTED_UNIT=datapulse-health-publish.service
 run_case 'installed copy with default runtime paths and unit' 1 1
 [[ ! -s "$fixture/err" ]]
 printf 'PASS marker bytes, inode, mtime and ctime unchanged; only PATH stubs used\n'
