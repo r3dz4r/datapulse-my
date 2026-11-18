@@ -991,6 +991,17 @@ jobs:
           python3 scripts/select_accepted_health.py --measure-age \
             --health _site/health/latest.json --binding _site/attestations/latest/binding.json
 
+      - name: Require served observation near main health (served_health_stale)
+        # Post-upload: may fail the run, never prevents the upload.
+        if: always() && steps.deploy.outcome == 'success'
+        run: |
+          set -Eeuo pipefail
+          lag="$(jq -er '.served_lag_seconds | select(type == "number")' _site/publication-identity.json)"
+          if (( lag > 10800 )); then
+            echo "::error title=Served health trails main::$(jq -r '.observed_at' _site/publication-identity.json) is ${lag}s behind main health (bound 10800s): $(jq -r '.served_lag_cause' _site/publication-identity.json)"
+            exit 1
+          fi
+
   publication_freshness:
     name: Check production publication freshness
     needs: [deploy]
