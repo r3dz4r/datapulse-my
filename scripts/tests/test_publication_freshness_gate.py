@@ -132,7 +132,7 @@ def test_workflow_compares_served_content_to_published_artifact(
     assert "git show" not in step["run"]
     assert step["if"] == "always()"
     checkout = _freshness_job()["steps"][0]
-    assert checkout["with"]["fetch-depth"] == 0
+    assert checkout["with"]["fetch-depth"] == 1  # This job reads served content, not repository history.
     (tmp_path / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
     health = tmp_path / "health/latest.json"
     health.parent.mkdir()
