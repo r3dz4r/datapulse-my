@@ -2,7 +2,7 @@ name: Commit daily signed attestation envelopes
 
 on:
   schedule:
-    - cron: "17 * * * *"
+    - cron: "17 3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -13,7 +13,7 @@ permissions:
 concurrency:
   group: cloudflare-pages-production
   cancel-in-progress: false
-  # Serialize hourly append producers without evicting pending runs.
+  # Queue pending promotions instead of evicting the daily append producer.
   queue: max
 
 jobs:
@@ -188,45 +188,6 @@ jobs:
           fi
           python3 scripts/verify_attestation_append.py --base HEAD
 
-      - name: Prepare the append race guard
-        run: |
-          set -Eeuo pipefail
-          # Keep status classification here; the signing and append scripts stay unchanged.
-          cat > "$RUNNER_TEMP/attestation-append-guard.sh" <<'BASH'
-          set -Eeuo pipefail
-          readonly ACCEPTED_HEAD_ADVANCED=76
-          source="$(git rev-parse HEAD)"
-          log="$RUNNER_TEMP/attestation-append.log"
-          # The existing refusal prevents even one rebuild of a frozen candidate.
-          status=0
-          APPEND_REBUILD_ATTEMPT=1 bash "$1" > "$log" 2>&1 || status=$?
-          cat "$log"
-          if (( status == 1 )) && grep -Fq 'Refusing a second append rebuild: accepted main moved from ' "$log"; then
-            accepted="$(git rev-parse origin/main)"
-            if [[ "$accepted" != "$source" ]] && git merge-base --is-ancestor "$source" "$accepted"; then
-              old_head="$(git show "$source:attestations/chain-index.json" | jq -er '.current_head')"
-              new_head="$(git show "$accepted:attestations/chain-index.json" | jq -er '.current_head')"
-              refusal="Refusing a second append rebuild: accepted main moved from $source to $accepted (heads $old_head and $new_head)."
-              # Generic verifier, fetch, signing, and submission errors must still fail.
-              if grep -Fxq "$refusal" "$log"; then
-                echo "ACCEPTED_HEAD_ADVANCED: accepted head advanced from $source to $accepted; skipping this candidate without retry."
-                printf 'state=head_advanced\nexit_code=%s\n' "$ACCEPTED_HEAD_ADVANCED" >> "$GITHUB_OUTPUT"
-                exit "$ACCEPTED_HEAD_ADVANCED"
-              fi
-            fi
-          fi
-          if (( status == 0 )); then
-            read -r branch _ < "$APPEND_SUBMISSION_RESULT"
-            if [[ "$branch" == noop ]]; then
-              printf 'state=noop\n' >> "$GITHUB_OUTPUT"
-            else
-              printf 'state=submitted\n' >> "$GITHUB_OUTPUT"
-            fi
-          fi
-          printf 'exit_code=%s\n' "$status" >> "$GITHUB_OUTPUT"
-          exit "$status"
-          BASH
-
       - uses: actions/create-github-app-token@v1
         id: app-token
         with:
@@ -234,32 +195,9 @@ jobs:
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       - name: Commit dated envelopes and open their append pull request
-        id: append_attempt
-        continue-on-error: true
-        shell: bash --noprofile --norc -e -o pipefail "${{ runner.temp }}/attestation-append-guard.sh" {0}
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
-          APPEND_SUBMISSION_RESULT: ${{ runner.temp }}/attestation-append-result
         run: bash scripts/submit_attestation_append.sh
-
-      - name: Report skipped append
-        if: (steps.append_attempt.outcome == 'failure' && steps.append_attempt.outputs.exit_code == '76' && steps.append_attempt.outputs.state == 'head_advanced') || (steps.append_attempt.outcome == 'success' && steps.append_attempt.outputs.state == 'noop')
-        env:
-          APPEND_EXIT_CODE: ${{ steps.append_attempt.outputs.exit_code }}
-        run: |
-          if [[ "$APPEND_EXIT_CODE" == 76 ]]; then
-            message='Skipped: ACCEPTED_HEAD_ADVANCED (76); accepted head advanced; no retry.'
-          else
-            message='Skipped: no new candidate to accept.'
-          fi
-          echo "::notice::$message"
-          printf '%s\n' "$message" >> "$GITHUB_STEP_SUMMARY"
-
-      - name: Fail unexpected append errors
-        if: steps.append_attempt.outcome == 'failure' && (steps.append_attempt.outputs.exit_code != '76' || steps.append_attempt.outputs.state != 'head_advanced')
-        run: |
-          echo '::error::Attestation append failed outside the accepted-head-advanced skip; see the append log.'
-          exit 1
 
       - name: Remove ephemeral Ed25519 attestation key
         if: always()
