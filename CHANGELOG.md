@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.68.4](https://github.com/r3dz4r/datapulse-my/compare/v3.68.3...v3.68.4) (2026-11-18)
+
+
+### Bug Fixes
+
+* **deploy:** fail the run when served health trails main (served_health_stale) ([#3683](https://github.com/r3dz4r/datapulse-my/issues/3683)) ([0a71b7e](https://github.com/r3dz4r/datapulse-my/commit/0a71b7e95113302b1d5dd797813036109761906e))
+
 ## [3.68.3](https://github.com/r3dz4r/datapulse-my/compare/v3.68.2...v3.68.3) (2026-11-18)
 
 
