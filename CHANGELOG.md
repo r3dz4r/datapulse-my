@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.68.5](https://github.com/r3dz4r/datapulse-my/compare/v3.68.4...v3.68.5) (2026-11-19)
+
+
+### Bug Fixes
+
+* **deploy:** bound served lag at the append cadence envelope, not 3h ([#3691](https://github.com/r3dz4r/datapulse-my/issues/3691)) ([6e92115](https://github.com/r3dz4r/datapulse-my/commit/6e92115c729daf2a47b3cd53aaee3eb588c0b27e))
+
 ## [3.68.4](https://github.com/r3dz4r/datapulse-my/compare/v3.68.3...v3.68.4) (2026-11-18)
 
 
