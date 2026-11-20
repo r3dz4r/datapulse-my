@@ -206,6 +206,24 @@ git_repo_index_retry() {
   done
 }
 
+history_daily_newest_aggregate_day() {
+  "$PYTHON_BIN" - "$1" <<'PY'
+import json
+import re
+import sys
+
+try:
+    with open(sys.argv[1], encoding="utf-8") as source:
+        rows = json.load(source).get("aggregates", [])
+    days = [row.get("date") for row in rows if isinstance(row, dict)]
+    days = [day for day in days if isinstance(day, str) and re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2}", day)]
+    if days:
+        print(max(days))
+except (OSError, UnicodeError, ValueError, AttributeError, TypeError):
+    pass
+PY
+}
+
 # 0 = artifacts computed from the snapshot may still be published.
 # 1 = the snapshot is on neither origin/main nor the publish branch, so the
 #     history it was computed from has moved out from under it.
@@ -3698,6 +3716,21 @@ PY
   stage_started="$(milliseconds)"
   STAGE_GAP_TIMING publish.swap start
   swap_artifacts
+  history_working_day="$(history_daily_newest_aggregate_day "$repo/health/history_daily.json")"
+  history_committed_day=""
+  history_branch=keep
+  if history_tmp="$(mktemp)"; then
+    if git_repo show HEAD:health/history_daily.json > "$history_tmp" 2>/dev/null; then
+      history_committed_day="$(history_daily_newest_aggregate_day "$history_tmp")"
+    fi
+    rm -f -- "$history_tmp"
+  fi
+  if [[ -n "$history_committed_day" && -f "$repo/health/history_daily.json" \
+        && ( -z "$history_working_day" || "$history_working_day" < "$history_committed_day" || "$history_working_day" == "$history_committed_day" ) ]]; then
+    git_repo_index_retry restore --source=HEAD --staged --worktree -- health/history_daily.json
+    history_branch=restore
+  fi
+  log "history daily working=${history_working_day:-none} committed=${history_committed_day:-none} action=$history_branch"
   git_repo_index_retry add -A -- "${publish_artifact_paths[@]}"
 
   if git_repo diff --cached --quiet -- "${publish_artifact_paths[@]}"; then
