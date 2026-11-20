@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.68.6](https://github.com/r3dz4r/datapulse-my/compare/v3.68.5...v3.68.6) (2026-11-20)
+
+
+### Bug Fixes
+
+* **pipeline:** hold daily history until its aggregate day advances ([#3804](https://github.com/r3dz4r/datapulse-my/issues/3804)) ([3f0b28d](https://github.com/r3dz4r/datapulse-my/commit/3f0b28d1fd9d759816fd27e7dcbb0859d2c9abc0))
+
 ## [3.68.5](https://github.com/r3dz4r/datapulse-my/compare/v3.68.4...v3.68.5) (2026-11-19)
 
 
