@@ -6,7 +6,21 @@ from pathlib import Path
 
 import pytest
 
-from scripts.gen_public_summary import GenerationError, STATUS_KEYS, generate
+from scripts.gen_public_summary import GenerationError, STATUS_KEYS, _now_iso, generate
+
+
+def test_generation_clock_honours_source_date_epoch(monkeypatch):
+    monkeypatch.setenv("SOURCE_DATE_EPOCH", "1794589942")
+    assert _now_iso() == "2026-11-13T17:12:22+00:00"
+
+
+def test_generation_clock_falls_back_for_invalid_epoch(monkeypatch):
+    from datetime import datetime, timezone
+
+    monkeypatch.setenv("SOURCE_DATE_EPOCH", "invalid")
+    before = datetime.now(timezone.utc)
+    actual = datetime.fromisoformat(_now_iso())
+    assert before <= actual <= datetime.now(timezone.utc)
 
 
 def _write_health(root: Path, *, extra_status: bool = False) -> None:

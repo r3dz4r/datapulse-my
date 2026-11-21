@@ -31,6 +31,14 @@ STATUS_KEYS = (
 
 def _now_iso() -> str:
     """Return the generation time; kept separate so tests can freeze the clock."""
+    import os
+
+    epoch = os.environ.get("SOURCE_DATE_EPOCH")
+    if epoch is not None:
+        try:
+            return datetime.fromtimestamp(int(epoch), timezone.utc).isoformat()
+        except ValueError:
+            pass
     return datetime.now(timezone.utc).isoformat()
 
 
