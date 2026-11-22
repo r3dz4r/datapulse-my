@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/bop/bop_balance.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-08T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-15T04:46:27Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-22T05:21:22Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/bop_balance.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 325
-stale_after: "2026-08-17T00:00:00Z"
+stale_after: "2026-11-16T00:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Balance of Payments by Account is published by Department of Statistics Malaysia
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:d88c73cfbd47c106e0abd5f4f49f5fc036b84cd89e409777347e2ad234bbccfd`
-- `record_count`: `330`
+- `record_count`: `435`
 
 # Quirks
 
