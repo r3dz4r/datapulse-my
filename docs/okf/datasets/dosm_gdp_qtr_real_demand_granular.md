@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/gdp/gdp_qtr_real_demand_sub.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-15T04:46:27Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-22T05:21:22Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -26,7 +26,7 @@ Quarterly Real GDP by Expenditure Subtype is published by Department of Statisti
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:5c6dfff12ef78b2d6fa19d8007d65351757e4815614b1055d9c1f1508616d10d`
-- `record_count`: `3504`
+- `record_count`: `3583`
 
 # Quirks
 

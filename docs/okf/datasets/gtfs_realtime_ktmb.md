@@ -8,25 +8,25 @@ sources:
   - {"id": "ktmb","resource": "https://api.data.gov.my/gtfs-realtime/vehicle-position/ktmb","title": "Keretapi Tanah Melayu Berhad (KTMB)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-21T07:40:49Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-22T08:00:21Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Keretapi Tanah Melayu Berhad"
-datapulse:real_status: "stale"
+datapulse:real_status: "fresh"
 datapulse:health_report: "/data/gtfs_realtime_ktmb.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-11-21T07:50:49Z"
+stale_after: "2026-11-22T08:10:21Z"
 datapulse:stale_after_basis: "realtime"
 ---
 
 # Summary
 
-GTFS Realtime — KTMB Vehicle Positions is published by Keretapi Tanah Melayu Berhad (KTMB) and tracked by DataPulse. The latest published probe classifies it as `stale`.
+GTFS Realtime — KTMB Vehicle Positions is published by Keretapi Tanah Melayu Berhad (KTMB) and tracked by DataPulse. The latest published probe classifies it as `fresh`.
 
 # Schema
 
-- `record_count`: `8`
+- `record_count`: `9`
 
 # Quirks
 

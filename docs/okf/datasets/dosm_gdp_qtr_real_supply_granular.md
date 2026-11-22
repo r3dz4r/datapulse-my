@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/gdp/gdp_qtr_real_supply_sub.csv","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-15T04:46:27Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-22T05:21:22Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -26,7 +26,7 @@ Quarterly Real GDP by Economic Subsector is published by Department of Statistic
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:69b57252740ad034b05c61036fed5088d0402b198a91be62fb31814fbec60344`
-- `record_count`: `10241`
+- `record_count`: `10472`
 
 # Quirks
 
