@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://api.data.gov.my/data-catalogue?id=gdp_qtr_real_sa_demand","title": "Department of Statistics Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-09T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-15T04:46:27Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-22T05:21:22Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "aging"
 datapulse:health_report: "/data/dosm_gdp_qtr_real_sa_demand.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: 270
-stale_after: "2026-08-17T00:00:00Z"
+stale_after: "2026-11-16T00:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ Quarterly Real GDP (Seasonally Adjusted) by Expenditure Type is published by Dep
 
 - `column_count`: `4`
 - `first_row_hash`: `shape-v1:5ad28b6a5daf4f5cdb0d8b44b502c6ea2d841a71fbbb499234bc388a46a80b97`
-- `record_count`: `276`
+- `record_count`: `558`
 
 # Quirks
 

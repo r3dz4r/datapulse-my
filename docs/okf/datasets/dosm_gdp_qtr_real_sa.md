@@ -8,7 +8,7 @@ sources:
   - {"id": "dosm","resource": "https://storage.dosm.gov.my/gdp/gdp_qtr_real_sa.csv","title": "DOSM Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-04T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-15T04:46:27Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-22T05:21:22Z"}
 status: "stable"
 datapulse:licence: "Creative Commons Attribution 4.0"
 datapulse:attribution: "Data source: Department of Statistics Malaysia"
@@ -16,7 +16,7 @@ datapulse:real_status: "fresh"
 datapulse:health_report: "/data/dosm_gdp_qtr_real_sa.md"
 datapulse:methodology_version: 3
 datapulse:expected_record_count: null
-stale_after: "2026-08-17T00:00:00Z"
+stale_after: "2026-11-16T00:00:00Z"
 datapulse:stale_after_basis: "cadence"
 ---
 
@@ -28,7 +28,7 @@ OpenDOSM Quarterly Real GDP (Seasonally Adjusted) is published by DOSM Malaysia 
 
 - `column_count`: `3`
 - `first_row_hash`: `shape-v1:fa4bd649f882bee506a7b2fb668dde7ba2a99adfc510149c8657f7e898bea002`
-- `record_count`: `46`
+- `record_count`: `93`
 
 # Quirks
 
