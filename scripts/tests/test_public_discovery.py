@@ -17,7 +17,6 @@ def _stage(root: Path) -> None:
         "origins": {
             "website": "https://www.data-pulse.my",
             "mcp": "https://mcp.data-pulse.my",
-            "api": "https://api.data-pulse.my",
             "repository": "https://github.com/r3dz4r/datapulse-my",
         },
         "pages": ["/", "/health-methodology.html"],
@@ -39,9 +38,8 @@ def _stage(root: Path) -> None:
         "properties": {"product_name": {"const": "DataPulse"}, "dataset_pages": {"properties": {"path_template": {"const": "/datasets/{id}"}}}, "origins": {"properties": {
             "website": {"const": "https://www.data-pulse.my"},
             "mcp": {"const": "https://mcp.data-pulse.my"},
-            "api": {"const": "https://api.data-pulse.my"},
             "repository": {"const": "https://github.com/r3dz4r/datapulse-my"},
-        }, "required": ["website", "mcp", "api", "repository"], "additionalProperties": False}},
+        }, "required": ["website", "mcp", "repository"], "additionalProperties": False}},
         "additionalProperties": False,
     }) + "\n")
     (root / "datapulse.json").write_text(json.dumps({"datasets": [{"id": "beta"}, {"id": "alpha"}]}) + "\n")

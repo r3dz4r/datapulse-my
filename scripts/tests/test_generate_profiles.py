@@ -286,11 +286,6 @@ def _stage_source(tmp_path: Path) -> Path:
     surfaces["compatibility_aliases"] = production_surfaces["compatibility_aliases"]
     _write_json(source / "config/public-surfaces.json", surfaces)
     schema = json.loads((source / "config/public-surfaces.schema.json").read_text(encoding="utf-8"))
-    origins = schema["properties"]["origins"]
-    required = origins.setdefault("required", ["website", "mcp", "repository"])
-    if "api" not in required:
-        required.append("api")
-    origins["properties"]["api"] = {"const": "https://api.data-pulse.my"}
     _write_json(source / "config/public-surfaces.schema.json", schema)
     shutil.copy2(RELEASE_FIXTURE / "robots.txt", source / "robots.txt")
     shutil.copy2(RELEASE_FIXTURE / "docs/mcp-deploy.md", source / "docs/mcp-deploy.md")
