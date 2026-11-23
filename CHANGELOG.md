@@ -14,6 +14,15 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.68.7](https://github.com/r3dz4r/datapulse-my/compare/v3.68.6...v3.68.7) (2026-11-23)
+
+
+### Bug Fixes
+
+* **contract:** declare only origins that are actually served ([5e93775](https://github.com/r3dz4r/datapulse-my/commit/5e937758cd4813fa687e981db6b1702e3dfb43d3))
+* derive public origins from served surfaces ([9b25de5](https://github.com/r3dz4r/datapulse-my/commit/9b25de5de28f4caff6682a4be9d9bea7d615d5e8))
+* stop requiring removed api origin ([5e1879a](https://github.com/r3dz4r/datapulse-my/commit/5e1879ad81f8691f258a2cc47aa6add9aa2188e7))
+
 ## [3.68.6](https://github.com/r3dz4r/datapulse-my/compare/v3.68.5...v3.68.6) (2026-11-20)
 
 
