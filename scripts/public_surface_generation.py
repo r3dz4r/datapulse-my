@@ -25,7 +25,6 @@ ALLOWED_CONFIG_KEYS = {
     "artifacts",
     "featured_dataset_ids",
 }
-ALLOWED_ORIGIN_KEYS = {"website", "mcp", "api", "repository"}
 OLD_CANONICAL_HOSTS = {"r3dz4r.github.io"}
 
 
@@ -79,6 +78,7 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
     """Load and strictly validate the stable public-surface contract."""
     path = root / "config/public-surfaces.json"
     schema_path = root / "config/public-surfaces.schema.json"
+    served_origins_path = Path(__file__).resolve().parents[1] / "config/served-origins.json"
     schema = load_json(schema_path)
     if schema.get("additionalProperties") is not False:
         raise GenerationError(f"{schema_path}: root additionalProperties must be false")
@@ -107,8 +107,20 @@ def load_public_surfaces(root: Path) -> dict[str, Any]:
     origins = document["origins"]
     if not isinstance(origins, dict):
         raise GenerationError(f"{path}: origins must be an object")
-    if set(origins) != ALLOWED_ORIGIN_KEYS:
-        raise GenerationError(f"{path}: origins must contain exactly {sorted(ALLOWED_ORIGIN_KEYS)}")
+    if not served_origins_path.is_file():
+        raise GenerationError(f"{served_origins_path}: missing origins declaration")
+    served_origins = load_json(served_origins_path).get("origins")
+    if not isinstance(served_origins, dict):
+        raise GenerationError(f"{served_origins_path}: missing origins declaration")
+    allowed_origin_keys = set(served_origins)
+    contract_origin_keys = set(origins)
+    if contract_origin_keys != allowed_origin_keys:
+        missing = sorted(contract_origin_keys - allowed_origin_keys)
+        undeclared = sorted(allowed_origin_keys - contract_origin_keys)
+        mismatched = ", ".join(
+            [*(f"unserved: {key}" for key in missing), *(f"not declared: {key}" for key in undeclared)]
+        )
+        raise GenerationError(f"{path}: origins do not match served origins ({mismatched})")
     validated_origins = {key: _validate_origin(key, origins[key]) for key in origins}
     for key, value in validated_origins.items():
         expected = schema_origins.get("properties", {}).get(key, {}).get("const")

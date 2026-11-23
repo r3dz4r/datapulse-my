@@ -22,6 +22,7 @@ def _landing_root(tmp_path: Path) -> Path:
         "config/landing-page.json",
         "config/public-surfaces.json",
         "config/public-surfaces.schema.json",
+        "config/served-origins.json",
         "scripts/gen_landing_page.py",
         "scripts/public_surface_generation.py",
         "scripts/templates/landing.html.tmpl",

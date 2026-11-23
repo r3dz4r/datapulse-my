@@ -393,7 +393,6 @@ catalog_graph = json.loads((work / "catalog-graph.json").read_text())
 surfaces = load_public_surfaces(Path.cwd())
 
 assert surfaces["pages"] == ["/", "/health-methodology.html", "/privacy.html", "/learn.html", "/okf/"]
-website, mcp_origin, api_origin = (surfaces["origins"][key] for key in ("website", "mcp", "api"))
 
 manifest_ids = [row["id"] for row in manifest["datasets"]]
 health_ids = [row["dataset_id"] for row in health["datasets"]]
@@ -631,7 +630,8 @@ from scripts.public_surface_generation import load_public_surfaces
 
 work = Path(sys.argv[1])
 surfaces = load_public_surfaces(Path.cwd())
-website, mcp_origin, api_origin = (surfaces["origins"][key] for key in ("website", "mcp", "api"))
+website = surfaces["origins"].get("website")
+assert website, "config/served-origins.json: missing required 'website' origin declaration"
 health = json.loads((work / "health.json").read_text(encoding="utf-8"))
 manifest = json.loads((work / "manifest.json").read_text(encoding="utf-8"))
 

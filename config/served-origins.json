@@ -1,0 +1,17 @@
+{
+  "schema": "datapulse/v1/served-origins",
+  "origins": {
+    "website": {
+      "serving": "Cloudflare Pages",
+      "path": ".github/workflows/deploy-cloudflare-pages.yml"
+    },
+    "mcp": {
+      "serving": "FastMCP behind the Cloudflare Tunnel",
+      "path": "mcp/server.py"
+    },
+    "repository": {
+      "serving": "GitHub repository",
+      "path": "README.md"
+    }
+  }
+}

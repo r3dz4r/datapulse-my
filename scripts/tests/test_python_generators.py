@@ -30,6 +30,7 @@ CHANGELOG_INPUTS = [
     "health/latest.json",
     "config/public-surfaces.json",
     "config/public-surfaces.schema.json",
+    "config/served-origins.json",
 ]
 CHANGELOG_OUTPUTS = ["catalog-snapshot.json", "changelog.json"]
 JSONLD_INPUTS = [
@@ -38,6 +39,7 @@ JSONLD_INPUTS = [
     "docs/index.html",
     "config/public-surfaces.json",
     "config/public-surfaces.schema.json",
+    "config/served-origins.json",
 ]
 JSONLD_OUTPUTS = [
     "data/jsonld/catalog.json",
