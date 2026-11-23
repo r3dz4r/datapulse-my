@@ -8,7 +8,7 @@ sources:
   - {"id": "bnm","resource": "https://api.bnm.gov.my/public/my-overnight-rate","title": "Bank Negara Malaysia"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-08-10T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-21T14:01:26Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-22T14:31:26Z"}
 status: "stable"
 datapulse:licence: "Open Government Licence (Malaysia)"
 datapulse:attribution: "Source: Bank Negara Malaysia"
