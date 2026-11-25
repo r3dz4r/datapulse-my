@@ -170,19 +170,19 @@ esac
     curl.chmod(0o755)
     observed_at = "bad" if damage == "invalid-clock" else "2026-11-12T09:26:20Z"
     served = json.dumps({"checked_at": observed_at})
-    identity = {"accepted_main_commit": deployed, "observed_at": observed_at,
-                "health_sha256": hashlib.sha256(served.encode()).hexdigest()}
+    identity = {"accepted_main_commit": deployed, "data_observed_at": observed_at, "observed_at": "2026-11-11T09:26:20Z",
+                "data_health_sha256": hashlib.sha256(served.encode()).hexdigest()}
     if damage in {"clock", "newer"}:
         served = json.dumps({"checked_at": "2026-11-12T09:25:20Z" if damage == "clock"
                              else "2026-11-12T09:27:20Z"})
     elif damage == "digest":
         served += "\n"
     elif damage == "missing-clock":
-        del identity["observed_at"]
+        del identity["data_observed_at"]
     elif damage == "missing-digest":
-        del identity["health_sha256"]
+        del identity["data_health_sha256"]
     elif damage == "invalid-digest":
-        identity["health_sha256"] = "not-a-digest"
+        identity["data_health_sha256"] = "not-a-digest"
     env = {**os.environ, "PATH": f"{bin_path}:{os.environ['PATH']}",
            "IDENTITY": "" if damage == "empty-identity" else json.dumps(identity),
            "SERVED_HEALTH": "" if damage == "empty-health" else served,
@@ -307,7 +307,7 @@ case "$url" in
     if [[ "$IDENTITY_STATUS" == transport ]]; then printf 000; exit 7; fi
     printf '%s' "$IDENTITY_STATUS" ;;
   */binding.json) cp "$FIXTURE/binding.json" "$output" ;;
-  */health.json) cp "$FIXTURE/health.json" "$output" ;;
+  */health/accepted/latest.json) cp "$FIXTURE/health.json" "$output" ;;
   *) exit 99 ;;
 esac
 ''')
@@ -381,24 +381,35 @@ def test_publication_precedes_age_verdict(
     env, served_command = _served_report_case(tmp_path, identity_status, age_hours)
     (tmp_path / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
     site = tmp_path / "_site"
-    for directory in ("health", "attestations/latest", ".attestations"):
+    for directory in ("health/accepted", "attestations/latest", ".attestations"):
         (site / directory).mkdir(parents=True)
+    shutil.copy2(tmp_path / "health.json", site / "health/accepted/latest.json")
     shutil.copy2(tmp_path / "health.json", site / "health/latest.json")
+    (tmp_path / "health").mkdir()
+    shutil.copy2(tmp_path / "health.json", tmp_path / "health/latest.json")
+    for args in [("init", "-q"), ("add", "health/latest.json"), ("-c", "user.name=Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "pinned data")]:
+        subprocess.run(["git", *args], cwd=tmp_path, check=True, capture_output=True)
+    revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=tmp_path, text=True).strip()
     shutil.copy2(tmp_path / "binding.json", site / "attestations/latest/binding.json")
     for path in ("attestations/latest/chain_head.json", ".attestations/chain_head.json"):
         (site / path).write_text(json.dumps({"chain_head": "a" * 64}))
     (site / "datapulse.json").write_text("{}")
     (site / "index.html").write_text("<html><body>Fixture</body></html>")
     identity = json.loads((tmp_path / "identity.json").read_text()) | {
-        "accepted_main_commit": "b" * 40,
+        "accepted_main_commit": revision,
+        "data_health_sha256": hashlib.sha256((site / "health/latest.json").read_bytes()).hexdigest(),
+        "data_observed_at": json.loads((site / "health/latest.json").read_bytes())["checked_at"],
         "manifest_sha256": hashlib.sha256(b"{}").hexdigest(),
     }
     publication = Path(env["RUNNER_TEMP"]) / "sigstore-publication"
     publication.mkdir()
+    (publication / "health").mkdir()
+    shutil.copy2(tmp_path / "health.json", publication / "health/latest.json")
+    (publication / "accepted-observation.json").write_text("{}")
     (publication / "publication-identity.json").write_text(json.dumps(identity))
-    env |= {"ACCEPTED_MAIN_COMMIT": "b" * 40,
+    env |= {"ACCEPTED_MAIN_COMMIT": revision,
             "ACCEPTED_OBSERVED_AT": identity["observed_at"],
-            "PROMOTION_SOURCE_SHA": "b" * 40,
+            "PROMOTION_SOURCE_SHA": revision,
             "EVENT_LOG": str(tmp_path / "events")}
     bin_path = tmp_path / "bin"
     python = bin_path / "python3"

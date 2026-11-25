@@ -47,7 +47,7 @@ def test_health_snapshot_gate_owned_by_verify_served_release() -> None:
 
     verifier = SERVED_VERIFIER.read_text(encoding="utf-8")
     health_gate = verifier.split('if [[ "$kv_surfaces_published_elsewhere" != true || "$accepted_report" == true ]]; then', 1)[1]
-    assert "served health digest differs from the accepted report bytes" in health_gate
+    assert "served health digest differs from the pinned data bytes" in health_gate
     assert 'if [[ "$accepted_report" == true ]]; then' in health_gate
 
 
@@ -726,8 +726,8 @@ def test_attestation_state_machine_preserves_the_accepted_report_during_signer_o
     assert gate["if"] == "needs.sign_health.outputs.health_only != 'true' && needs.sign_health.outputs.attestation_state != 'signed'"
     overlay = next(step for step in steps if step.get("name") == "Bind built dashboard to accepted sign-time trust plane")
     assert "if" not in overlay
-    assert 'cp "$publication/health/latest.json" health/latest.json' in overlay["run"]
-    assert "verify_attestation_binding.py --root ." in overlay["run"]
+    assert 'cp "$publication/health/latest.json" health/accepted/latest.json' in overlay["run"]
+    assert 'verify_attestation_binding.py --root "$publication"' in overlay["run"]
     assert "preserved-attestations" not in workflow
 
 
@@ -1307,8 +1307,8 @@ def test_sign_health_selects_accepted_inputs_before_signing() -> None:
     generate = next(step for step in steps if step.get("name") == "Generate deterministic health attestation statement")
     assert steps.index(select) < steps.index(generate)
     assert '--revision "$PROMOTION_SOURCE_SHA"' in select["run"]
-    assert '--health health/latest.json' in generate["run"]
-    assert '--manifest datapulse.json' in generate["run"]
+    assert '--health health/accepted/latest.json' in generate["run"]
+    assert '--manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json"' in generate["run"]
     assert '--legacy-chain-head .attestations/chain_head.json' in generate["run"]
 
 
@@ -1329,8 +1329,8 @@ def test_health_only_signed_artifact_carries_and_overlays_the_generated_attestat
         "      - name: Deploy canonical Cloudflare Pages artifact\n", 1
     )[0]
 
-    assert 'cmp health/latest.json "$publication/health/latest.json"' in sign_step
-    assert 'cmp datapulse.json "$publication/datapulse.json"' in sign_step
+    assert 'cmp health/accepted/latest.json "$publication/health/latest.json"' in sign_step
+    assert 'cmp health/latest.json "$RUNNER_TEMP/pinned-health.json"' in sign_step
     assert upload["with"]["include-hidden-files"] is True
 
     # Full releases also publish the accepted sign-time head and manifest.
@@ -1340,7 +1340,7 @@ def test_health_only_signed_artifact_carries_and_overlays_the_generated_attestat
     assert 'test -s "$RUNNER_TEMP/sigstore-publication/attestations/latest/chain_head.json"' in assemble
     assert 'rm -rf _site/attestations' in assemble
     assert 'rm -rf _site/.attestations' in assemble
-    assert 'cp "$RUNNER_TEMP/sigstore-publication/datapulse.json" _site/datapulse.json' in assemble
+    assert 'cp "$RUNNER_TEMP/sigstore-publication/datapulse.json" _site/datapulse.json' not in assemble
     assert 'cp -R "$RUNNER_TEMP/sigstore-publication/attestations" _site/' in assemble
     assert 'cp -R "$RUNNER_TEMP/sigstore-publication/.attestations" _site/' in assemble
 
@@ -1411,7 +1411,7 @@ def _select_step() -> dict:
                 if step.get('id') == 'select_accepted_health')
 
 
-def test_frozen_main_h1_publishes_accepted_h0_with_its_observation_time(tmp_path: Path) -> None:
+def test_signing_keeps_h0_and_indexes_its_evidence_separately_from_h1(tmp_path: Path) -> None:
     root, revision, h0, env = _accepted_workflow_case(tmp_path)
     h1 = (root / 'health/latest.json').read_bytes()
     assert h1 != h0
@@ -1421,15 +1421,31 @@ def test_frozen_main_h1_publishes_accepted_h0_with_its_observation_time(tmp_path
     # Assert on the workflow's own decision, not just the selector function.
     outputs = dict(line.split('=', 1) for line in Path(env['GITHUB_OUTPUT']).read_text().splitlines())
     assert outputs == {'state': 'accepted', 'observed_at': json.loads(h0)['checked_at']}
-    assert (root / 'health/latest.json').read_bytes() == h0
+    assert (root / 'health/latest.json').read_bytes() == h1
+    assert (root / 'health/accepted/latest.json').read_bytes() == h0
     publication = Path(env['RUNNER_TEMP']) / 'sigstore-publication'
     assert (publication / 'health/latest.json').read_bytes() == h0
     identity = json.loads((publication / 'publication-identity.json').read_bytes())
     assert identity['accepted_main_commit'] == revision
     assert identity['observed_at'] == outputs['observed_at']
+    assert identity['data_observed_at'] == json.loads(h1)['checked_at']
+    assert identity['data_health_sha256'] == hashlib.sha256(h1).hexdigest()
+    accepted = json.loads((publication / 'accepted-observation.json').read_bytes())
+    assert accepted['schema'] == 'datapulse/v1/accepted-observation'
+    assert accepted['observed_at'] == json.loads(h0)['checked_at'] != identity['data_observed_at']
+    assert accepted['published_at'] == identity['published_at']
+    assert accepted['source_commit'] == revision
+    assert accepted['health_sha256'] == hashlib.sha256(h0).hexdigest()
+    assert accepted['health_snapshot_ref'] == identity['health_snapshot_ref']
+    assert json.loads((publication / accepted['binding_ref']).read_bytes())['payload']['health']['artifact_sha256'] == accepted['health_sha256']
+    assert accepted['max_age_seconds'] == 129600
     assert 'report_age_status' not in identity
     assert '"report_age_status": "current"' in result.stdout
     assert outputs['observed_at'] in Path(env['GITHUB_STEP_SUMMARY']).read_text()
+    summary = Path(env['GITHUB_STEP_SUMMARY']).read_text()
+    assert f"Data observation time: {json.loads(h1)['checked_at']}" in summary
+    assert f"signed accepted observation time: {json.loads(h0)['checked_at']}" in summary
+    assert 'signed evidence: accepted-observation.json' in summary
     assert 'Report age:' in result.stdout
     assert yaml.safe_load(_workflow())['jobs']['deploy']['if'] == "needs.sign_health.outputs.report_state == 'accepted'"
 
@@ -1506,7 +1522,7 @@ def test_report_age_is_independent_of_a_fresh_deploy(
                     '  compressed=false\n'
                     '  if [[ "$*" == *binding.json* ]]; then source="$AGE_ROOT/attestations/latest/binding.json"; '
                     'elif [[ "$*" == *publication-identity.json* ]]; then source="$AGE_ROOT/identity.json"; '
-                    'else source="$AGE_ROOT/health/latest.json"; compressed=true; fi\n'
+                    'else source="$AGE_ROOT/health/latest.json"; fi\n'
                     '  while [[ "$1" != -o ]]; do shift; done\n'
                     '  if $compressed; then gzip -c "$source" > "$2"; else cp "$source" "$2"; fi\n'
                     '  if $write_out; then printf 200; fi\nfi\n')
@@ -1536,7 +1552,9 @@ def test_report_age_is_independent_of_a_fresh_deploy(
     assert '36h' in summary and health['checked_at'] in summary
 
 
-def test_assembled_report_discloses_exact_observation_time_and_identity(tmp_path: Path) -> None:
+@pytest.mark.parametrize('damage', ['none', 'data', 'evidence'])
+@pytest.mark.parametrize('optimize', ['0', '1'])
+def test_assembled_report_discloses_exact_observation_time_and_identity(tmp_path: Path, damage: str, optimize: str) -> None:
     root, revision, h0, env = _accepted_workflow_case(tmp_path)
     selected = subprocess.run(['bash', '-c', _select_step()['run']], cwd=root, env=env,
                               capture_output=True, text=True, timeout=30)
@@ -1549,9 +1567,20 @@ def test_assembled_report_discloses_exact_observation_time_and_identity(tmp_path
     (site / 'index.html').write_text('<html><body><main>Status: fresh</main></body></html>')
     step = _deploy_step('Verify accepted report identity and disclose observation time')
     env |= {'ACCEPTED_MAIN_COMMIT': revision, 'ACCEPTED_OBSERVED_AT': json.loads(h0)['checked_at']}
+    env['PYTHONOPTIMIZE'] = optimize
+    if damage != 'none':
+        path = site / ('health/latest.json' if damage == 'data' else 'health/accepted/latest.json')
+        path.write_bytes(path.read_bytes() + b' ')
     result = subprocess.run(['bash', '-c', step['run']], cwd=root, env=env,
                             capture_output=True, text=True, timeout=10)
+    if damage != 'none':
+        assert result.returncode != 0, result.stdout + result.stderr
+        assert ('pinned data bytes drift' if damage == 'data' else 'accepted evidence bytes drift') in result.stderr
+        assert not (site / 'publication-identity.json').exists()
+        return
     assert result.returncode == 0, result.stdout + result.stderr
+    assert (site / 'health/latest.json').read_bytes() != h0
+    assert (site / 'health/accepted/latest.json').read_bytes() == h0
     html = (site / 'index.html').read_text()
     assert html.index('Accepted health report observed at') < html.index('Status: fresh')
     assert f'<time datetime="{env["ACCEPTED_OBSERVED_AT"]}">' in html
@@ -1570,7 +1599,7 @@ def test_workflow_contract_forbids_resurrection(tmp_path: Path, forbidden: str) 
         verify_workflows(ROOT / '.github/workflows/datapulse-attest-daily.yml', pages)
 
 
-@pytest.mark.parametrize('damage', ['none', 'statement', 'unaccepted_head', 'missing_head', 'health'])
+@pytest.mark.parametrize('damage', ['none', 'data', 'statement', 'unaccepted_head', 'missing_head', 'health'])
 def test_cosign_receives_only_main_accepted_head_and_bound_health(tmp_path: Path, damage: str) -> None:
     """Exercise the actual workflow up to Cosign; invalid inputs must never reach it."""
     root, revision, _, env = _accepted_workflow_case(tmp_path)
@@ -1591,6 +1620,9 @@ def test_cosign_receives_only_main_accepted_head_and_bound_health(tmp_path: Path
         _write_site_json(root, '.attestations/chain_head.json', head)
     elif damage == 'health':
         # Regenerate a structurally valid statement for bytes the binding did not accept.
+        with (root / 'health/accepted/latest.json').open('ab') as output:
+            output.write(b' ')
+    if damage == 'data':
         with (root / 'health/latest.json').open('ab') as output:
             output.write(b' ')
     generated = subprocess.run(['bash', '-c', generate['run']], cwd=root, env=env,
@@ -1605,21 +1637,24 @@ def test_cosign_receives_only_main_accepted_head_and_bound_health(tmp_path: Path
     if damage == 'statement':
         statement['predicate']['legacyEd25519']['chainHead'] = 'f' * 64
         statement_path.write_text(json.dumps(statement))
-    if damage == 'none':
+    if damage in ('none', 'data'):
         assert statement['predicate']['legacyEd25519']['chainHead'] == accepted_head
     bin_dir = tmp_path / 'bin'
     bin_dir.mkdir()
     cosign = bin_dir / 'cosign'
     # No OIDC or external write: record the signer's input and model an outage.
     marker = tmp_path / 'cosign-input.json'
-    cosign.write_text('#!/bin/bash\ncp "$RUNNER_TEMP/health.latest.statement.json" "$COSIGN_INPUT"\nexit 1\n')
+    cosign.write_text('#!/bin/bash\nprintf \"%s\\n\" \"${@: -1}\" > \"$COSIGN_INPUT.path\"\ncp "$RUNNER_TEMP/health.latest.statement.json" "$COSIGN_INPUT"\nexit 1\n')
     cosign.chmod(0o755)
     env |= {'PATH': f'{bin_dir}:{env["PATH"]}', 'COSIGN_INPUT': str(marker)}
     result = subprocess.run(['bash', '-c', signer['run']], cwd=root, env=env,
                             capture_output=True, text=True, timeout=30)
-    if damage == 'none':
+    if damage in ('none', 'data'):
         assert result.returncode == 0, result.stdout + result.stderr
         assert json.loads(marker.read_bytes()) == statement
+        assert Path(str(marker) + '.path').read_text().strip() == 'health/accepted/latest.json'
+        assert statement['subject'][0]['digest']['sha256'] == hashlib.sha256((root / 'health/accepted/latest.json').read_bytes()).hexdigest()
+        assert statement['subject'][0]['digest']['sha256'] != hashlib.sha256((root / 'health/latest.json').read_bytes()).hexdigest()
         assert 'state=signer_down' in Path(env['GITHUB_OUTPUT']).read_text()
     else:
         assert not marker.exists(), 'invalid statement reached Cosign'
@@ -1662,7 +1697,8 @@ def test_selection_pins_git_inputs_and_ignores_stale_latest_pointers(tmp_path: P
                             capture_output=True, text=True, timeout=30)
     assert result.returncode == 0, result.stdout + result.stderr
     assert 'state=accepted' in Path(env['GITHUB_OUTPUT']).read_text()
-    assert (root / 'health/latest.json').read_bytes() == h0
+    assert (root / 'health/accepted/latest.json').read_bytes() == h0
+    assert (root / 'health/latest.json').read_bytes() == subprocess.check_output(['git', 'show', f"{env['PROMOTION_SOURCE_SHA']}:health/latest.json"], cwd=root)
 
 
 @pytest.mark.parametrize('field,value', [
@@ -1793,12 +1829,11 @@ def _observation_build(root: Path, checked_at: str) -> None:
     (root / 'catalog-graph.json').write_text(json.dumps({'generated_at': checked_at}) + '\n')
 
 
-@pytest.mark.parametrize('hours,admitted', [(0, True), (24, True), (28, False)])
-def test_restored_observation_build_reports_its_lag_behind_main(
-    tmp_path: Path, hours: int, admitted: bool,
+@pytest.mark.parametrize('hours', [0, 24, 28])
+def test_restored_data_build_equals_pinned_main_without_applying_daily_cadence(
+    tmp_path: Path, hours: int,
 ) -> None:
-    """A faithful day-old observation is measured and named; an overdue append is refused."""
-    from scripts.select_accepted_health import SERVED_LAG_BOUND_SECONDS
+    """Even a 28-hour-old signed observation cannot replace the pinned data build."""
     from scripts.tests.test_attestation_projections import git
     observed = datetime(2026, 11, 9, 10, 12, 34, tzinfo=timezone.utc)
     stamp = lambda moment: moment.isoformat().replace('+00:00', 'Z')
@@ -1831,32 +1866,20 @@ def test_restored_observation_build_reports_its_lag_behind_main(
         '--root', str(root), '--revision', revision, '--publication', str(publication),
     ], env=os.environ | {'GITHUB_STEP_SUMMARY': str(summary)}, capture_output=True, text=True, timeout=60)
     output = result.stdout + result.stderr
-    assert SERVED_LAG_BOUND_SECONDS == 27 * 3600
-    assert f'"served_lag_seconds": {hours * 3600}' in output, output
     identity = json.loads((publication / 'publication-identity.json').read_bytes())
-    if not admitted:
-        assert result.returncode == 1, output
-        assert 'REFUSED: served observation trails main by 100800s' in output
-        assert '::error title=Served observation exceeds append cadence::' in output
-        assert 'append_overdue' in output
-        assert 'served_lag_seconds' not in identity
-        assert (root / 'datapulse_summary.json').read_bytes() == main_summary
-        return
     assert result.returncode == 0, output
-    assert identity['observation_build_commit'] == accepted
+    assert (root / 'datapulse_summary.json').read_bytes() == main_summary
+    assert (root / 'health/latest.json').read_bytes() == subprocess.check_output(
+        ['git', 'show', f'{revision}:health/latest.json'], cwd=root)
+    assert (publication / 'health/latest.json').read_bytes() == health_bytes
+    assert identity['observation_build_commit'] == revision
+    assert identity['accepted_observation_build_commit'] == accepted
+    assert identity['observed_at'] == stamp(observed)
+    assert identity['data_observed_at'] == stamp(observed + timedelta(hours=hours))
     assert identity['main_observed_at'] == stamp(observed + timedelta(hours=hours))
-    assert identity['served_lag_seconds'] == hours * 3600
-    assert identity['served_lag_health_commits'] == hours
-    assert identity['served_lag_bound_seconds'] == SERVED_LAG_BOUND_SECONDS
-    assert identity['served_lag_status'] == 'within_append_cadence'
-    assert json.loads((root / 'datapulse_summary.json').read_bytes())['generated_at'] == stamp(observed)
-    if hours:
-        # A faithful day-old artifact is admitted, but never silently.
-        assert identity['served_lag_cause'] == (
-            f'awaiting_next_append: main observed after the accepted append published at {published}; '
-            'next append due by 2026-11-10T11:29:34Z')
-        assert '::notice title=Served observation trails main::86400s (24 health commits)' in output
-    else:
-        assert identity['served_lag_cause'].startswith('current:')
-        assert '::notice' not in output
-    assert f"by {hours * 3600}s ({hours} health commits)" in summary.read_text()
+    assert identity['served_lag_seconds'] == 0
+    assert identity['served_lag_health_commits'] == 0
+    assert identity['served_lag_bound_seconds'] == 0
+    assert identity['served_lag_status'] == 'pinned_source'
+    assert identity['served_lag_cause'].startswith('current:')
+    assert 'by 0s (0 health commits)' in summary.read_text()

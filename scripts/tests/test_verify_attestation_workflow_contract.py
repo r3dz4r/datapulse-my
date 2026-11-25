@@ -176,7 +176,7 @@ def test_pages_signs_accepted_report_while_daily_retains_witness_production() ->
     assert steps.index(select) < steps.index(installer) < steps.index(signer)
     assert installer["with"]["cosign-release"] == "v3.1.3"
     assert "id-token: write" in pages
-    assert 'cmp health/latest.json "$publication/health/latest.json"' in signer["run"]
+    assert 'cmp health/accepted/latest.json "$publication/health/latest.json"' in signer["run"]
     assert "DATAPULSE_ATTESTATION_PRIVATE_KEY_FILE" not in pages
 
 
@@ -184,7 +184,7 @@ def test_pages_signs_accepted_report_while_daily_retains_witness_production() ->
     ("target", "old", "new", "message"),
     (
         ("daily", "--statement \"$statement\"", "--predicate \"$statement\"", "--statement"),
-        ("pages", "--manifest datapulse.json", "--manifest altered.json", "--manifest datapulse.json"),
+        ("pages", '--manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json"', "--manifest altered.json", "--manifest"),
         ("pages", "cosign attest-blob", "cosign sign-blob", "must not use cosign sign-blob"),
         ("pages", '--source-commit "$PROMOTION_SOURCE_SHA"', '--source-commit "$GITHUB_SHA"', "PROMOTION_SOURCE_SHA"),
         ("pages", "PROMOTION_SOURCE_SHA: ${{ needs.classify.outputs.settled_sha }}", "PROMOTION_SOURCE_SHA: ${{ github.sha }}", "PROMOTION_SOURCE_SHA"),

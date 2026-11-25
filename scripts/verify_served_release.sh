@@ -59,7 +59,9 @@ if [[ -n "$publication_dir" || -f "$site_dir/publication-identity.json" ]]; then
   [[ -n "$publication_dir" && -s "$publication_dir/publication-identity.json" ]] || fail "missing staged accepted report identity"
   cmp -s "$publication_dir/publication-identity.json" "$site_dir/publication-identity.json" || fail "assembled accepted report identity differs from staged artifact"
   # The code build and the accepted observation have independent clocks. Keep
-  # the entire assembled byte inventory pinned to the selected code revision.
+  # the assembled inventory (data plus separately verified evidence) pinned
+  # to this build. health/accepted/latest.json is signed evidence;
+  # health/latest.json is data. This unsigned inventory signs neither.
   python3 scripts/verify_release_artifact.py verify --site "$site_dir" \
     --manifest "$RUNNER_TEMP/release-artifact-manifest.json" \
     --source-commit "$source_commit" || fail "accepted publication build identity drift"
@@ -216,11 +218,11 @@ grep -q 'DataPulse MY' "$smoke_dir/index.html" && fail "origin root retains the 
 fetch_alias landing.html "$base_url/landing.html" /; fetch_alias landing "$base_url/landing" /; fetch_alias dashboard "$base_url/dashboard" /; fetch_alias register "$base_url/register" /
 if [[ "$kv_surfaces_published_elsewhere" != true || "$accepted_report" == true ]]; then
 fetch "health snapshot" "$base_url/health/latest.json" "$smoke_dir/health/latest.json"
-accepted_report_digest="$(sha256sum "$site_dir/health/latest.json" | cut -d ' ' -f 1)"
+staged_data_digest="$(sha256sum "$site_dir/health/latest.json" | cut -d ' ' -f 1)"
 served_digest="$(sha256sum "$smoke_dir/health/latest.json" | cut -d ' ' -f 1)"
 receipt_covered_served_snapshot=false
-if [[ "$served_digest" == "$accepted_report_digest" ]]; then
-  echo "health attribution: accepted_report digest=$served_digest"
+if [[ "$served_digest" == "$staged_data_digest" ]]; then
+  echo "health attribution: pinned_source_data digest=$served_digest"
 else
   # Pin the receipt's key to the assembled release, never a fetched registry.
   if [[ "$accepted_report" == true ]] && receipt_day="$(jq -er '.checked_at | select(type == "string") | select(test("^[0-9]{4}-[0-9]{2}-[0-9]{2}T")) | .[0:10]' "$smoke_dir/health/latest.json")"; then
@@ -265,16 +267,21 @@ PY
   if [[ "$receipt_covered_served_snapshot" == true ]]; then
     echo "health attribution: receipt_covered_served_snapshot digest=$served_digest"
   else
-    fail "served health digest differs from the accepted report bytes: served=$served_digest accepted_report=$accepted_report_digest; no matching signed observation receipt covers health/latest.json" >&2
+    fail "served health digest differs from the pinned data bytes: served=$served_digest pinned_data=$staged_data_digest; no matching signed observation receipt covers health/latest.json" >&2
   fi
 fi
 fi
 if [[ "$accepted_report" == true ]]; then
+  # Evidence must match the verified staged observation even if KV data advances.
+  cmp -s "$publication_dir/health/latest.json" "$site_dir/health/accepted/latest.json" || fail "assembled accepted evidence differs from staged artifact"
+  fetch "accepted health evidence" "$base_url/health/accepted/latest.json" "$smoke_dir/health/accepted/latest.json"
+  cmp -s "$publication_dir/health/latest.json" "$smoke_dir/health/accepted/latest.json" || fail "served accepted evidence differs from staged artifact"
+  echo "health attribution: accepted_evidence path=health/accepted/latest.json"
   fetch "accepted publication identity" "$base_url/publication-identity.json" "$smoke_dir/publication-identity.json"
   cmp -s "$publication_dir/publication-identity.json" "$smoke_dir/publication-identity.json" || fail "served accepted report identity differs from staged artifact"
   fetch "accepted report binding" "$base_url/attestations/latest/binding.json" "$smoke_dir/report-binding.json"
   cmp -s "$publication_dir/attestations/latest/binding.json" "$smoke_dir/report-binding.json" || fail "served accepted report binding differs from staged artifact"
-  python3 - "$smoke_dir" "$source_commit" "$site_dir/health/latest.json" <<'PY'
+  python3 - "$smoke_dir" "$source_commit" "$smoke_dir/health/accepted/latest.json" <<'PY'
 import json,sys
 from datetime import datetime, timezone
 from pathlib import Path
@@ -283,7 +290,7 @@ from scripts.select_accepted_health import report_age
 served = Path(sys.argv[1])
 identity = json.loads((served / 'publication-identity.json').read_bytes())
 binding = json.loads((served / 'report-binding.json').read_bytes())['payload']
-# Check the accepted report's own age even when a receipt covers the snapshot.
+# Only signed evidence carries the 36-hour policy; publication data does not.
 age = report_age(Path(sys.argv[3]), served / 'report-binding.json', datetime.now(timezone.utc))
 if (identity['accepted_main_commit'] != sys.argv[2]
         or identity['health_sha256'] != binding['health']['artifact_sha256']
@@ -307,7 +314,7 @@ if [[ "$sigstore_signed" == true ]]; then
   fetch "Sigstore health DSSE bundle" "$base_url/$sigstore_path" "$smoke_dir/health.latest.sigstore.json"; cmp -s "$staged_bundle" "$smoke_dir/health.latest.sigstore.json" || fail "served Sigstore bundle differs from the verified staged artifact"
   fetch "signed manifest snapshot" "$base_url/signatures/datapulse.json" "$smoke_dir/signatures/datapulse.json"; cmp -s "$staged_manifest" "$smoke_dir/signatures/datapulse.json" || fail "served signed manifest snapshot differs from the verified staged artifact"
   [[ -n "$cosign_bin" && -x "$cosign_bin" ]] || fail "Cosign verifier is required for a signed bundle"
-  python3 scripts/verify_sigstore_bundle.py --health "$site_dir/health/latest.json" --manifest "$smoke_dir/signatures/datapulse.json" --legacy-chain-head "$publication_dir/chain_head.json" --source-commit "$source_commit" --bundle "$smoke_dir/health.latest.sigstore.json" --certificate-identity "https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" --cosign "$cosign_bin" || fail "served Sigstore bundle verification failed"
+  python3 scripts/verify_sigstore_bundle.py --health "$smoke_dir/health/accepted/latest.json" --manifest "$smoke_dir/signatures/datapulse.json" --legacy-chain-head "$publication_dir/chain_head.json" --source-commit "$source_commit" --bundle "$smoke_dir/health.latest.sigstore.json" --certificate-identity "https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main" --certificate-oidc-issuer "https://token.actions.githubusercontent.com" --cosign "$cosign_bin" || fail "served Sigstore bundle verification failed"
 else
   retrieve "optional Sigstore health DSSE bundle" "$base_url/$sigstore_path" "$smoke_dir/unsigned-sigstore-response" "" || fail "transport failure retrieving optional Sigstore health DSSE bundle: curl exit code $last_curl_status, elapsed_seconds=$last_elapsed, bytes received=$last_bytes"; status="$last_status"
   if [[ "$status" == 200 ]]; then grep -q 'application/vnd.dev.sigstore.bundle' "$smoke_dir/unsigned-sigstore-response" && fail "stale Sigstore bundle is still served after signing became unavailable (HTTP $status)"; grep -Eq '<html[ >]|<head>|id="main-content"|hero-heading' "$smoke_dir/unsigned-sigstore-response" || fail "stale Sigstore bundle is still served after signing became unavailable (HTTP $status)"; elif [[ "$status" == 404 ]]; then :; else fail "unexpected HTTP status while proving optional Sigstore bundle absence (HTTP $status)"; fi

@@ -15,9 +15,19 @@ ROOT = Path(__file__).resolve().parents[1]
 COSIGN_INSTALLER = "sigstore/cosign-installer@faadad0cce49287aee09b3a48701e75088a2c6ad"
 COSIGN_RELEASE = "cosign-release: v3.1.3"
 OIDC_ISSUER = "https://token.actions.githubusercontent.com"
-CANONICAL_HEALTH = "--health health/latest.json"
-CANONICAL_MANIFEST = "--manifest datapulse.json"
 CANONICAL_CHAIN_HEAD = "--legacy-chain-head .attestations/chain_head.json"
+# The daily workflow signs the accepted report directly in its checkout.
+DAILY_SIGNING_INPUTS = (
+    "--health health/latest.json",
+    "--manifest datapulse.json",
+    CANONICAL_CHAIN_HEAD,
+)
+# Pages keeps pinned publication data separate from the selected signing evidence.
+PAGES_SIGNING_INPUTS = (
+    "--health health/accepted/latest.json",
+    '--manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json"',
+    CANONICAL_CHAIN_HEAD,
+)
 
 
 class ContractError(Exception):
@@ -70,13 +80,14 @@ def _require_command_arguments(block: str, label: str, command: str, arguments: 
             raise ContractError(f"{label}: {command} missing required {argument!r}")
 
 
-def _require_dsse_flow(workflow: str, label: str, identity: str, source_variable: str) -> None:
+def _require_dsse_flow(
+    workflow: str, label: str, identity: str, source_variable: str,
+    signing_inputs: tuple[str, ...],
+) -> None:
+    canonical_inputs = (*signing_inputs, f'--source-commit "${source_variable}"')
     for fragment in (
         "python3 scripts/gen_sigstore_bundle.py",
-        CANONICAL_HEALTH,
-        CANONICAL_MANIFEST,
-        CANONICAL_CHAIN_HEAD,
-        f'--source-commit "${source_variable}"',
+        *canonical_inputs,
         "python3 scripts/verify_sigstore_bundle.py",
         "--certificate-identity \"$SIGSTORE_IDENTITY\"",
         "--certificate-oidc-issuer \"$SIGSTORE_ISSUER\"",
@@ -94,12 +105,6 @@ def _require_dsse_flow(workflow: str, label: str, identity: str, source_variable
             f"{label}: must use cosign attest-blob --statement for the canonical in-toto predicate"
         )
 
-    canonical_inputs = (
-        CANONICAL_HEALTH,
-        CANONICAL_MANIFEST,
-        CANONICAL_CHAIN_HEAD,
-        f'--source-commit "${source_variable}"',
-    )
     _require_command_arguments(
         _command_block(workflow, "python3 scripts/gen_sigstore_bundle.py", "--out", label),
         label,
@@ -173,7 +178,7 @@ def _require_pages_boundaries(workflow: str) -> None:
 
 
 def verify_workflows(daily_path: Path, pages_path: Path) -> None:
-    """Verify both workflow files preserve the shared Sigstore signing contract."""
+    """Verify each workflow preserves its Sigstore signing input contract."""
     daily = _read_workflow(daily_path)
     pages = _read_workflow(pages_path)
 
@@ -182,12 +187,14 @@ def verify_workflows(daily_path: Path, pages_path: Path) -> None:
         "daily workflow",
         "https://github.com/r3dz4r/datapulse-my/.github/workflows/datapulse-attest-daily.yml@refs/heads/main",
         "GITHUB_SHA",
+        DAILY_SIGNING_INPUTS,
     )
     _require_dsse_flow(
         pages,
         "Pages workflow",
         "https://github.com/r3dz4r/datapulse-my/.github/workflows/deploy-cloudflare-pages.yml@refs/heads/main",
         "PROMOTION_SOURCE_SHA",
+        PAGES_SIGNING_INPUTS,
     )
     _require_daily_guards(daily)
     _require_pages_boundaries(pages)
@@ -212,8 +219,8 @@ def verify_workflows(daily_path: Path, pages_path: Path) -> None:
     for required in (
         "id: select_accepted_health",
         "python3 scripts/select_accepted_health.py --root .",
-        'cp "$publication/health/latest.json" health/latest.json',
-        'cmp health/latest.json "$publication/health/latest.json"',
+        'cp "$publication/health/latest.json" health/accepted/latest.json',
+        'cmp health/accepted/latest.json "$publication/health/latest.json"',
         '--revision "$PROMOTION_SOURCE_SHA" --out "$publication"',
         "needs.sign_health.outputs.report_state == 'accepted'",
         "Verify accepted report identity and disclose observation time",

@@ -362,8 +362,8 @@ def test_attestation_state_fails_closed_for_full_releases_and_keeps_accepted_rep
     assert "exit 1" in full_release_gate["run"]
     overlay = next(step for step in steps if step.get("name") == "Bind built dashboard to accepted sign-time trust plane")
     assert "if" not in overlay
-    assert 'cp "$publication/health/latest.json" health/latest.json' in overlay["run"]
-    assert "python3 scripts/verify_attestation_binding.py --root ." in overlay["run"]
+    assert 'cp "$publication/health/latest.json" health/accepted/latest.json' in overlay["run"]
+    assert 'python3 scripts/verify_attestation_binding.py --root "$publication"' in overlay["run"]
     assert "Preserve served attestation plane" not in _read(DEPLOY_WORKFLOW)
 
 

@@ -700,12 +700,12 @@ def test_served_invariant_uses_report_binding_instead_of_build_clock(
     sha = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
     proof.write_text(proof.read_text().replace(SOURCE_COMMIT, sha if damage != "code" else "c" * 40))
     if damage == "health":
-        health = built / "health/latest.json"
+        health = built / "health/accepted/latest.json"
         health.write_bytes(health.read_bytes() + b" ")
     script = VERIFY_SCRIPT.read_text()
     match = re.search(r'(?ms)^if ! \$local_mode; then\n"\$python_bin" - "\$work_dir/release-verification\.md"[^\n]*<<\'PY\'\n(.*?)^PY\n^fi', script)
     assert match is not None
-    result = subprocess.run([sys.executable, "-", str(proof), str(built / "health/latest.json"),
+    result = subprocess.run([sys.executable, "-", str(proof), str(built / "health/accepted/latest.json"),
                              str(root / "mcp.json"), str(built / "attestations/latest/binding.json")],
                             cwd=ROOT, input=match[1], capture_output=True, text=True, timeout=10)
     if refusal is None:

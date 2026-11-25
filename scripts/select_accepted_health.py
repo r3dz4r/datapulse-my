@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Materialise the exact accepted report at one pinned main build revision."""
+"""Materialise signed evidence separately from pinned publication data.
+
+accepted-observation.json is a versioned, unsigned index of the daily signed
+evidence. Its observed_at and published_at are the binding's two clocks;
+source_commit identifies the pinned Git revision used to recover that evidence,
+health_sha256 hashes the uncompressed snapshot at health_snapshot_ref, and
+binding_ref identifies the signed envelope covering those exact bytes. It makes
+no signature claim about the independently published health/latest.json.
+"""
 from __future__ import annotations
 
 import argparse
@@ -13,7 +21,7 @@ import subprocess
 import sys
 import tarfile
 import tempfile
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -21,7 +29,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 LOGGER = logging.getLogger(__name__)
 MAX_AGE_SECONDS = 36 * 60 * 60
-# Restore the observation build as a unit, including nested metadata and retained
+# Restore the pinned data build as a unit, including nested metadata and retained
 # evidence. Code, templates, discovery and the independent release proof stay at
 # the pinned publishing revision; the dashboard is rendered from those sources.
 OBSERVATION_BUILD_PATHS = (
@@ -29,14 +37,6 @@ OBSERVATION_BUILD_PATHS = (
     'changelog.json', 'catalog-snapshot.json', 'catalog-graph.json',
     'datapulse_summary.json', 'docs/okf', 'docs/datasets', 'observation-receipts',
 )
-# The served observation trails main's health until the next append is accepted.
-# Appends are produced once a day (datapulse-attest-daily.yml cron "17 3 * * *"),
-# and an accepted observation reached main 1h38m-2h17m after it was taken across
-# 2026-11-05..10. A lag beyond one cadence plus that latency means an append is
-# overdue, not that the publication is faithfully waiting for the next one.
-APPEND_CADENCE_SECONDS = 24 * 60 * 60
-APPEND_LATENCY_SECONDS = 3 * 60 * 60
-SERVED_LAG_BOUND_SECONDS = APPEND_CADENCE_SECONDS + APPEND_LATENCY_SECONDS
 
 
 class SelectionError(ValueError):
@@ -97,32 +97,6 @@ def report_age(health: Path, binding: Path, now: datetime) -> dict[str, Any]:
     }
 
 
-def served_lag(observed_at: str, main_observed_at: str, published_at: str) -> dict[str, Any]:
-    """Measure how far the served observation trails main, and name why."""
-    clocks = []
-    for value in (observed_at, main_observed_at, published_at):
-        timestamp = datetime.fromisoformat(value.replace('Z', '+00:00'))
-        if timestamp.tzinfo is None:
-            raise SelectionError('observation timestamps must include a UTC offset')
-        clocks.append(timestamp)
-    lag = (clocks[1] - clocks[0]).total_seconds()
-    if lag < 0:
-        raise SelectionError('accepted observation is newer than main health at the pinned revision')
-    if lag == 0:
-        cause = 'current: served observation is main health at the pinned revision'
-    elif lag <= SERVED_LAG_BOUND_SECONDS:
-        cause = (f'awaiting_next_append: main observed after the accepted append published at '
-                 f'{published_at}; next append due by '
-                 f'{(clocks[2] + timedelta(seconds=APPEND_CADENCE_SECONDS)).isoformat().replace("+00:00", "Z")}')
-    else:
-        cause = (f'append_overdue: no append accepted for main health within '
-                 f'{SERVED_LAG_BOUND_SECONDS}s of the served observation; last published at {published_at}')
-    return {'main_observed_at': main_observed_at, 'served_lag_seconds': int(lag),
-            'served_lag_bound_seconds': SERVED_LAG_BOUND_SECONDS, 'served_lag_cause': cause,
-            'served_lag_status': 'within_append_cadence' if lag <= SERVED_LAG_BOUND_SECONDS
-            else 'exceeds_append_cadence'}
-
-
 def _archive_files(root: Path, revision: str, out: Path, paths: tuple[str, ...]) -> None:
     with subprocess.Popen([
         'git', 'archive', revision, *paths,
@@ -166,7 +140,7 @@ def _export(root: Path, revision: str, out: Path) -> None:
 
 
 def restore_observation_build(root: Path, revision: str, publication: Path) -> str:
-    """Recover the build whose committed health bytes the accepted report signs."""
+    """Recover pinned data without replacing the separately verified signing inputs."""
     identity_path = publication / 'publication-identity.json'
     identity = json.loads(identity_path.read_bytes())
     health_bytes = (publication / 'health/latest.json').read_bytes()
@@ -176,7 +150,7 @@ def restore_observation_build(root: Path, revision: str, publication: Path) -> s
         raise SelectionError('accepted observation build identity differs from pinned report')
     blob = subprocess.check_output(['git', 'hash-object', '--stdin'], input=health_bytes, cwd=root).decode().strip()
     # Follow only the pinned main ancestry. A candidate branch or a later main
-    # observation can never supply the published build, even if its date matches.
+    # observation can never supply accepted evidence, even if its date matches.
     candidates = subprocess.check_output([
         'git', 'log', '--first-parent', '--format=%H', revision, '--', 'health/latest.json',
     ], cwd=root, text=True).splitlines()
@@ -198,33 +172,31 @@ def restore_observation_build(root: Path, revision: str, publication: Path) -> s
             raise SelectionError('no committed observation build matches the exact accepted health bytes')
         # A receipt-only commit can carry evidence missing from the health commit.
         source = revision
-    lag = served_lag(identity['observed_at'], main_health['checked_at'], identity['published_at'])
-    lag['served_lag_health_commits'] = 0 if identity.get('observation_receipt_ref') else candidates.index(source)
+    # The 36-hour policy belongs to the signed evidence (checked by select_report
+    # and report_age). Publication data must equal the pinned source, so its lag
+    # relative to that source is zero; the daily append cadence cannot bound it.
+    lag = {'main_observed_at': main_health['checked_at'], 'served_lag_seconds': 0,
+           'served_lag_bound_seconds': 0, 'served_lag_health_commits': 0,
+           'served_lag_status': 'pinned_source',
+           'served_lag_cause': 'current: data equals main health at the pinned revision'}
     LOGGER.info('Served lag: %s', json.dumps(lag, sort_keys=True))
-    if lag['served_lag_status'] != 'within_append_cadence':
-        LOGGER.info('::error title=Served observation exceeds append cadence::%ss behind main; %s',
-                    lag['served_lag_seconds'], lag['served_lag_cause'])
-        raise SelectionError(f"served observation trails main by {lag['served_lag_seconds']}s, beyond the "
-                             f"{SERVED_LAG_BOUND_SECONDS}s append cadence bound: {lag['served_lag_cause']}")
-    if lag['served_lag_seconds']:
-        LOGGER.info('::notice title=Served observation trails main::%ss (%s health commits) behind main; %s',
-                    lag['served_lag_seconds'], lag['served_lag_health_commits'], lag['served_lag_cause'])
     paths = tuple(subprocess.check_output([
-        'git', 'ls-tree', '--name-only', source, '--', *OBSERVATION_BUILD_PATHS,
+        'git', 'ls-tree', '--name-only', revision, '--', *OBSERVATION_BUILD_PATHS,
     ], cwd=root, text=True).splitlines())
     required = set(OBSERVATION_BUILD_PATHS) - {'docs/okf', 'docs/datasets', 'observation-receipts'}
     if not required <= set(paths):
         raise SelectionError('accepted observation build is incomplete: ' + ', '.join(sorted(required - set(paths))))
     with tempfile.TemporaryDirectory(prefix='accepted-build-', dir=publication.parent) as temporary:
         build = Path(temporary)
-        _archive_files(root, source, build, paths)
-        if (build / 'health/latest.json').read_bytes() != health_bytes:
-            raise SelectionError('accepted observation build health bytes changed')
+        _archive_files(root, revision, build, paths)
+        pinned_bytes = subprocess.check_output(['git', 'show', f'{revision}:health/latest.json'], cwd=root)
+        if (build / 'health/latest.json').read_bytes() != pinned_bytes:
+            raise SelectionError('pinned data build health bytes changed')
         snapshot = json.loads((build / 'catalog-snapshot.json').read_bytes())
         graph = json.loads((build / 'catalog-graph.json').read_bytes())
-        observed = identity['observed_at']
+        observed = main_health['checked_at']
         if not (snapshot['generated_at'] == snapshot['health']['checked_at']
-                == graph['generated_at'] == json.loads(health_bytes)['checked_at'] == observed):
+                == graph['generated_at'] == observed):
             raise SelectionError('accepted observation build contains inconsistent clocks')
         for name in OBSERVATION_BUILD_PATHS:
             target = root / name
@@ -238,11 +210,15 @@ def restore_observation_build(root: Path, revision: str, publication: Path) -> s
             elif origin.is_file():
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(origin, target)
-    identity['observation_build_commit'] = source
+    identity['accepted_observation_build_commit'] = source
+    identity['observation_build_commit'] = revision
+    identity['data_observed_at'] = observed
+    identity['data_health_sha256'] = hashlib.sha256(pinned_bytes).hexdigest()
     identity.update(lag)
     atomic_write(identity_path, (json.dumps(identity, sort_keys=True, indent=2) + '\n').encode())
-    LOGGER.info('Accepted observation build %s: health and catalogs observed at %s', source, observed)
-    return source
+    LOGGER.info('Data observation build %s: health and catalogs observed at %s; signed accepted observation %s',
+                revision, observed, identity.get('anchor_observed_at', identity['observed_at']))
+    return revision
 
 
 def prefer_receipt_covered_snapshot(root: Path, revision: str, out: Path, now: datetime) -> dict[str, Any] | None:
@@ -323,11 +299,33 @@ def select_report(root: Path, revision: str, out: Path, now: datetime) -> dict[s
     result = verify_contract(out, now=now)
     if result['health'] != claim or result['ed25519']['chain_head'] != head:
         raise SelectionError("materialised accepted report identity changed")
+    # This index always names the daily signed binding and immutable snapshot.
+    # Receipt preference below continues to select signing inputs exactly as
+    # before; neither that choice nor newer publication data rewrites the anchor.
+    accepted = {
+        'schema': 'datapulse/v1/accepted-observation',
+        'description': ('Unsigned index of signed accepted evidence; observed_at is the signed '
+                        'observation clock, published_at is the envelope clock, source_commit is '
+                        'the recovery revision, and health_sha256 hashes the uncompressed '
+                        'health_snapshot_ref. binding_ref is the signed envelope. '
+                        'This index does not attest the published health/latest.json.'),
+        'observed_at': claim['observed_at'], 'published_at': age['published_at'],
+        'source_commit': revision, 'health_sha256': claim['artifact_sha256'],
+        'health_snapshot_ref': snapshots[0].relative_to(out).as_posix(),
+        'binding_ref': directory + '/binding.json', 'chain_head_ref': reference,
+        'accepted_chain_head': head, 'max_age_seconds': MAX_AGE_SECONDS,
+    }
+    atomic_write(out / 'accepted-observation.json',
+                 (json.dumps(accepted, sort_keys=True, indent=2) + '\n').encode())
+    data_bytes = subprocess.check_output(['git', 'show', f'{revision}:health/latest.json'], cwd=root)
     identity = {'accepted_main_commit': revision, 'accepted_chain_head': head,
                 'health_sha256': claim['artifact_sha256'], 'dataset_count': claim['dataset_count'],
                 'manifest_sha256': hashlib.sha256(manifest_bytes).hexdigest(),
                 'health_snapshot_ref': snapshots[0].relative_to(out).as_posix(),
                 'observed_at': age['observed_at'], 'published_at': age['published_at'],
+                'data_observed_at': json.loads(data_bytes)['checked_at'],
+                'data_health_sha256': hashlib.sha256(data_bytes).hexdigest(),
+                'signed_observed_at': claim['observed_at'],
                 'max_age_seconds': MAX_AGE_SECONDS}
     # Preserve every accepted-set precondition and diagnostic before considering
     # the optional cycle source. Absence never invalidates the accepted report.
@@ -376,11 +374,11 @@ def main() -> int:
             summary = os.environ.get('GITHUB_STEP_SUMMARY')
             if summary:
                 with open(summary, 'a', encoding='utf-8') as output:
-                    output.write(f"Served observation {identity['observed_at']} trails main health "
-                                 f"{identity['main_observed_at']} by {identity['served_lag_seconds']}s "
-                                 f"({identity['served_lag_health_commits']} health commits); bound "
-                                 f"{SERVED_LAG_BOUND_SECONDS}s (append cadence + latency): "
-                                 f"{identity['served_lag_status']}. Cause: {identity['served_lag_cause']}.\n")
+                    output.write(f"Data observation time: {identity['data_observed_at']}; "
+                                 f"signed accepted observation time: {identity.get('signed_observed_at', identity['observed_at'])}; "
+                                 f"signed evidence: accepted-observation.json. Data trails pinned source "
+                                 f"by {identity['served_lag_seconds']}s ({identity['served_lag_health_commits']} health commits); "
+                                 "data must equal pinned source; signed evidence policy remains 36h.\n")
             return 0
         if args.measure_age:
             identity = report_age(args.health, args.binding, now)
@@ -392,7 +390,9 @@ def main() -> int:
         summary = os.environ.get('GITHUB_STEP_SUMMARY')
         if summary:
             with open(summary, 'a', encoding='utf-8') as output:
-                output.write(f"Report observed at {identity['observed_at']}; envelope published at {identity['published_at']}. "
+                output.write(f"Data observation time: {identity.get('data_observed_at', 'not measured')}; "
+                             f"signed accepted observation time: {identity.get('signed_observed_at', identity['observed_at'])}; "
+                             f"signed evidence: accepted-observation.json; envelope published at {identity['published_at']}. "
                              f"Report age: {identity['observation_age_seconds']:.0f}s observed / "
                              f"{identity['envelope_age_seconds']:.0f}s published; policy 129600s (36h): "
                              f"{identity['report_age_status']}.\n")
