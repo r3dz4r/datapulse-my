@@ -767,7 +767,6 @@ def test_production_deploy_workflow_does_not_pass_the_exclusion() -> None:
 
 def _stage_accepted_fixture(tmp_path: Path, *, age_hours: int = 2) -> tuple[Path, Path, Path, Path]:
     """An accepted observation predates a newer, differently sized code build."""
-    from scripts.gen_attestations import health_binding
     from scripts.verify_release_artifact import create_manifest
 
     root, built, served = _stage_fixture(tmp_path)
@@ -781,7 +780,16 @@ def _stage_accepted_fixture(tmp_path: Path, *, age_hours: int = 2) -> tuple[Path
     evidence = (built / "health/latest.json").read_bytes()
     for directory in (built, served):
         _write(directory / "health/accepted/latest.json", evidence.decode())
-    claim = health_binding(built, health)
+    dataset_ids = sorted(row["dataset_id"] for row in health["datasets"])
+    claim = {
+        "artifact_ref": "health/latest.json",
+        "artifact_sha256": hashlib.sha256(evidence).hexdigest(),
+        "dataset_count": len(dataset_ids),
+        "dataset_ids_sha256": hashlib.sha256(json.dumps(
+            dataset_ids, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+        ).encode()).hexdigest(),
+        "observed_at": observed,
+    }
     data = health | {"checked_at": now.isoformat()}
     for directory in (built, served):
         _write(directory / "health/latest.json", json.dumps(data))
