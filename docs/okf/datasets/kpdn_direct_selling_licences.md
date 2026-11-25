@@ -8,7 +8,7 @@ sources:
   - {"id": "kpdn","resource": "https://www.kpdn.gov.my/perkhidmatan-kpdn/jom-berniaga/pembangunan-industri-jualan-langsung/status-syarikat-jualan-langsung","title": "Kementerian Perdagangan Dalam Negeri dan Kos Sara Hidup (KPDN)"}
 generated: {"by": "process:datapulse-pipeline","at": "2026-11-12T00:00:00Z"}
 verified:
-  - {"by": "process:datapulse-health-timer","at": "2026-11-24T07:35:46Z"}
+  - {"by": "process:datapulse-health-timer","at": "2026-11-25T07:35:41Z"}
 status: "stable"
 datapulse:licence: "Reuse licence not stated on the KPDN source pages; permission unverified"
 datapulse:attribution: "Kementerian Perdagangan Dalam Negeri dan Kos Sara Hidup (KPDN)"
