@@ -1,0 +1,48 @@
+{
+  "schema": "datapulse/v1/observation-day",
+  "cycle_date": "2026-11-25",
+  "receipts": [
+    {
+      "payload": {
+        "schema": "datapulse/v1/observation-receipt",
+        "observed_at": "2026-11-25T00:48:31Z",
+        "cycle_date": "2026-11-25",
+        "health_artifact_sha256": "a2b659876ed8825102ab67b12c06c78715dff7572a3dd6592629746dc84e7004",
+        "artifact_path": "health/latest.json",
+        "artifact_commit": "1e56384480fb22b0461fba6cfa8532de4d3f17f4",
+        "normalization": "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing",
+        "dataset_count": 448,
+        "freshness_status_counts": {
+          "fresh": 139,
+          "stale": 96,
+          "unknown-freshness": 7,
+          "aging": 157,
+          "degraded": 2,
+          "discontinued": 1,
+          "reference": 43,
+          "unreachable": 3
+        },
+        "verification_profile_version": "257494e9163a37cf68e0c91dc86c81888d61c43ddd9d603c74d8ae421dd361b0",
+        "policy_version": null,
+        "key_id": "ed25519-e075218fa8086893",
+        "sequence_number": 4700,
+        "previous_receipt_id": "4e03c51bde52898bdbed91d429c5e92177de7ed07aa3c5dc4239c80ad97d7c48",
+        "valid_until": "2026-11-26T02:48:31Z",
+        "limitations": [
+          "operator-produced evidence: the observing host signs its own observation at execution time",
+          "timestamps rely on the host clock and are not independently witnessed",
+          "upstream truth is not asserted; freshness statuses reflect this observation only"
+        ],
+        "observer_attestation": {
+          "key_id": "ed25519-a4ac279ec3354508",
+          "signature_base64": "ia2cXu1jw7+fAbcLEE7jTpEBWLRmoPFSg6Lr0jtN4JgnXrncKgU7kLVUoPhgJwePimYyCjBfo9AzUj1lgkMfBQ==",
+          "signed_at": "2026-11-25T00:48:31Z",
+          "statement_sha256": "6cf6d98b39ec9e915a5d3749d6e0b0bca15e1d6723225175a28c92c26c3281b6"
+        }
+      },
+      "receipt_id": "206310219621bcf9eb1f554230d2dc4937bb77382dde580c2471afcc684b9fd8",
+      "signature_base64": "sN+ekaKru95fJOhbHxEEWuvu73LfGZ1yS82xIzRB0i/fjjQttDAlD2PN2iL18wUOjl6tscBnqgUtkpDmH+cyCg=="
+    }
+  ],
+  "updated_at": "2026-11-25T00:48:31Z"
+}
