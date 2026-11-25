@@ -7,7 +7,6 @@ age policies. Replay that boundary without GitHub or Cloudflare access.
 """
 from __future__ import annotations
 
-import gzip
 import hashlib
 import json
 import os
@@ -36,6 +35,7 @@ def _run_publication_job(
                   "commit", "-qm", "deployed")]:
         subprocess.run(["git", *args], cwd=tmp_path, check=True, capture_output=True)
     deployed = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=tmp_path, text=True).strip()
+    data_content = json.dumps(health | {"checked_at": "2026-11-08T04:01:47Z"}).encode()
     head = "a" * 64
     published = "2026-11-08T03:23:51Z"
     snapshot_ref = "attestations/2026-11-08/health.json.gz"
@@ -54,14 +54,15 @@ def _run_publication_job(
         "identity": {"accepted_main_commit": deployed,
                      "health_snapshot_ref": snapshot_ref, "health_sha256": claim["artifact_sha256"],
                      "accepted_chain_head": head, "observed_at": health["checked_at"],
-                     "published_at": published},
+                     "published_at": published, "data_observed_at": "2026-11-08T04:01:47Z",
+                     "data_health_sha256": hashlib.sha256(data_content).hexdigest()},
         "binding": {"payload": {"health": claim, "ed25519": {"chain_head": head},
                                 "published_at": published, "freshness": {"max_age_seconds": 129600}}},
     }
     for name, response in responses.items():
         (tmp_path / name).write_text(json.dumps(response))
-    (tmp_path / "snapshot").write_bytes(gzip.compress(content))
-    (tmp_path / "consumer-health").write_bytes(content)
+    (tmp_path / "snapshot").write_bytes(content)
+    (tmp_path / "consumer-health").write_bytes(data_content)
     (tmp_path / "scripts").symlink_to(ROOT / "scripts", target_is_directory=True)
     bin_dir = tmp_path / "bin"
     bin_dir.mkdir()
@@ -89,12 +90,12 @@ else:
         if case == "malformed":
             content = b"{invalid json"
         if case == "digest":
-            import gzip
-            content = gzip.compress(b'{"checked_at":"2026-11-07T13:01:47Z","datasets":[]}')
+            content = b'{"checked_at":"2026-11-07T13:01:47Z","datasets":[]}'
         if case == "identity-digest":
             import json
             identity = json.loads(content)
             identity["health_sha256"] = "0" * 64
+            identity["data_health_sha256"] = "0" * 64
             content = json.dumps(identity).encode()
     output.write_bytes(content)
     if name == os.environ["FETCH_ARTIFACT"] and os.environ["FETCH_CASE"] == "partial-error":

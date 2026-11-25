@@ -283,9 +283,9 @@ jobs:
             fi
             exit "$status"
           fi
-          # Signing consumes the recovered report, including when main has newer health.
-          cp "$publication/health/latest.json" health/latest.json
-          cp "$publication/datapulse.json" datapulse.json
+          # Keep publication data at the pinned revision; only this evidence is signed.
+          mkdir -p health/accepted
+          cp "$publication/health/latest.json" health/accepted/latest.json
           rm -rf attestations .attestations
           cp -R "$publication/attestations" "$publication/.attestations" .
           cp "$publication/docs/.well-known/datapulse-probe-keys.json" docs/.well-known/
@@ -297,8 +297,8 @@ jobs:
         run: |
           set -Eeuo pipefail
           python3 scripts/gen_sigstore_bundle.py \
-            --health health/latest.json \
-            --manifest datapulse.json \
+            --health health/accepted/latest.json \
+            --manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json" \
             --legacy-chain-head .attestations/chain_head.json \
             --source-commit "$PROMOTION_SOURCE_SHA" \
             --out "$RUNNER_TEMP/health.latest.statement.json"
@@ -343,7 +343,7 @@ jobs:
           if not head or head not in accepted["heads"]:
               raise SystemExit("Main has no accepted chain head")
           statement = json.loads((Path(os.environ["RUNNER_TEMP"]) / "health.latest.statement.json").read_bytes())
-          expected = generate_statement(root / "health/latest.json", root / "datapulse.json",
+          expected = generate_statement(root / "health/accepted/latest.json", Path(os.environ["RUNNER_TEMP"]) / "sigstore-publication/datapulse.json",
                                         root / ".attestations/chain_head.json", revision)
           if statement != expected or statement["predicate"]["legacyEd25519"]["chainHead"] != head:
               raise SystemExit("Signing statement differs from main's accepted chain head or inputs")
@@ -357,13 +357,13 @@ jobs:
             --yes \
             --statement "$RUNNER_TEMP/health.latest.statement.json" \
             --bundle "$bundle_tmp" \
-            health/latest.json; then
+            health/accepted/latest.json; then
             echo "state=signer_down" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           python3 scripts/verify_sigstore_bundle.py \
-            --health health/latest.json \
-            --manifest datapulse.json \
+            --health health/accepted/latest.json \
+            --manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json" \
             --legacy-chain-head .attestations/chain_head.json \
             --source-commit "$PROMOTION_SOURCE_SHA" \
             --bundle "$bundle_tmp" \
@@ -372,8 +372,9 @@ jobs:
             --cosign "$(command -v cosign)"
           mv "$bundle_tmp" "$publication/health.latest.sigstore.json"
           cp .attestations/chain_head.json "$publication/chain_head.json"
-          cmp health/latest.json "$publication/health/latest.json"
-          cmp datapulse.json "$publication/datapulse.json"
+          cmp health/accepted/latest.json "$publication/health/latest.json"
+          git show "$PROMOTION_SOURCE_SHA:health/latest.json" > "$RUNNER_TEMP/pinned-health.json"
+          cmp health/latest.json "$RUNNER_TEMP/pinned-health.json"
           echo "state=signed" >> "$GITHUB_OUTPUT"
 
       - name: Stage statement into Sigstore publication
@@ -382,7 +383,7 @@ jobs:
 
       - name: Generate per-dataset evidence statements
         if: steps.select_accepted_health.outputs.state == 'accepted'
-        run: python3 scripts/gen_per_dataset_receipt.py
+        run: python3 scripts/gen_per_dataset_receipt.py --health health/accepted/latest.json --manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json"
 
       - name: Sign per-dataset evidence statements
         id: sign_per_dataset
@@ -397,6 +398,8 @@ jobs:
             --result-out "$RUNNER_TEMP/per-dataset-receipts.result"
           if [[ "$(cat "$RUNNER_TEMP/per-dataset-receipts.result")" == "signed" ]]; then
             python3 scripts/verify_per_dataset_receipt.py \
+              --health health/accepted/latest.json \
+              --manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json" \
               --certificate-identity "$SIGSTORE_IDENTITY" \
               --certificate-oidc-issuer "$SIGSTORE_ISSUER" \
               --cosign "$(command -v cosign)"
@@ -569,10 +572,6 @@ jobs:
           rm -rf docs health deltas record-evidence badges samples data
           cp -R "$VERIFIED_PAGES_BUILD/." .
 
-      - name: Generate per-dataset evidence statements (release artifact)
-        if: needs.sign_health.outputs.health_only != 'true'
-        run: python3 scripts/gen_per_dataset_receipt.py
-
       - name: Validate DataPulse contract (non-health path)
         if: needs.sign_health.outputs.health_only != 'true'
         run: bash scripts/run_datacontract_validation.sh
@@ -644,19 +643,22 @@ jobs:
           publication="$RUNNER_TEMP/sigstore-publication"
           test -s "$publication/datapulse.json"
           test -s "$publication/attestations/latest/binding.json"
-          # Shape A: recover the accepted observation's complete committed build,
-          # rather than pairing its health with catalogs/evidence from newer main.
-          # The independent code release proof was verified above and stays pinned.
+          # Restore data and catalogs from the pinned source revision. Signed
+          # evidence has its own health input and is verified in its staged root.
           python3 scripts/select_accepted_health.py --restore-observation-build \
             --root . --revision "$PROMOTION_SOURCE_SHA" --publication "$publication"
-          cp "$publication/health/latest.json" health/latest.json
-          cp "$publication/datapulse.json" datapulse.json
+          mkdir -p health/accepted
+          cp "$publication/health/latest.json" health/accepted/latest.json
           rm -rf attestations .attestations
           cp -R "$publication/attestations" "$publication/.attestations" .
           cp "$publication/docs/.well-known/datapulse-probe-keys.json" docs/.well-known/
-          python3 scripts/verify_attestation_binding.py --root .
+          python3 scripts/verify_attestation_binding.py --root "$publication"
           python3 scripts/embed_dashboard_data.py --health health/latest.json
           bash scripts/verify_release_invariants.sh --local
+
+      - name: Generate per-dataset evidence statements (release artifact)
+        if: needs.sign_health.outputs.health_only != 'true'
+        run: python3 scripts/gen_per_dataset_receipt.py --health health/accepted/latest.json --manifest "$RUNNER_TEMP/sigstore-publication/datapulse.json"
 
       - name: Generate dataset passports from the bound observation build
         # data/passports/ is build output, not tracked. The restore above replaces
@@ -702,7 +704,6 @@ jobs:
             test -s "$RUNNER_TEMP/sigstore-publication/attestations/latest/chain_head.json"
             rm -rf _site/attestations
             rm -rf _site/.attestations
-            cp "$RUNNER_TEMP/sigstore-publication/datapulse.json" _site/datapulse.json
             cp -R "$RUNNER_TEMP/sigstore-publication/attestations" _site/
             cp -R "$RUNNER_TEMP/sigstore-publication/.attestations" _site/
           fi
@@ -743,26 +744,37 @@ jobs:
           import os
           from pathlib import Path
           import re
+          import subprocess
+
+          def require(condition: bool, message: str) -> None:
+              if not condition:
+                  raise SystemExit(message)
 
           site = Path('_site')
           publication = Path(os.environ['RUNNER_TEMP']) / 'sigstore-publication'
           identity_bytes = (publication / 'publication-identity.json').read_bytes()
           identity = json.loads(identity_bytes)
-          assert identity['accepted_main_commit'] == os.environ['ACCEPTED_MAIN_COMMIT']
-          assert identity['observed_at'] == os.environ['ACCEPTED_OBSERVED_AT']
-          for path, key in [('health/latest.json', 'health_sha256'), ('datapulse.json', 'manifest_sha256')]:
-              assert hashlib.sha256((site / path).read_bytes()).hexdigest() == identity[key], path
+          require(identity['accepted_main_commit'] == os.environ['ACCEPTED_MAIN_COMMIT'], 'source identity drift')
+          require(identity['observed_at'] == os.environ['ACCEPTED_OBSERVED_AT'], 'accepted observation clock drift')
+          require((site / 'health/accepted/latest.json').read_bytes() == (publication / 'health/latest.json').read_bytes(), 'accepted evidence bytes drift')
+          pinned_health = subprocess.check_output(['git', 'show', f"{os.environ['ACCEPTED_MAIN_COMMIT']}:health/latest.json"])
+          require((site / 'health/latest.json').read_bytes() == pinned_health, 'pinned data bytes drift')
+          for path, key in [('health/accepted/latest.json', 'health_sha256'), ('health/latest.json', 'data_health_sha256'), ('datapulse.json', 'manifest_sha256')]:
+              require(hashlib.sha256((site / path).read_bytes()).hexdigest() == identity[key], path + ' digest drift')
           for path in ['attestations/latest/chain_head.json', '.attestations/chain_head.json']:
-              assert json.loads((site / path).read_bytes())['chain_head'] == identity['accepted_chain_head']
-          assert json.loads((site / 'health/latest.json').read_bytes())['checked_at'] == identity['observed_at']
+              require(json.loads((site / path).read_bytes())['chain_head'] == identity['accepted_chain_head'], path + ' head drift')
+          require(json.loads((site / 'health/accepted/latest.json').read_bytes())['checked_at'] == identity['observed_at'], 'health/accepted/latest.json clock drift')
+          require(json.loads((site / 'health/latest.json').read_bytes())['checked_at'] == identity['data_observed_at'], 'health/latest.json clock drift')
+          (site / 'accepted-observation.json').write_bytes((publication / 'accepted-observation.json').read_bytes())
           (site / 'publication-identity.json').write_bytes(identity_bytes)
           observed = html.escape(identity['observed_at'], quote=True)
           banner = ('<aside class="register-shell" role="note" aria-label="Report observation time"><p><strong>'
                     f'Accepted health report observed at <time datetime="{observed}">{observed}</time>.'
-                    '</strong> Status verdicts describe that observation time and each dataset’s declared cadence.</p></aside>')
+                    '</strong> Signed evidence: <a href="/health/accepted/latest.json">accepted report</a>. '
+                    f'Published data observed at {html.escape(identity["data_observed_at"], quote=True)}.</p></aside>')
           page = site / 'index.html'
           rendered, count = re.subn(r'(<body\b[^>]*>)', lambda match: match[1] + banner, page.read_text(), count=1)
-          assert count == 1, 'dashboard body missing'
+          require(count == 1, 'dashboard body missing')
           page.write_text(rendered)
           print(json.dumps(identity, sort_keys=True))
           PYCODE
@@ -989,7 +1001,7 @@ jobs:
         run: |
           set -Eeuo pipefail
           python3 scripts/select_accepted_health.py --measure-age \
-            --health _site/health/latest.json --binding _site/attestations/latest/binding.json
+            --health _site/health/accepted/latest.json --binding _site/attestations/latest/binding.json
 
       - name: Require served observation near main health (served_health_stale)
         # Post-upload: may fail the run, never prevents the upload.
@@ -997,13 +1009,9 @@ jobs:
         run: |
           set -Eeuo pipefail
           lag="$(jq -er '.served_lag_seconds | select(type == "number")' _site/publication-identity.json)"
-          # Bound is the accepted-lag envelope, not an arbitrary window: the daily
-          # signed append plus its latency, as defined in select-accepted-health
-          # (97200s). The served report is the daily signed append, so a lag
-          # inside that envelope is normal operation and must not fail a deploy.
-          # This step exists to catch a served report that has escaped the
-          # envelope entirely, not to re-assert the cadence. Naming the source
-          # constants here is forbidden by the deploy contract tests, hence prose.
+          # Restoration records zero lag for data pinned to this revision.
+          # Retain the established diagnostic bound; signed evidence age is
+          # independently checked above against its unchanged 36-hour policy.
           if (( lag > 97200 )); then
             echo "::error title=Served health trails main::$(jq -r '.observed_at' _site/publication-identity.json) is ${lag}s behind main health (bound 97200s = append cadence + latency): $(jq -r '.served_lag_cause' _site/publication-identity.json)"
             exit 1
@@ -1064,10 +1072,10 @@ jobs:
             -o "$comparison/identity.json" https://www.data-pulse.my/publication-identity.json
           refuse_comparison() { echo "::error title=No verified served publication::$1"; exit 1; }
           test -s "$comparison/identity.json" || refuse_comparison publication_identity_empty
-          published_observed_at="$(jq -er '.observed_at | select(type == "string" and length > 0)' "$comparison/identity.json")" || refuse_comparison publication_observed_at_missing_or_invalid
-          published_health_sha256="$(jq -er '.health_sha256 | select(type == "string") | select(test("^[0-9a-f]{64}$"))' "$comparison/identity.json")" || refuse_comparison publication_health_sha256_missing_or_invalid
-          # Compare the signed artifact this deployment published. The accepted
-          # commit remains provenance rather than the report's clock.
+          published_observed_at="$(jq -er '.data_observed_at | select(type == "string" and length > 0)' "$comparison/identity.json")" || refuse_comparison publication_observed_at_missing_or_invalid
+          published_health_sha256="$(jq -er '.data_health_sha256 | select(type == "string") | select(test("^[0-9a-f]{64}$"))' "$comparison/identity.json")" || refuse_comparison publication_health_sha256_missing_or_invalid
+          # Compare publication data to its pinned build identity, independently
+          # of the accepted signed evidence and its 36-hour policy.
           curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
             -o "$comparison/health.json" https://www.data-pulse.my/health/latest.json
           test -s "$comparison/health.json" || refuse_comparison served_health_empty
@@ -1113,18 +1121,15 @@ jobs:
               ;;
           esac
           test -s "$report/identity.json"
-          snapshot_ref="$(jq -er '.health_snapshot_ref' "$report/identity.json")"
-          [[ "$snapshot_ref" =~ ^attestations/[0-9]{4}-[0-9]{2}-[0-9]{2}(/revisions/[0-9a-f]{64})?/health\.json(\.gz)?$ ]]
+          jq -e 'type == "object"' "$report/identity.json" >/dev/null
           curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
-            "https://www.data-pulse.my/$snapshot_ref" -o "$report/snapshot"
+            https://www.data-pulse.my/health/accepted/latest.json -o "$report/snapshot"
           curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
             https://www.data-pulse.my/attestations/latest/binding.json -o "$report/binding.json"
           test -s "$report/snapshot"
           test -s "$report/binding.json"
-          # /health/latest.json belongs to the separate KV producer. Measure the
-          # accepted report's immutable bytes, without changing that consumer route.
-          python3 - "$report" "$snapshot_ref" <<'PY'
-          import gzip
+          # Measure the separately served accepted evidence, never publication data.
+          python3 - "$report" <<'PY'
           import hashlib
           import json
           from pathlib import Path
@@ -1132,8 +1137,6 @@ jobs:
 
           report = Path(sys.argv[1])
           content = (report / 'snapshot').read_bytes()
-          if sys.argv[2].endswith('.gz'):
-              content = gzip.decompress(content)
           identity = json.loads((report / 'identity.json').read_bytes())
           binding = json.loads((report / 'binding.json').read_bytes())['payload']
           if (hashlib.sha256(content).hexdigest() != identity['health_sha256']

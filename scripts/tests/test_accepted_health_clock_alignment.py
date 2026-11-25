@@ -39,8 +39,8 @@ def _write(path: Path, document: dict) -> None:
     path.write_text(json.dumps(document, indent=2) + '\n')
 
 
-@pytest.fixture(scope='module')
-def bound_observation(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, dict[str, str], str, str]:
+@pytest.fixture(scope='module', params=[True, False], ids=['receipt', 'daily-evidence'])
+def bound_observation(request: pytest.FixtureRequest, tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, dict[str, str], str, str]:
     """Use real local artifacts, generators, signatures and the unmodified gate."""
     temporary = tmp_path_factory.mktemp('accepted-clock')
     root, key = fixture_root(temporary / 'repo')
@@ -93,7 +93,8 @@ def bound_observation(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, d
         _write(root / name, document)
     result = _run(root, env, generate)
     assert result.returncode == 0, result.stdout + result.stderr
-    write_snapshot_receipt(root)
+    if request.param:
+        write_snapshot_receipt(root)
     git(root, 'add', '-A')
     git(root, 'commit', '-m', 'newer checkout build H1')
     env['PROMOTION_SOURCE_SHA'] = git(root, 'rev-parse', 'HEAD')
@@ -122,13 +123,14 @@ def test_binding_publishes_receipt_covered_pinned_observation_and_discloses_anch
         shutil.copytree(root / name, site / name)
     shutil.copy2(root / 'datapulse.json', site / 'datapulse.json')
     shutil.copy2(root / 'docs/index.html', site / 'index.html')
-    env = env | {'ACCEPTED_MAIN_COMMIT': env['PROMOTION_SOURCE_SHA'], 'ACCEPTED_OBSERVED_AT': newer}
+    evidence_clock = json.loads((root / 'health/accepted/latest.json').read_bytes())['checked_at']
+    env = env | {'ACCEPTED_MAIN_COMMIT': env['PROMOTION_SOURCE_SHA'], 'ACCEPTED_OBSERVED_AT': evidence_clock}
     result = _run(root, env, _step('Verify accepted report identity and disclose observation time'))
     assert result.returncode == 0, result.stdout + result.stderr
-    assert f'<time datetime="{newer}">{newer}</time>' in (site / 'index.html').read_text()
+    assert f'<time datetime="{evidence_clock}">{evidence_clock}</time>' in (site / 'index.html').read_text()
     identity = json.loads((site / 'publication-identity.json').read_bytes())
-    assert identity['observed_at'] == newer
-    assert identity['anchor_observed_at'] == observed
+    assert identity['observed_at'] == evidence_clock
+    assert identity.get('anchor_observed_at', identity['observed_at']) == observed
     assert identity['observation_build_commit'] == env['PROMOTION_SOURCE_SHA']
     assert identity['observation_build_commit'] != env['ACCEPTED_BUILD_SHA']
 

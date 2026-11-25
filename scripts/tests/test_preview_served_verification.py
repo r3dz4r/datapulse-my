@@ -531,7 +531,7 @@ def test_default_still_fails_on_a_stale_served_health_snapshot(tmp_path: Path) -
     combined = result.stdout + result.stderr
 
     assert result.returncode != 0
-    assert "served health digest differs from the accepted report bytes" in combined
+    assert "served health digest differs from the pinned data bytes" in combined
     assert "published by another lane on its own cadence" not in combined
 
 
@@ -545,7 +545,7 @@ def test_environment_cannot_enable_kv_surface_exclusion(tmp_path: Path, monkeypa
     combined = result.stdout + result.stderr
 
     assert result.returncode != 0
-    assert "served health digest differs from the accepted report bytes" in combined
+    assert "served health digest differs from the pinned data bytes" in combined
     assert "published by another lane on its own cadence" not in combined
 
 
@@ -777,14 +777,24 @@ def _stage_accepted_fixture(tmp_path: Path, *, age_hours: int = 2) -> tuple[Path
     for directory in (built, served):
         _write(directory / "health/latest.json", json.dumps(health))
     _write(served / "health/index.json", json.dumps(health))
+    # Accepted evidence stays H0; publication data comes from a newer pinned H1.
+    evidence = (built / "health/latest.json").read_bytes()
+    for directory in (built, served):
+        _write(directory / "health/accepted/latest.json", evidence.decode())
+    claim = health_binding(built, health)
+    data = health | {"checked_at": now.isoformat()}
+    for directory in (built, served):
+        _write(directory / "health/latest.json", json.dumps(data))
+    _write(served / "health/index.json", json.dumps(data))
     head = "b" * 64
-    payload = {"health": health_binding(built, health), "published_at": (now - timedelta(hours=1)).isoformat(),
+    payload = {"health": claim, "published_at": (now - timedelta(hours=1)).isoformat(),
                "freshness": {"max_age_seconds": 129600}, "ed25519": {"chain_head": head}}
     binding = {"schema": "datapulse/v1/attestation-binding-envelope", "payload": payload}
     identity = {"accepted_main_commit": SOURCE_COMMIT, "accepted_chain_head": head,
                 "health_sha256": payload["health"]["artifact_sha256"], "dataset_count": 2,
                 "observed_at": observed, "published_at": payload["published_at"], "max_age_seconds": 129600}
     publication = root / "runner/sigstore-publication"
+    _write(publication / "health/latest.json", evidence.decode())
     for directory in (built, served, publication):
         _write(directory / "publication-identity.json", json.dumps(identity))
         _write(directory / "attestations/latest/binding.json", json.dumps(binding))
@@ -807,7 +817,8 @@ def test_accepted_report_passes_newer_build_proof_and_uses_report_count(tmp_path
 
 
 @pytest.mark.parametrize("damage,refusal", [
-    ("health", "served health digest differs from the accepted report bytes"),
+    ("health", "served health digest differs from the pinned data bytes"),
+    ("evidence", "served accepted evidence differs from staged artifact"),
     ("age", "accepted report exceeds 36-hour signed policy"),
     ("code", "release proof drift:"),
     ("manifest", "source commit mismatch"),
@@ -815,8 +826,8 @@ def test_accepted_report_passes_newer_build_proof_and_uses_report_count(tmp_path
 ])
 def test_accepted_report_mutations_refuse_publication(tmp_path: Path, damage: str, refusal: str) -> None:
     root, built, served, publication = _stage_accepted_fixture(tmp_path, age_hours=37 if damage == "age" else 2)
-    if damage == "health":
-        path = served / "health/latest.json"
+    if damage in ("health", "evidence"):
+        path = served / ("health/accepted/latest.json" if damage == "evidence" else "health/latest.json")
         health = json.loads(path.read_bytes())
         health["datasets"][0]["status"] = "stale"  # Same clock and membership; different bytes.
         _write(path, json.dumps(health))
@@ -841,7 +852,7 @@ def test_existing_kv_option_cannot_bypass_health_attribution_without_receipt(tmp
     result = _run_verifier(tmp_path, root, built, served, publication=publication,
                            kv_surfaces_published_elsewhere=True)
     assert result.returncode != 0
-    assert "served health digest differs from the accepted report bytes" in result.stderr
+    assert "served health digest differs from the pinned data bytes" in result.stderr
 
 
 def _stage_receipt_snapshot(
@@ -901,11 +912,11 @@ def _stage_receipt_snapshot(
     create_manifest(built, root / "runner/release-artifact-manifest.json", SOURCE_COMMIT)
 
 
-@pytest.mark.parametrize("state", ["accepted_report", "receipt_covered_served_snapshot", "neither"])
+@pytest.mark.parametrize("state", ["pinned_source_data", "receipt_covered_served_snapshot", "neither"])
 @pytest.mark.parametrize("kv_excluded", [False, True])
 def test_two_source_served_health_attribution(tmp_path: Path, state: str, kv_excluded: bool) -> None:
     root, built, served, publication = _stage_accepted_fixture(tmp_path)
-    if state != "accepted_report":
+    if state != "pinned_source_data":
         _stage_receipt_snapshot(root, built, served, damage="absent" if state == "neither" else "none")
     result = _run_verifier(tmp_path, root, built, served, publication=publication,
                            kv_surfaces_published_elsewhere=kv_excluded)
@@ -915,7 +926,7 @@ def test_two_source_served_health_attribution(tmp_path: Path, state: str, kv_exc
     print(f"fixture={state} kv_excluded={kv_excluded} exit={result.returncode}\n{evidence}")
     if state == "neither":
         assert result.returncode != 0, output
-        assert "served health digest differs from the accepted report bytes" in output
+        assert "served health digest differs from the pinned data bytes" in output
         for path in (served / "health/latest.json", built / "health/latest.json"):
             assert hashlib.sha256(path.read_bytes()).hexdigest() in output
     else:
@@ -932,7 +943,7 @@ def test_receipt_cannot_cover_unattributable_served_bytes(tmp_path: Path, damage
     result = _run_verifier(tmp_path, root, built, served, publication=publication)
     output = result.stdout + result.stderr
     assert result.returncode != 0, output
-    assert "served health digest differs from the accepted report bytes" in output
+    assert "served health digest differs from the pinned data bytes" in output
     assert "health attribution: receipt_covered_served_snapshot" not in output
 
 
@@ -942,5 +953,43 @@ def test_receipt_coverage_preserves_accepted_report_age_gate(tmp_path: Path) -> 
     result = _run_verifier(tmp_path, root, built, served, publication=publication)
     output = result.stdout + result.stderr
     assert "health attribution: receipt_covered_served_snapshot" in output
+    assert "health attribution: accepted_evidence" in output
     assert result.returncode != 0, output
     assert "accepted report exceeds 36-hour signed policy" in output
+
+
+@pytest.mark.parametrize("damage", ["missing", "html", "same-clock-different-bytes"])
+@pytest.mark.parametrize("kv_excluded", [False, True])
+def test_accepted_evidence_cannot_be_replaced_by_data_or_kv_exclusion(
+    tmp_path: Path, damage: str, kv_excluded: bool,
+) -> None:
+    root, built, served, publication = _stage_accepted_fixture(tmp_path)
+    evidence = served / "health/accepted/latest.json"
+    if damage == "missing":
+        evidence.unlink()
+    elif damage == "html":
+        evidence.write_text("<html>SPA fallback</html>")
+    else:
+        evidence.write_bytes(evidence.read_bytes() + b" ")
+    result = _run_verifier(tmp_path, root, built, served, publication=publication,
+                           kv_surfaces_published_elsewhere=kv_excluded)
+    assert result.returncode != 0, result.stdout + result.stderr
+    assert ("accepted evidence differs" in result.stdout
+            or "missing or stale served surface: accepted health evidence" in result.stdout)
+
+
+def test_data_age_is_independent_of_signed_evidence_policy(tmp_path: Path) -> None:
+    from scripts.verify_release_artifact import create_manifest
+
+    root, built, served, publication = _stage_accepted_fixture(tmp_path)
+    data = json.loads((built / "health/latest.json").read_bytes())
+    data["checked_at"] = (datetime.now(timezone.utc) - timedelta(hours=40)).isoformat()
+    for directory in (built, served):
+        _write(directory / "health/latest.json", json.dumps(data))
+    _write(served / "health/index.json", json.dumps(data))
+    create_manifest(built, root / "runner/release-artifact-manifest.json", SOURCE_COMMIT)
+    result = _run_verifier(tmp_path, root, built, served, publication=publication)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert '"report_age_status": "current"' in result.stdout
+    assert "health attribution: pinned_source_data" in result.stdout
+    assert "health attribution: accepted_evidence" in result.stdout

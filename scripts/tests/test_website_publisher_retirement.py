@@ -50,7 +50,9 @@ def test_cloudflare_health_only_path_preserves_code_proof_and_selects_accepted_r
     assert "Preserve served attestation plane (health-only path)" not in workflow
     assert "Select and verify pinned accepted health report" in workflow
     assert 'website_origin="$(jq -er' in workflow
-    assert "python3 scripts/verify_attestation_binding.py --root ." in workflow
+    assert 'python3 scripts/verify_attestation_binding.py --root "$publication"' in workflow
+    assert 'cp "$publication/health/latest.json" health/accepted/latest.json' in workflow
+    assert 'cp "$publication/health/latest.json" health/latest.json' not in workflow
     assert 'cp "$RUNNER_TEMP/preserved-release-proof/release-verification.md" _site/release-verification.md' in workflow
     assert 'cp -R "$publication/attestations" "$publication/.attestations" .' in workflow
     assert "rm -f _site/attestations/latest/binding.json" not in workflow

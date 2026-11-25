@@ -319,12 +319,17 @@ def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advance
         '"--revision", "a" * 40, "--publication", '
         'str(Path(os.environ["RUNNER_TEMP"]) / "sigstore-publication")]\n'
         'assert Path("attestations/latest/binding.json").read_text() == "private-build"\n'
-        'Path("catalog-snapshot.json").write_text("accepted")\n'
+        'Path("catalog-snapshot.json").write_text("pinned-data")\n'
+        'Path("health/latest.json").write_text("pinned-data")\n'
+        'Path("datapulse.json").write_text("pinned-data")\n'
     )
     (root / "scripts/verify_attestation_binding.py").write_text(
         'from pathlib import Path\n'
-        'assert Path("catalog-snapshot.json").read_text() == "accepted"\n'
-        'assert Path("health/latest.json").read_text() == "accepted"\n'
+        'assert Path("catalog-snapshot.json").read_text() == "pinned-data"\n'
+        'assert Path("health/latest.json").read_text() == "pinned-data"\n'
+        'assert Path("health/accepted/latest.json").read_text() == "accepted"\n'
+        'import os, sys\n'
+        'assert sys.argv[1:] == ["--root", str(Path(os.environ["RUNNER_TEMP"]) / "sigstore-publication")]\n'
         'assert Path("attestations/latest/binding.json").read_text() == "accepted"\n'
     )
     (root / "scripts/embed_dashboard_data.py").write_text(
@@ -335,13 +340,13 @@ def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advance
     )
     (root / "scripts/verify_release_invariants.sh").write_text(
         'set -Eeuo pipefail\n[[ "$1" == --local ]]\n'
-        '[[ "$(cat docs/index.html)" == accepted ]]\n'
+        '[[ "$(cat docs/index.html)" == pinned-data ]]\n'
     )
     step = _step(PUBLISH, "deploy", "Bind built dashboard to accepted sign-time trust plane")
     assert "if" not in step
     result = _run(step["run"], root, RUNNER_TEMP=str(runner), PROMOTION_SOURCE_SHA="a" * 40)
     assert result.returncode == 0, result.stderr
-    assert (root / "docs/index.html").read_text() == "accepted"
+    assert (root / "docs/index.html").read_text() == "pinned-data"
     names = [step.get("name") for step in _workflow(PUBLISH)["jobs"]["deploy"]["steps"]]
     assert names.index("Download accepted report and optional Sigstore bundle") < names.index(step["name"]) < names.index("Assemble canonical Pages artifact")
 
