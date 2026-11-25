@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.68.8](https://github.com/r3dz4r/datapulse-my/compare/v3.68.7...v3.68.8) (2026-11-25)
+
+
+### Bug Fixes
+
+* **publish:** re-arm pending publication wakes at bounded intervals ([#3563](https://github.com/r3dz4r/datapulse-my/issues/3563)) ([d123bc1](https://github.com/r3dz4r/datapulse-my/commit/d123bc10f5d8d688dd1df73326a8e132fd973c08))
+
 ## [3.68.7](https://github.com/r3dz4r/datapulse-my/compare/v3.68.6...v3.68.7) (2026-11-23)
 
 
