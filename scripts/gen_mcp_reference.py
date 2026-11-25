@@ -270,7 +270,9 @@ async def generate(root: Path, *, source_sha: str | None = None, source_date: st
         root / "docs/mcp-reference.md": _reference(config, datasets, taxonomy, tools, resources, templates),
     }
     block = _mcp_block(tools)
-    readme_body = f"- {len(tools)} tools: " + ", ".join(f"`{tool.name}`" for tool in tools) + f"\n\nThe public endpoint serves all {len(tools)} read-only tools over the\n{len(datasets)}-dataset catalogue."
+    # gen_readme.py owns the dataset count and refreshes it every health cycle.
+    # Repeating it in this externally owned block would make dataset PRs carry README.md.
+    readme_body = f"- {len(tools)} tools: " + ", ".join(f"`{tool.name}`" for tool in tools) + f"\n\nThe public endpoint serves all {len(tools)} read-only tools over the\nwhole dataset catalogue."
     deploy_body = (
         f"The stable public endpoint is `{config['origins']['mcp']}/mcp`. Its local contract registers "
         f"{len(tools)} tools ({', '.join(f'`{tool.name}`' for tool in tools)}), "
