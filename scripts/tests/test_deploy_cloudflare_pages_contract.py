@@ -1411,7 +1411,7 @@ def _select_step() -> dict:
                 if step.get('id') == 'select_accepted_health')
 
 
-def test_frozen_main_h1_publishes_accepted_h0_with_its_observation_time(tmp_path: Path) -> None:
+def test_signing_keeps_h0_and_indexes_its_evidence_separately_from_h1(tmp_path: Path) -> None:
     root, revision, h0, env = _accepted_workflow_case(tmp_path)
     h1 = (root / 'health/latest.json').read_bytes()
     assert h1 != h0
@@ -1427,9 +1427,24 @@ def test_frozen_main_h1_publishes_accepted_h0_with_its_observation_time(tmp_path
     identity = json.loads((publication / 'publication-identity.json').read_bytes())
     assert identity['accepted_main_commit'] == revision
     assert identity['observed_at'] == outputs['observed_at']
+    assert identity['data_observed_at'] == json.loads(h1)['checked_at']
+    assert identity['data_health_sha256'] == hashlib.sha256(h1).hexdigest()
+    accepted = json.loads((publication / 'accepted-observation.json').read_bytes())
+    assert accepted['schema'] == 'datapulse/v1/accepted-observation'
+    assert accepted['observed_at'] == json.loads(h0)['checked_at'] != identity['data_observed_at']
+    assert accepted['published_at'] == identity['published_at']
+    assert accepted['source_commit'] == revision
+    assert accepted['health_sha256'] == hashlib.sha256(h0).hexdigest()
+    assert accepted['health_snapshot_ref'] == identity['health_snapshot_ref']
+    assert json.loads((publication / accepted['binding_ref']).read_bytes())['payload']['health']['artifact_sha256'] == accepted['health_sha256']
+    assert accepted['max_age_seconds'] == 129600
     assert 'report_age_status' not in identity
     assert '"report_age_status": "current"' in result.stdout
     assert outputs['observed_at'] in Path(env['GITHUB_STEP_SUMMARY']).read_text()
+    summary = Path(env['GITHUB_STEP_SUMMARY']).read_text()
+    assert f"Data observation time: {json.loads(h1)['checked_at']}" in summary
+    assert f"signed accepted observation time: {json.loads(h0)['checked_at']}" in summary
+    assert 'signed evidence: accepted-observation.json' in summary
     assert 'Report age:' in result.stdout
     assert yaml.safe_load(_workflow())['jobs']['deploy']['if'] == "needs.sign_health.outputs.report_state == 'accepted'"
 
@@ -1793,12 +1808,11 @@ def _observation_build(root: Path, checked_at: str) -> None:
     (root / 'catalog-graph.json').write_text(json.dumps({'generated_at': checked_at}) + '\n')
 
 
-@pytest.mark.parametrize('hours,admitted', [(0, True), (24, True), (28, False)])
-def test_restored_observation_build_reports_its_lag_behind_main(
-    tmp_path: Path, hours: int, admitted: bool,
+@pytest.mark.parametrize('hours', [0, 24, 28])
+def test_restored_data_build_equals_pinned_main_without_applying_daily_cadence(
+    tmp_path: Path, hours: int,
 ) -> None:
-    """A faithful day-old observation is measured and named; an overdue append is refused."""
-    from scripts.select_accepted_health import SERVED_LAG_BOUND_SECONDS
+    """Even a 28-hour-old signed observation cannot replace the pinned data build."""
     from scripts.tests.test_attestation_projections import git
     observed = datetime(2026, 11, 9, 10, 12, 34, tzinfo=timezone.utc)
     stamp = lambda moment: moment.isoformat().replace('+00:00', 'Z')
@@ -1831,32 +1845,20 @@ def test_restored_observation_build_reports_its_lag_behind_main(
         '--root', str(root), '--revision', revision, '--publication', str(publication),
     ], env=os.environ | {'GITHUB_STEP_SUMMARY': str(summary)}, capture_output=True, text=True, timeout=60)
     output = result.stdout + result.stderr
-    assert SERVED_LAG_BOUND_SECONDS == 27 * 3600
-    assert f'"served_lag_seconds": {hours * 3600}' in output, output
     identity = json.loads((publication / 'publication-identity.json').read_bytes())
-    if not admitted:
-        assert result.returncode == 1, output
-        assert 'REFUSED: served observation trails main by 100800s' in output
-        assert '::error title=Served observation exceeds append cadence::' in output
-        assert 'append_overdue' in output
-        assert 'served_lag_seconds' not in identity
-        assert (root / 'datapulse_summary.json').read_bytes() == main_summary
-        return
     assert result.returncode == 0, output
-    assert identity['observation_build_commit'] == accepted
+    assert (root / 'datapulse_summary.json').read_bytes() == main_summary
+    assert (root / 'health/latest.json').read_bytes() == subprocess.check_output(
+        ['git', 'show', f'{revision}:health/latest.json'], cwd=root)
+    assert (publication / 'health/latest.json').read_bytes() == health_bytes
+    assert identity['observation_build_commit'] == revision
+    assert identity['accepted_observation_build_commit'] == accepted
+    assert identity['observed_at'] == stamp(observed)
+    assert identity['data_observed_at'] == stamp(observed + timedelta(hours=hours))
     assert identity['main_observed_at'] == stamp(observed + timedelta(hours=hours))
-    assert identity['served_lag_seconds'] == hours * 3600
-    assert identity['served_lag_health_commits'] == hours
-    assert identity['served_lag_bound_seconds'] == SERVED_LAG_BOUND_SECONDS
-    assert identity['served_lag_status'] == 'within_append_cadence'
-    assert json.loads((root / 'datapulse_summary.json').read_bytes())['generated_at'] == stamp(observed)
-    if hours:
-        # A faithful day-old artifact is admitted, but never silently.
-        assert identity['served_lag_cause'] == (
-            f'awaiting_next_append: main observed after the accepted append published at {published}; '
-            'next append due by 2026-11-10T11:29:34Z')
-        assert '::notice title=Served observation trails main::86400s (24 health commits)' in output
-    else:
-        assert identity['served_lag_cause'].startswith('current:')
-        assert '::notice' not in output
-    assert f"by {hours * 3600}s ({hours} health commits)" in summary.read_text()
+    assert identity['served_lag_seconds'] == 0
+    assert identity['served_lag_health_commits'] == 0
+    assert identity['served_lag_bound_seconds'] == 0
+    assert identity['served_lag_status'] == 'pinned_source'
+    assert identity['served_lag_cause'].startswith('current:')
+    assert 'by 0s (0 health commits)' in summary.read_text()
