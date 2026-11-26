@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.68.10](https://github.com/r3dz4r/datapulse-my/compare/v3.68.9...v3.68.10) (2026-11-26)
+
+
+### Bug Fixes
+
+* **deploy:** inject first-parent order when verifying the publication pseudo-root ([#4236](https://github.com/r3dz4r/datapulse-my/issues/4236)) ([cb241ca](https://github.com/r3dz4r/datapulse-my/commit/cb241cad64f08928dbe0752a477f5be27c5d0bef))
+
 ## [3.68.9](https://github.com/r3dz4r/datapulse-my/compare/v3.68.8...v3.68.9) (2026-11-25)
 
 
