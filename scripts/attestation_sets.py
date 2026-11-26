@@ -297,6 +297,28 @@ def first_parent_order(root: Path, revision: str = "HEAD") -> dict[str, int]:
     return {path: rank for path, rank in introductions.items() if rank is not None}
 
 
+def require_first_parent_order(repository: Path, revision: str = "HEAD") -> dict[str, int]:
+    """Compute first-parent order for injection, refusing absent or shallow history.
+
+    first_parent_order() answers "no authority" with an empty map. A caller that
+    injects order into a Git pseudo-root needs the real history, so its absence
+    is a refusal here rather than a silently empty map.
+    """
+    try:
+        shallow = subprocess.run(["git", "rev-parse", "--is-shallow-repository"],
+                                 cwd=repository, check=True, capture_output=True, text=True)
+        subprocess.run(["git", "rev-parse", "--verify", "--quiet", f"{revision}^{{commit}}"],
+                       cwd=repository, check=True, capture_output=True, text=True)
+    except (OSError, subprocess.SubprocessError) as error:
+        raise ContractError(
+            f"first-parent order is required but {repository} is not a Git repository "
+            f"with revision {revision}") from error
+    if shallow.stdout.strip() != "false":
+        raise ContractError(
+            f"first-parent order is required but {repository} has shallow Git history")
+    return first_parent_order(repository, revision)
+
+
 def discovery(root: Path, *, verify_datasets: bool = True,
               fork_order: dict[str, int] | None = None) -> dict:
     """Validate v2, or derive v2 from verified v1 entries without rewriting evidence."""
@@ -356,6 +378,8 @@ def discovery(root: Path, *, verify_datasets: bool = True,
     # Recompute rejection from history; an unsigned index field is no authority.
     document.pop("rejected_heads", None)
     rejected: dict[str, str] = {}
+    injected = fork_order is not None
+    unranked: list[str] = []
 
     def select(children: list[tuple[str, str, dict]]) -> tuple[str, str, dict] | None:
         nonlocal fork_order
@@ -367,6 +391,8 @@ def discovery(root: Path, *, verify_datasets: bool = True,
             fork_order = first_parent_order(root)
         ranks = [fork_order.get(reference) for _, reference, _ in children]
         if None in ranks or len(set(ranks)) != len(ranks):
+            unranked.extend(sorted(reference for _, reference, _ in children
+                                   if fork_order.get(reference) is None))
             return None
         return min(children, key=lambda child: fork_order[child[1]])
 
@@ -376,10 +402,17 @@ def discovery(root: Path, *, verify_datasets: bool = True,
             verify_set(root, reference, verify_datasets=verify_datasets)
         predecessors = {digest: head["payload"]["previous_chain_head"]
                         for digest, (_, head) in sorted(pending.items())}
+        detail = ""
+        if unranked:
+            source = "injected first-parent order" if injected else f"Git history at {root}"
+            detail = (f"; first-parent order is required to adjudicate this fork but {source} "
+                      f"has no rank for {json.dumps(sorted(set(unranked)))}")
+            if not injected:
+                detail += "; a Git pseudo-root needs order injected from the real repository"
         raise ContractError(
             "fork or disconnected accepted forward head: candidate does not append to accepted parent; "
             f"accepted_parent={document['current_head'] or '0' * 64}; "
-            f"pending_parents={json.dumps(predecessors, sort_keys=True)}")
+            f"pending_parents={json.dumps(predecessors, sort_keys=True)}" + detail)
 
     # A regenerated checkpoint may already contain the winner. Its sibling is
     # still on disk and must be reclassified, without trusting a saved rejection.
@@ -530,9 +563,14 @@ def verify_legacy_mirror(root: Path, document: dict[str, Any], directory: str) -
         logger.warning("legacy mirror agrees with current head: %s", " ".join(operands))
 
 
-def selected_directory(root: Path, *, projections: bool = True, verify_datasets: bool = True) -> str:
-    """Resolve current identity and reject mixtures of latest and immutable bytes."""
-    document = discovery(root, verify_datasets=verify_datasets)
+def selected_directory(root: Path, *, projections: bool = True, verify_datasets: bool = True,
+                       fork_order: dict[str, int] | None = None) -> str:
+    """Resolve current identity and reject mixtures of latest and immutable bytes.
+
+    fork_order is injected first-parent order for a Git pseudo-root; None reads
+    the order from Git history at root.
+    """
+    document = discovery(root, verify_datasets=verify_datasets, fork_order=fork_order)
     digest = document["current_head"]
     directory = set_directory(document["heads"][digest])
     revision = root / directory / "revisions" / digest / "chain_head.json"

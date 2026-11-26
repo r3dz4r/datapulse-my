@@ -169,12 +169,22 @@ def _valid_head_ref(reference: object, day: object, digest: object) -> bool:
     return reference in {f"attestations/{day}/chain_head.json", f"attestations/{day}/revisions/{digest}/chain_head.json"}
 
 
-def _selected_directory(root: Path, *, verify_datasets: bool = True) -> str:
+def _selected_directory(root: Path, *, verify_datasets: bool = True,
+                        fork_order: dict[str, int] | None = None) -> str:
     try:
         from scripts.attestation_sets import selected_directory
     except ModuleNotFoundError:
         from attestation_sets import selected_directory
-    return selected_directory(root, verify_datasets=verify_datasets)
+    return selected_directory(root, verify_datasets=verify_datasets, fork_order=fork_order)
+
+
+def first_parent_order_from(repository: Path) -> dict[str, int]:
+    """Read fork-adjudication order from a real repository for a pseudo-root."""
+    try:
+        from scripts.attestation_sets import require_first_parent_order
+    except ModuleNotFoundError:
+        from attestation_sets import require_first_parent_order
+    return require_first_parent_order(repository)
 
 
 def _verify_legacy_plane(
@@ -372,7 +382,8 @@ def verify_rekor_evidence(
 
 
 def verify_unbound_legacy_plane(
-    root: Path, *, now: datetime | None = None, verify_datasets: bool = True
+    root: Path, *, now: datetime | None = None, verify_datasets: bool = True,
+    fork_order: dict[str, int] | None = None,
 ) -> None:
     """Validate legacy L1 evidence before allowing an honestly unattested snapshot."""
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
@@ -390,7 +401,7 @@ def verify_unbound_legacy_plane(
     _verify_legacy_plane(
         root, index, head, public, registry_row, verify_datasets=verify_datasets
     )
-    _selected_directory(root, verify_datasets=verify_datasets)
+    _selected_directory(root, verify_datasets=verify_datasets, fork_order=fork_order)
 
 
 def health_claim(snapshot: dict[str, Any], content: bytes) -> dict[str, Any]:
@@ -476,8 +487,14 @@ def verify_contract(
     require_rekor: bool = False,
     verify_datasets: bool = True,
     allow_newer_health: bool = False,
+    fork_order: dict[str, int] | None = None,
 ) -> dict[str, Any]:
-    """Verify the daily anchor and any independently receipt-covered newer health."""
+    """Verify the daily anchor and any independently receipt-covered newer health.
+
+    fork_order is first-parent order computed in the real repository. It only
+    adjudicates accepted fork pairs; every byte, digest and signature check
+    still reads root. None reads the order from Git history at root itself.
+    """
     current = (now or datetime.now(timezone.utc)).astimezone(timezone.utc)
     health_path = root / "health/latest.json"
     health = _load(health_path, "health snapshot")
@@ -519,7 +536,8 @@ def verify_contract(
         root, index, head, public, registry_row, verify_datasets=verify_datasets
     )
 
-    selected_directory = _selected_directory(root, verify_datasets=verify_datasets)
+    selected_directory = _selected_directory(
+        root, verify_datasets=verify_datasets, fork_order=fork_order)
 
     observed_at = _parse_time(health_binding.get("observed_at"), "health observation time")
     if current < published_at or current < observed_at:
@@ -605,15 +623,23 @@ def main() -> int:
     parser.add_argument("--require-rekor", action="store_true")
     parser.add_argument("--allow-unattested-health", action="store_true")
     parser.add_argument("--head-only", action="store_true")
+    parser.add_argument(
+        "--first-parent-order-repo", type=Path,
+        help="real Git repository whose HEAD first-parent order adjudicates accepted "
+             "fork pairs when --root is a pseudo-root without Git history")
     args = parser.parse_args()
     now = _parse_time(args.now, "verification time") if args.now else None
+    fork_order = None
     try:
+        if args.first_parent_order_repo is not None:
+            fork_order = first_parent_order_from(args.first_parent_order_repo)
         result = verify_contract(
             args.root,
             now=now,
             require_rekor=args.require_rekor,
             verify_datasets=not args.head_only,
             allow_newer_health=args.require_rekor,
+            fork_order=fork_order,
         )
     except ContractError as error:
         allowed_reasons = {
@@ -625,7 +651,8 @@ def main() -> int:
             if str(error) == "latest binding is missing or invalid":
                 try:
                     verify_unbound_legacy_plane(
-                        args.root, now=now, verify_datasets=not args.head_only
+                        args.root, now=now, verify_datasets=not args.head_only,
+                        fork_order=fork_order,
                     )
                 except ContractError as legacy_error:
                     print(f"verify_attestation_binding.py: {legacy_error}")

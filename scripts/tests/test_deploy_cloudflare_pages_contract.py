@@ -727,7 +727,17 @@ def test_attestation_state_machine_preserves_the_accepted_report_during_signer_o
     overlay = next(step for step in steps if step.get("name") == "Bind built dashboard to accepted sign-time trust plane")
     assert "if" not in overlay
     assert 'cp "$publication/health/latest.json" health/accepted/latest.json' in overlay["run"]
-    assert 'verify_attestation_binding.py --root "$publication"' in overlay["run"]
+    # Bytes are verified in the publication pseudo-root; fork pairs need the
+    # first-parent order of the real, full-history checkout passed explicitly.
+    command = re.sub(r"\\\n\s*", "", overlay["run"])
+    invocations = [line.strip() for line in command.splitlines()
+                   if "verify_attestation_binding.py" in line]
+    assert invocations == [
+        'python3 scripts/verify_attestation_binding.py --root "$publication" --first-parent-order-repo .'
+    ]
+    checkout = parsed["jobs"]["deploy"]["steps"][0]
+    assert checkout["uses"].startswith("actions/checkout@")
+    assert checkout["with"]["fetch-depth"] == 0
     assert "preserved-attestations" not in workflow
 
 
@@ -1883,3 +1893,77 @@ def test_restored_data_build_equals_pinned_main_without_applying_daily_cadence(
     assert identity['served_lag_status'] == 'pinned_source'
     assert identity['served_lag_cause'].startswith('current:')
     assert 'by 0s (0 health commits)' in summary.read_text()
+
+
+def test_publication_pseudo_root_adjudicates_fork_only_with_injected_first_parent_order(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The deploy verifies publication bytes in a root with no Git history.
+
+    Its accepted fork pair is undecidable there, so the verifier must refuse
+    explicitly until the real repository's first-parent order is injected, and
+    the injected order must pick the winner that the real history picks.
+    """
+    from scripts import verify_attestation_binding as binding_verifier
+    from scripts.attestation_sets import (
+        FILES, discovery, first_parent_order, require_first_parent_order, snapshot_content,
+    )
+    from scripts.tests.test_append_fork_resolution import merged_fork
+    from scripts.verify_attestation_binding import ContractError
+
+    repository, winner, loser, _ = merged_fork(tmp_path / "repository")
+    real = discovery(repository)
+    assert real["current_head"] == winner
+    assert real["rejected_heads"] == {loser: winner}
+    winner_ref = real["heads"][winner]
+    [loser_path] = repository.glob(f"attestations/*/revisions/{loser}/chain_head.json")
+    loser_ref = loser_path.relative_to(repository).as_posix()
+
+    # A publication-shaped pseudo-root: the same accepted head and sibling, no Git.
+    publication = tmp_path / "publication"
+    shutil.copytree(repository, publication, ignore=shutil.ignore_patterns(".git"))
+    winner_directory = Path(winner_ref).parent
+    for filename in FILES:
+        shutil.copy(publication / winner_directory / filename,
+                    publication / "attestations/latest" / filename)
+    shutil.copy(publication / winner_directory / "chain_head.json",
+                publication / ".attestations/chain_head.json")
+    (publication / "health/latest.json").write_bytes(
+        snapshot_content(publication / winner_directory / "health.json.gz"))
+    assert not (publication / ".git").exists()
+    assert first_parent_order(publication) == {}
+
+    # Before: Git history at the pseudo-root supplies no order, so it refuses.
+    with pytest.raises(ContractError, match="fork or disconnected accepted forward head") as refused:
+        binding_verifier._selected_directory(publication)
+    assert "first-parent order is required" in str(refused.value)
+    assert "needs order injected from the real repository" in str(refused.value)
+    with pytest.raises(ContractError, match="first-parent order is required"):
+        require_first_parent_order(publication)
+
+    # After: the real repository's order adjudicates the pseudo-root's bytes.
+    order = require_first_parent_order(repository)
+    assert order[winner_ref] < order[loser_ref]
+    assert binding_verifier._selected_directory(publication, fork_order=order) == \
+        winner_directory.as_posix()
+    injected = discovery(publication, fork_order=order)
+    assert injected["current_head"] == real["current_head"] == winner
+    assert injected["rejected_heads"] == real["rejected_heads"]
+
+    # The CLI flag the workflow passes computes that order in the named repository.
+    seen: dict = {}
+
+    def capture(root: Path, **kwargs: object) -> dict:
+        seen.update(root=root, **kwargs)
+        return {}
+
+    monkeypatch.setattr(binding_verifier, "verify_contract", capture)
+    monkeypatch.setattr(sys, "argv", ["verify_attestation_binding.py", "--root", str(publication),
+                                      "--first-parent-order-repo", str(repository)])
+    assert binding_verifier.main() == 0
+    assert seen["root"] == publication and seen["fork_order"] == order
+    monkeypatch.setattr(sys, "argv", ["verify_attestation_binding.py", "--root", str(publication),
+                                      "--first-parent-order-repo", str(publication)])
+    capsys.readouterr()
+    assert binding_verifier.main() == 1
+    assert "first-parent order is required" in capsys.readouterr().out
