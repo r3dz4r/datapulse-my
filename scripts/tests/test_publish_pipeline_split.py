@@ -329,7 +329,8 @@ def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advance
         'assert Path("health/latest.json").read_text() == "pinned-data"\n'
         'assert Path("health/accepted/latest.json").read_text() == "accepted"\n'
         'import os, sys\n'
-        'assert sys.argv[1:] == ["--root", str(Path(os.environ["RUNNER_TEMP"]) / "sigstore-publication")]\n'
+        'assert sys.argv[1:] == ["--root", str(Path(os.environ["RUNNER_TEMP"]) / "sigstore-publication"), '
+        '"--first-parent-order-repo", "."]\n'
         'assert Path("attestations/latest/binding.json").read_text() == "accepted"\n'
     )
     (root / "scripts/embed_dashboard_data.py").write_text(
