@@ -292,7 +292,21 @@ def test_one_build_identity_reaches_signing_and_download_without_latest_name_loo
     assert classifier["env"]["BEFORE_SHA"] == "${{ steps.production.outputs.source_sha }}"
 
 
-def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advanced(tmp_path: Path) -> None:
+SUPPORTED_BINDING_LOG = (
+    "Attestation binding path: publication root with injected first-parent order "
+    "(verifier supports --first-parent-order-repo)"
+)
+FALLBACK_BINDING_LOG = (
+    "::warning title=Attestation binding fallback::Attestation binding path: checkout root "
+    "fallback (pinned artifact verifier predates --first-parent-order-repo; verifying the "
+    "publication attestations copied into the full-history checkout)"
+)
+
+
+@pytest.mark.parametrize("verifier", ["current", "predates_order", "broken"])
+def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advanced(
+    tmp_path: Path, verifier: str,
+) -> None:
     root = tmp_path
     runner = root / "runner"
     publication = runner / "sigstore-publication"
@@ -323,15 +337,35 @@ def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advance
         'Path("health/latest.json").write_text("pinned-data")\n'
         'Path("datapulse.json").write_text("pinned-data")\n'
     )
+    # The binding step executes whatever verifier the pinned artifact restored:
+    # the current one (injected order), one that predates the order flag and
+    # rejects it as argparse does, or one that cannot even describe itself.
+    supports = verifier == "current"
+    expected_argv = (
+        '["--root", str(Path(os.environ["RUNNER_TEMP"]) / "sigstore-publication"), '
+        '"--first-parent-order-repo", "."]' if supports else '["--root", "."]'
+    )
     (root / "scripts/verify_attestation_binding.py").write_text(
+        ('raise SystemExit("ImportError: verifier dependency missing")\n' if verifier == "broken" else '')
+        + 'import os, sys\n'
         'from pathlib import Path\n'
+        f'SUPPORTS = {supports}\n'
+        'usage = "usage: verify_attestation_binding.py [-h] [--root ROOT] [--now NOW]"'
+        ' + (" [--first-parent-order-repo REPO]" if SUPPORTS else "")\n'
+        'if sys.argv[1:] == ["--help"]:\n'
+        '    print(usage)\n'
+        '    raise SystemExit(0)\n'
+        'if "--first-parent-order-repo" in sys.argv and not SUPPORTS:\n'
+        '    print(usage, file=sys.stderr)\n'
+        '    print("verify_attestation_binding.py: error: unrecognized arguments: '
+        '--first-parent-order-repo .", file=sys.stderr)\n'
+        '    raise SystemExit(2)\n'
         'assert Path("catalog-snapshot.json").read_text() == "pinned-data"\n'
         'assert Path("health/latest.json").read_text() == "pinned-data"\n'
         'assert Path("health/accepted/latest.json").read_text() == "accepted"\n'
-        'import os, sys\n'
-        'assert sys.argv[1:] == ["--root", str(Path(os.environ["RUNNER_TEMP"]) / "sigstore-publication"), '
-        '"--first-parent-order-repo", "."]\n'
+        f'assert sys.argv[1:] == {expected_argv}, sys.argv\n'
         'assert Path("attestations/latest/binding.json").read_text() == "accepted"\n'
+        'Path("binding-verified").write_text(" ".join(sys.argv[1:]))\n'
     )
     (root / "scripts/embed_dashboard_data.py").write_text(
         'from pathlib import Path\n'
@@ -346,7 +380,28 @@ def test_dashboard_uses_accepted_signer_plane_when_build_predecessor_has_advance
     step = _step(PUBLISH, "deploy", "Bind built dashboard to accepted sign-time trust plane")
     assert "if" not in step
     result = _run(step["run"], root, RUNNER_TEMP=str(runner), PROMOTION_SOURCE_SHA="a" * 40)
+    if verifier == "broken":
+        # A verifier that cannot describe itself is broken, not merely older.
+        assert result.returncode != 0
+        assert "::error title=Attestation binding verifier broken::" in result.stdout
+        assert "ImportError: verifier dependency missing" in result.stderr
+        assert SUPPORTED_BINDING_LOG not in result.stdout
+        assert FALLBACK_BINDING_LOG not in result.stdout
+        assert not (root / "binding-verified").exists()
+        assert (root / "docs/index.html").read_text() == "private-build"
+        return
     assert result.returncode == 0, result.stderr
+    assert "unrecognized arguments" not in result.stderr
+    if supports:
+        assert SUPPORTED_BINDING_LOG in result.stdout.splitlines()
+        assert FALLBACK_BINDING_LOG not in result.stdout
+        assert (root / "binding-verified").read_text() == (
+            f"--root {runner / 'sigstore-publication'} --first-parent-order-repo ."
+        )
+    else:
+        assert FALLBACK_BINDING_LOG in result.stdout.splitlines()
+        assert SUPPORTED_BINDING_LOG not in result.stdout
+        assert (root / "binding-verified").read_text() == "--root ."
     assert (root / "docs/index.html").read_text() == "pinned-data"
     names = [step.get("name") for step in _workflow(PUBLISH)["jobs"]["deploy"]["steps"]]
     assert names.index("Download accepted report and optional Sigstore bundle") < names.index(step["name"]) < names.index("Assemble canonical Pages artifact")

@@ -730,11 +730,38 @@ def test_attestation_state_machine_preserves_the_accepted_report_during_signer_o
     # Bytes are verified in the publication pseudo-root; fork pairs need the
     # first-parent order of the real, full-history checkout passed explicitly.
     command = re.sub(r"\\\n\s*", "", overlay["run"])
-    invocations = [line.strip() for line in command.splitlines()
-                   if "verify_attestation_binding.py" in line]
-    assert invocations == [
-        'python3 scripts/verify_attestation_binding.py --root "$publication" --first-parent-order-repo .'
+    lines = [line.strip() for line in command.splitlines()]
+    invocations = [line for line in lines if "python3 scripts/verify_attestation_binding.py" in line]
+    # The executing script comes from the pinned artifact and can predate the
+    # workflow: probe its interface, keep the injected-order publication path
+    # where it is supported, and fall back to the checkout root by name.
+    probe = ('if ! binding_usage="$(python3 scripts/verify_attestation_binding.py --help 2>&1)" '
+             "|| ! grep -q -- '--root' <<<\"$binding_usage\"; then")
+    supported = 'python3 scripts/verify_attestation_binding.py --root "$publication" --first-parent-order-repo .'
+    fallback = "python3 scripts/verify_attestation_binding.py --root ."
+    assert invocations == [probe, supported, fallback]
+    start = lines.index(probe)
+    assert lines[start:] == [
+        probe,
+        "printf '%s\\n' \"$binding_usage\" >&2",
+        'echo "::error title=Attestation binding verifier broken::'
+        'scripts/verify_attestation_binding.py --help failed or did not describe --root"',
+        "exit 1",
+        "fi",
+        "if grep -q -- '--first-parent-order-repo' <<<\"$binding_usage\"; then",
+        'echo "Attestation binding path: publication root with injected first-parent order '
+        '(verifier supports --first-parent-order-repo)"',
+        supported,
+        "else",
+        'echo "::warning title=Attestation binding fallback::Attestation binding path: checkout root '
+        "fallback (pinned artifact verifier predates --first-parent-order-repo; verifying the "
+        'publication attestations copied into the full-history checkout)"',
+        fallback,
+        "fi",
+        "python3 scripts/embed_dashboard_data.py --health health/latest.json",
+        "bash scripts/verify_release_invariants.sh --local",
     ]
+    assert lines.index('cp -R "$publication/attestations" "$publication/.attestations" .') < start
     checkout = parsed["jobs"]["deploy"]["steps"][0]
     assert checkout["uses"].startswith("actions/checkout@")
     assert checkout["with"]["fetch-depth"] == 0

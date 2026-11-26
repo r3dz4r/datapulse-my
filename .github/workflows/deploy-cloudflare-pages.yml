@@ -655,8 +655,23 @@ jobs:
           # Bytes are verified in the publication root, which has no Git
           # history. Accepted fork pairs are adjudicated by first-parent order
           # read from this full-history checkout of the settled revision.
-          python3 scripts/verify_attestation_binding.py --root "$publication" \
-            --first-parent-order-repo .
+          # The restore above replaced scripts/ with the pinned artifact's
+          # copies, which can predate this workflow, so probe the interface
+          # instead of assuming it. A failing probe is a broken verifier.
+          if ! binding_usage="$(python3 scripts/verify_attestation_binding.py --help 2>&1)" \
+            || ! grep -q -- '--root' <<<"$binding_usage"; then
+            printf '%s\n' "$binding_usage" >&2
+            echo "::error title=Attestation binding verifier broken::scripts/verify_attestation_binding.py --help failed or did not describe --root"
+            exit 1
+          fi
+          if grep -q -- '--first-parent-order-repo' <<<"$binding_usage"; then
+            echo "Attestation binding path: publication root with injected first-parent order (verifier supports --first-parent-order-repo)"
+            python3 scripts/verify_attestation_binding.py --root "$publication" \
+              --first-parent-order-repo .
+          else
+            echo "::warning title=Attestation binding fallback::Attestation binding path: checkout root fallback (pinned artifact verifier predates --first-parent-order-repo; verifying the publication attestations copied into the full-history checkout)"
+            python3 scripts/verify_attestation_binding.py --root .
+          fi
           python3 scripts/embed_dashboard_data.py --health health/latest.json
           bash scripts/verify_release_invariants.sh --local
 
