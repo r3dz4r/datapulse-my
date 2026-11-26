@@ -652,7 +652,11 @@ jobs:
           rm -rf attestations .attestations
           cp -R "$publication/attestations" "$publication/.attestations" .
           cp "$publication/docs/.well-known/datapulse-probe-keys.json" docs/.well-known/
-          python3 scripts/verify_attestation_binding.py --root "$publication"
+          # Bytes are verified in the publication root, which has no Git
+          # history. Accepted fork pairs are adjudicated by first-parent order
+          # read from this full-history checkout of the settled revision.
+          python3 scripts/verify_attestation_binding.py --root "$publication" \
+            --first-parent-order-repo .
           python3 scripts/embed_dashboard_data.py --health health/latest.json
           bash scripts/verify_release_invariants.sh --local
 
