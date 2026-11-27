@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.68.14](https://github.com/r3dz4r/datapulse-my/compare/v3.68.13...v3.68.14) (2026-11-27)
+
+
+### Bug Fixes
+
+* **health:** serve the signed accepted-health evidence through the catch-all ([#4305](https://github.com/r3dz4r/datapulse-my/issues/4305)) ([6335aa1](https://github.com/r3dz4r/datapulse-my/commit/6335aa13016aac146eb0678ec962a0303a157a1f))
+
 ## [3.68.13](https://github.com/r3dz4r/datapulse-my/compare/v3.68.12...v3.68.13) (2026-11-27)
 
 
