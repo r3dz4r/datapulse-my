@@ -7,6 +7,9 @@ const HEALTH_ARTIFACTS = new Set([
   "reconciliation.json",
   "evidence-coverage.json",
 ]);
+// The signed accepted-health evidence is a static asset only: it is never a KV
+// key, so it is kept apart from HEALTH_ARTIFACTS and matched by exact name.
+const ACCEPTED_EVIDENCE_ASSET = "accepted/latest.json";
 
 const unavailable = reason => {
   console.error(`health index unavailable: ${reason}`);
@@ -29,6 +32,12 @@ export async function onRequest(context) {
     return new Response("Not found", { status: 404 });
   }
   const name = pathname.slice("/health/".length);
+  if (name.includes("..")) {
+    return new Response("Not found", { status: 404 });
+  }
+  if (name === ACCEPTED_EVIDENCE_ASSET) {
+    return staticAsset(context);
+  }
   if (!HEALTH_ARTIFACTS.has(name) || name.includes("..")) {
     return new Response("Not found", { status: 404 });
   }
