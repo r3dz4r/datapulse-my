@@ -265,3 +265,14 @@ def test_cited_binding_references_are_retained_even_outside_accepted_sets(root: 
     result = run_selector(root, "--plan")
     assert result.returncode != 0
     assert "published attestation reference is missing" in result.stderr
+
+
+def test_missing_public_reference_names_the_site_file_that_carried_it(root: Path) -> None:
+    carrier = root / "docs/data/feed.json"
+    carrier.parent.mkdir(parents=True)
+    carrier.write_text('{"ref": "attestations/2026-11-27/fuelprice.json"}')
+    result = run_selector(root, "--plan")
+    print(f"REFUSAL: {result.stderr.strip().splitlines()[-1]}")
+    assert result.returncode != 0
+    assert ("published attestation reference is missing: attestations/2026-11-27/fuelprice.json"
+            f" (cited by {carrier})") in result.stderr
