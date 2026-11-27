@@ -10,6 +10,17 @@
 # output. Every expected failure must fail at the expected step with the expected
 # diagnostic, and every expected pass must print derive-on-merge's success line, so a
 # broken fixture cannot report success.
+#
+# Speed, without changing what any case observes. The time is the subject's own CPU: one
+# derivation is ~4s of schema validation and every lane derives twice, ~80s in sequence.
+# So the commits every case needs are built first, in one checkout, and each case then
+# runs on its own fresh clone of that fixture, concurrently. No case shares a working
+# tree, a lane result, or a derivation with another; each starts from a clean checkout
+# of its commit, exactly as it did when the cases ran one after another.
+# The checkouts leave out attestations/ (sparse checkout; it stays in every commit and
+# every index). It is ~97% of the tracked files, so a full checkout dominated each case,
+# and nothing the lane runs reads it: no script or module on the lane's path names it,
+# and an audit of the lane's file opens, directory listings and git listings found none.
 set -euo pipefail
 
 repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -19,7 +30,8 @@ if [[ -x "$repo_root/.venv/bin/python3" ]]; then
   export PATH="$repo_root/.venv/bin:$PATH"
 fi
 fixture="$(mktemp -d -p . .derive-on-merge-test.XXXXXX)"
-trap 'rm -r -- "$fixture"' EXIT
+# Concurrent cases must finish before the fixture they run in is removed.
+trap 'wait; rm -r -- "$fixture"' EXIT
 fixture="$(cd "$fixture" && pwd)"
 repo="$fixture/repo"
 export TMPDIR="$fixture/tmp"
@@ -32,7 +44,16 @@ fail() {
 
 gitf() {
   git -C "$repo" -c user.name=derive-on-merge-fixture -c user.email=fixture@example.invalid \
-    -c commit.gpgsign=false -c core.hooksPath=/dev/null "$@"
+    -c commit.gpgsign=false -c core.hooksPath=/dev/null -c gc.auto=0 "$@"
+}
+
+# A checkout without attestations/ (see the header); the paths stay in the index.
+sparse_clone() {
+  git clone -q --shared --no-checkout "$1" "$2"
+  git -C "$2" config core.sparseCheckout true
+  git -C "$2" config core.sparseCheckoutCone false
+  mkdir -p "$2/.git/info"
+  printf '/*\n!/attestations/\n' > "$2/.git/info/sparse-checkout"
 }
 
 OWNED=(README.md catalog-graph.json catalog-snapshot.json changelog.json datapulse_summary.json
@@ -86,18 +107,22 @@ PY
 printf 'PASS: ci.yml runs derive-on-merge on full verification, before the gates that judge README\n'
 
 # --- Fixture: this checkout, uncommitted changes included, as "main". -----------------
-git clone -q --shared --no-checkout "$repo_root" "$repo"
+sparse_clone "$repo_root" "$repo"
 gitf checkout -q --detach "$(git rev-parse HEAD)"
+# Staged path by path, with --sparse, so a change under attestations/ is carried too.
+overlay=()
 while IFS= read -r -d '' path; do
   case "$path" in .derive-on-merge-test.*) continue ;; esac
   if [[ -e "$path" ]]; then
     mkdir -p "$repo/$(dirname "$path")"
     cp -p -- "$path" "$repo/$path"
+    overlay+=("$path")
   else
     rm -f -- "$repo/$path"
+    gitf rm -q --cached --sparse --ignore-unmatch -- "$path"
   fi
 done < <(git ls-files -z -m -o -d --exclude-standard)
-gitf add -A
+(( ${#overlay[@]} == 0 )) || gitf add --sparse -- "${overlay[@]}"
 gitf commit -q --allow-empty -m 'fixture: main with the change under test'
 M0="$(gitf rev-parse HEAD)"
 
@@ -131,7 +156,7 @@ lane() {
   lane_output=""
   lane_failed_step=""
   local name output status
-  local step_output="$fixture/step-output"
+  local step_output="$repo.step-output"
   : > "$step_output"
   for name in "${LANE_STEPS[@]}"; do
     if [[ "$name" == "Verify README matches its template before regeneration" ]] &&
@@ -190,6 +215,34 @@ owned_unchanged_since() {
   gitf diff --quiet "$1" HEAD -- "${OWNED[@]}"
 }
 
+# Each case runs in the background on its own fresh clone of the fixture; its output is
+# replayed in case order once every case has finished, and any failure fails the test.
+fixture_repo="$repo"
+case_ids=()
+declare -A case_pid
+run_case() {
+  local id="$1"
+  shift
+  case_ids+=("$id")
+  (
+    # The commits later cases need are still being built: let that work go first.
+    if command -v renice >/dev/null; then renice -n 10 -p "$BASHPID" >/dev/null; fi
+    repo="$fixture/case-$id"
+    sparse_clone "$fixture_repo" "$repo"
+    "$@"
+  ) > "$fixture/case-$id.out" 2> "$fixture/case-$id.err" &
+  case_pid["$id"]=$!
+}
+finish_cases() {
+  local id failed=0
+  for id in "${case_ids[@]}"; do
+    wait "${case_pid[$id]}" || failed=$((failed + 1))
+    cat -- "$fixture/case-$id.out"
+    cat -- "$fixture/case-$id.err" >&2
+  done
+  (( failed == 0 )) || fail "$failed case(s) failed"
+}
+
 # --- Main advances: one simulated health cycle, written by the generators. ------------
 gitf checkout -q -f --detach "$M0"
 (cd "$repo" && python3 - <<'PY'
@@ -216,7 +269,8 @@ rewritten="$(gitf diff --name-only "$M0" "$M1" -- "${OWNED[@]}")"
 
 # The health pipeline is the writer: its own change carries every derived path it rewrote,
 # and derive-on-merge must accept it rather than fight it.
-expect_pass "health-cycle change carrying the paths it derived passes" "$(merge_ref "$M0" "$M1")" "$M0"
+MERGE_M1="$(merge_ref "$M0" "$M1")"
+run_case health-cycle expect_pass "health-cycle change carrying the paths it derived passes" "$MERGE_M1" "$M0"
 
 # --- A source-only dataset change, branched before that cycle. -------------------------
 gitf checkout -q -f --detach "$M0"
@@ -272,25 +326,30 @@ owned_unchanged_since "$M0" || fail "the source-only dataset change carries a de
 
 # Control: the structure this replaces. The same change carrying its regenerated surfaces
 # conflicts with the health cycle that landed meanwhile, so it could never run checks.
-(cd "$repo" && bash scripts/derive_on_merge.sh derive >/dev/null)
-gitf add -A
-gitf commit -q -m 'fixture: the same dataset change carrying its regenerated surfaces'
-P_CARRY="$(gitf rev-parse HEAD)"
-gitf checkout -q -f --detach "$M1"
-if gitf merge -q --no-ff --no-edit "$P_CARRY" >/dev/null 2>&1; then
-  fail "control: a change carrying the derived surfaces merged cleanly; the fixture does not model the race"
-fi
-gitf merge --abort
-printf 'PASS: control: carrying the derived surfaces conflicts with the intervening health cycle\n'
+control_case() {
+  gitf checkout -q -f --detach "$P"
+  (cd "$repo" && bash scripts/derive_on_merge.sh derive >/dev/null)
+  gitf add -A
+  gitf commit -q -m 'fixture: the same dataset change carrying its regenerated surfaces'
+  P_CARRY="$(gitf rev-parse HEAD)"
+  gitf checkout -q -f --detach "$M1"
+  if gitf merge -q --no-ff --no-edit "$P_CARRY" >/dev/null 2>&1; then
+    fail "control: a change carrying the derived surfaces merged cleanly; the fixture does not model the race"
+  fi
+  gitf merge --abort
+  printf 'PASS: control: carrying the derived surfaces conflicts with the intervening health cycle\n'
+}
+run_case control control_case
 
 MERGE_P="$(merge_ref "$M1" "$P")"
-expect_pass "source-only dataset change merges cleanly after a health cycle and passes" "$MERGE_P" "$M1"
+run_case source-only expect_pass "source-only dataset change merges cleanly after a health cycle and passes" "$MERGE_P" "$M1"
 
 # --- The merge-side derivation: it derives the new dataset, idempotently, in place. ----
-gitf checkout -q -f --detach "$MERGE_P"
-gitf clean -fdq
 datasets_after=$((datasets_before + 1))
 hash_owned() { (cd "$repo" && sha256sum -- "${OWNED[@]}"); }
+merge_side_derivation_case() {
+gitf checkout -q -f --detach "$MERGE_P"
+gitf clean -fdq
 (cd "$repo" && bash scripts/derive_on_merge.sh derive >/dev/null)
 first="$(hash_owned)"
 (cd "$repo" && bash scripts/derive_on_merge.sh derive >/dev/null)
@@ -317,13 +376,15 @@ expected_changed="$(printf '%s\n' README.md catalog-graph.json catalog-snapshot.
 [[ "$(gitf rev-parse HEAD)" == "$MERGE_P" ]] && gitf diff --cached --quiet \
   || fail "derivation committed or staged something; the health pipeline is the only writer"
 printf 'PASS: merge-side derivation derives the new dataset, is byte-identical across two runs, and writes only the working tree\n'
+}
+run_case merge-side-derivation merge_side_derivation_case
 
 # --- Wrong changes still fail the lane. ----------------------------------------------
 # A hand-edited generated file: README.md, the surface the lane always rejected edits to.
 gitf checkout -q -f --detach "$P"
 printf '\nHand-written claim the generator never wrote.\n' >> "$repo/README.md"
 gitf commit -q -am 'fixture: hand-edit README.md'
-expect_fail "hand-edited README.md is rejected" "$(merge_ref "$M0" "$(gitf rev-parse HEAD)")" "$M0" \
+run_case hand-edited-readme expect_fail "hand-edited README.md is rejected" "$(merge_ref "$M0" "$(gitf rev-parse HEAD)")" "$M0" \
   "derive-on-merge" "::error file=README.md,title=derive-on-merge::"
 
 # A hand-edited generated file the lane used to overwrite without judging.
@@ -339,7 +400,7 @@ path.write_text('{"hand_edited": true, ' + text[1:].lstrip(), encoding="utf-8")
 PY
 )
 gitf commit -q -am 'fixture: hand-edit catalog-graph.json'
-expect_fail "hand-edited catalog-graph.json is rejected" "$(merge_ref "$M0" "$(gitf rev-parse HEAD)")" "$M0" \
+run_case hand-edited-catalog-graph expect_fail "hand-edited catalog-graph.json is rejected" "$(merge_ref "$M0" "$(gitf rev-parse HEAD)")" "$M0" \
   "derive-on-merge" "::error file=catalog-graph.json,title=derive-on-merge::"
 
 # A wall-clock timestamp is exempt, but every other public-summary field is judged.
@@ -355,7 +416,7 @@ path.write_text(json.dumps(document, indent=2) + "\n", encoding="utf-8")
 PY
 )
 gitf commit -q -am 'fixture: hand-edit public summary'
-expect_fail "hand-edited public summary is rejected apart from its clock" \
+run_case hand-edited-summary expect_fail "hand-edited public summary is rejected apart from its clock" \
   "$(merge_ref "$M0" "$(gitf rev-parse HEAD)")" "$M0" \
   "derive-on-merge" "::error file=datapulse_summary.json,title=derive-on-merge::"
 
@@ -363,8 +424,9 @@ expect_fail "hand-edited public summary is rejected apart from its clock" \
 gitf checkout -q -f --detach "$P"
 gitf rm -q "data/$DATASET.md"
 gitf commit -q -m 'fixture: drop the per-dataset report'
-expect_fail "manifest entry without its per-dataset report is rejected" \
+run_case missing-report expect_fail "manifest entry without its per-dataset report is rejected" \
   "$(merge_ref "$M1" "$(gitf rev-parse HEAD)")" "$M1" \
   "Verify repository contract" "dataset report: missing required paths: data/$DATASET.md"
 
+finish_cases
 printf 'PASS: derive-on-merge: source-only change lands, wrong changes fail, derivation is idempotent\n'
