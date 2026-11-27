@@ -212,3 +212,55 @@ def test_witness_tampering_is_rejected_on_both_sides_of_digest_boundary(tmp_path
 
     with pytest.raises(ContractError, match=message):
         verify_set(root, directory + "/chain_head.json")
+
+
+SKEW_DAY = "2026-11-27"
+SKEW_HEAD = "a" * 64
+
+
+def skewed_plane(tmp_path: Path, *, revision_files: bool) -> Path:
+    """A day index citing flat refs the plane lacks; the accepted revision index cites revision refs."""
+    revision = f"attestations/{SKEW_DAY}/revisions/{SKEW_HEAD}"
+    write(tmp_path / f"{revision}/chain_head.json", {"chain_head": SKEW_HEAD})
+    write(tmp_path / f"attestations/{SKEW_DAY}/chain_head.json", {"chain_head": SKEW_HEAD})
+    write(tmp_path / f"attestations/{SKEW_DAY}/index.json", {
+        "date": SKEW_DAY, "chain_head_ref": f"attestations/{SKEW_DAY}/chain_head.json",
+        "attestations": {"fuelprice": f"attestations/{SKEW_DAY}/fuelprice.json"},
+    })
+    write(tmp_path / f"{revision}/index.json", {
+        "date": SKEW_DAY, "chain_head_ref": f"{revision}/chain_head.json",
+        "attestations": {"fuelprice": f"{revision}/fuelprice.json"},
+    })
+    if revision_files:
+        write(tmp_path / f"{revision}/fuelprice.json", {})
+    write(tmp_path / "datapulse.json", {"datasets": [{"id": "fuelprice"}]})
+    return tmp_path
+
+
+def test_manifest_refresh_cites_resolvable_revision_refs_over_dangling_day_refs(tmp_path: Path) -> None:
+    root = skewed_plane(tmp_path, revision_files=True)
+    revision = f"attestations/{SKEW_DAY}/revisions/{SKEW_HEAD}"
+    ga.refresh_manifest_refs(root, revision)
+    cited = ga.load(root / "datapulse.json")["datasets"][0]["attestation_ref"]
+    assert cited == f"{revision}/fuelprice.json"
+    assert (root / cited).is_file()
+
+
+def test_manifest_refresh_prefers_matching_day_refs_when_they_resolve(tmp_path: Path) -> None:
+    root = skewed_plane(tmp_path, revision_files=True)
+    write(root / f"attestations/{SKEW_DAY}/fuelprice.json", {})
+    ga.refresh_manifest_refs(root, f"attestations/{SKEW_DAY}/revisions/{SKEW_HEAD}")
+    cited = ga.load(root / "datapulse.json")["datasets"][0]["attestation_ref"]
+    assert cited == f"attestations/{SKEW_DAY}/fuelprice.json"
+
+
+def test_manifest_refresh_fails_loudly_when_no_index_resolves(tmp_path: Path) -> None:
+    root = skewed_plane(tmp_path, revision_files=False)
+    before = (root / "datapulse.json").read_bytes()
+    with pytest.raises(FileNotFoundError) as error:
+        ga.refresh_manifest_refs(root, f"attestations/{SKEW_DAY}/revisions/{SKEW_HEAD}")
+    message = str(error.value)
+    print(f"REFUSAL: {message}")
+    assert SKEW_DAY in message
+    assert f"attestations/{SKEW_DAY}/fuelprice.json" in message
+    assert (root / "datapulse.json").read_bytes() == before

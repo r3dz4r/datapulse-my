@@ -200,14 +200,41 @@ def score_rows(manifest: dict, health: dict, trends: dict, drift: dict, recon: d
 
 def refresh_manifest_refs(root: Path, directory: str) -> None:
     """Derive mutable manifest references from the selected immutable index."""
-    index = load(root / directory / "index.json")
-    original_index = root / "attestations" / index["date"] / "index.json"
+    selected = load(root / directory / "index.json")
+    day = selected["date"]
+    manifest = load(root / "datapulse.json")
+    ids = [entry["id"] for entry in manifest["datasets"]]
+
+    def first_unresolved(index: dict) -> str | None:
+        for dataset_id in ids:
+            reference = index["attestations"][dataset_id]
+            if not (root / reference).is_file():
+                return reference
+        return None
+
+    # The day's original index carries flat day-level references, which are the
+    # meaningful ones only when it names the selected head and its files exist in
+    # this tree; otherwise the selected index's (revision-form) references are cited.
+    candidates = []
+    original_index = root / "attestations" / day / "index.json"
     if original_index.is_file():
         original = load(original_index)
-        if load(root / original["chain_head_ref"])["chain_head"] == load(root / index["chain_head_ref"])["chain_head"]:
-            index = original
+        original_head = root / original["chain_head_ref"]
+        if (original_head.is_file()
+                and load(original_head)["chain_head"] == load(root / selected["chain_head_ref"])["chain_head"]):
+            candidates.append((original_index.relative_to(root).as_posix(), original))
+    candidates.append((f"{directory}/index.json", selected))
+    unresolved = []
+    for name, index in candidates:
+        missing = first_unresolved(index)
+        if missing is None:
+            break
+        unresolved.append(f"{name} cites missing {missing}")
+    else:
+        raise FileNotFoundError(
+            f"manifest refresh for {day} has no index whose references resolve: " + "; ".join(unresolved)
+        )
     refs = index["attestations"]
-    manifest = load(root / "datapulse.json")
     for entry in manifest["datasets"]:
         entry["attestation_ref"] = refs[entry["id"]]
         entry["methodology_version"] = 3

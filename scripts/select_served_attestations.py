@@ -96,6 +96,15 @@ def select_attestations(
         keep.add(path)
         return path
 
+    def require_in(reference: str, source: Path) -> Path:
+        """Require a reference carried by a site file, naming that file if it is missing."""
+        try:
+            return require(reference)
+        except FileNotFoundError as error:
+            raise FileNotFoundError(
+                f"published attestation reference is missing: {reference} (cited by {source})"
+            ) from error
+
     def binding_references(path: Path) -> None:
         binding = json.loads(path.read_text())
         for reference in (binding.get("rekor") or {}).values():
@@ -145,7 +154,7 @@ def select_attestations(
 
     for path in public_files:
         for match in PUBLIC_REF.findall(path.read_bytes()):
-            require(match.decode("ascii"))
+            require_in(match.decode("ascii"), path)
     checked_bindings: set[Path] = set()
     while pending := {path for path in keep if path.name == "binding.json"} - checked_bindings:
         for path in pending:
