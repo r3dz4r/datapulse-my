@@ -139,6 +139,26 @@ def _export(root: Path, revision: str, out: Path) -> None:
     ))
 
 
+def restore_signed_manifest(root: Path, publication: Path, identity: dict[str, Any]) -> bytes:
+    """Serve the manifest the signing job signed, never the checked-out build manifest.
+
+    The checkout's datapulse.json can cite attestation references that the
+    served plane does not carry. The signed publication's copy is the one whose
+    digest the publication identity records, so only those exact bytes are served.
+    """
+    content = (publication / 'datapulse.json').read_bytes()
+    signed = identity.get('manifest_sha256')
+    actual = hashlib.sha256(content).hexdigest()
+    if not isinstance(signed, str) or re.fullmatch(r'[0-9a-f]{64}', signed) is None or actual != signed:
+        raise SelectionError(f'signed publication manifest digest mismatch: publication datapulse.json '
+                             f'sha256 {actual} != publication identity manifest_sha256 {signed}')
+    atomic_write(root / 'datapulse.json', content)
+    if hashlib.sha256((root / 'datapulse.json').read_bytes()).hexdigest() != signed:
+        raise SelectionError('served datapulse.json differs from the signed publication manifest after restore')
+    LOGGER.info('Served manifest restored from signed publication: sha256 %s', signed)
+    return content
+
+
 def restore_observation_build(root: Path, revision: str, publication: Path) -> str:
     """Recover pinned data without replacing the separately verified signing inputs."""
     identity_path = publication / 'publication-identity.json'
@@ -198,6 +218,9 @@ def restore_observation_build(root: Path, revision: str, publication: Path) -> s
         if not (snapshot['generated_at'] == snapshot['health']['checked_at']
                 == graph['generated_at'] == observed):
             raise SelectionError('accepted observation build contains inconsistent clocks')
+        # Every refusal above runs first; the signed manifest is verified and
+        # written before any pinned data replaces the checkout's copy.
+        restore_signed_manifest(root, publication, identity)
         for name in OBSERVATION_BUILD_PATHS:
             target = root / name
             if target.is_symlink() or target.is_file():
