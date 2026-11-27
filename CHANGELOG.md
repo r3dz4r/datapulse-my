@@ -14,6 +14,13 @@ consumers kept resolving a superseded entry. Publishing above `3.4.6` is the onl
 registry provides. All earlier releases remain tagged and published; only the numbering continues
 from this point.
 
+## [3.68.11](https://github.com/r3dz4r/datapulse-my/compare/v3.68.10...v3.68.11) (2026-11-27)
+
+
+### Bug Fixes
+
+* **deploy:** probe the pinned binding verifier before injecting first-parent order ([#4275](https://github.com/r3dz4r/datapulse-my/issues/4275)) ([309e054](https://github.com/r3dz4r/datapulse-my/commit/309e054419d7b5c0d1b57c61d26f704118d33bb2))
+
 ## [3.68.10](https://github.com/r3dz4r/datapulse-my/compare/v3.68.9...v3.68.10) (2026-11-26)
 
 
