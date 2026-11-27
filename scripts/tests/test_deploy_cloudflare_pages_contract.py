@@ -1892,10 +1892,14 @@ def test_restored_data_build_equals_pinned_main_without_applying_daily_cadence(
     publication = tmp_path / 'publication'
     (publication / 'health').mkdir(parents=True)
     (publication / 'health/latest.json').write_bytes(health_bytes)
+    # The signing job always ships the manifest it signed; the deploy serves it.
+    signed_manifest = b'{"datasets": []}\n'
+    (publication / 'datapulse.json').write_bytes(signed_manifest)
     published = stamp(observed + timedelta(hours=1, minutes=17))
     (publication / 'publication-identity.json').write_text(json.dumps({
         'accepted_main_commit': revision, 'accepted_chain_head': 'c' * 64,
         'health_sha256': hashlib.sha256(health_bytes).hexdigest(),
+        'manifest_sha256': hashlib.sha256(signed_manifest).hexdigest(),
         'observed_at': stamp(observed), 'published_at': published}))
     summary = tmp_path / 'summary'
     result = subprocess.run([
@@ -1909,6 +1913,7 @@ def test_restored_data_build_equals_pinned_main_without_applying_daily_cadence(
     assert (root / 'health/latest.json').read_bytes() == subprocess.check_output(
         ['git', 'show', f'{revision}:health/latest.json'], cwd=root)
     assert (publication / 'health/latest.json').read_bytes() == health_bytes
+    assert (root / 'datapulse.json').read_bytes() == signed_manifest
     assert identity['observation_build_commit'] == revision
     assert identity['accepted_observation_build_commit'] == accepted
     assert identity['observed_at'] == stamp(observed)

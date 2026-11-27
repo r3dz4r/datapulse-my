@@ -189,3 +189,66 @@ def test_binding_refuses_missing_build_provenance_before_overwriting_checkout(tm
     with pytest.raises(SelectionError, match=message):
         restore_observation_build(root, revision, publication)
     assert (root / 'health/latest.json').read_bytes() == before
+
+
+def _restorable_publication(tmp_path: Path) -> tuple[Path, str, Path]:
+    from scripts.tests.test_deploy_cloudflare_pages_contract import _accepted_workflow_case, _select_step
+
+    root, revision, _, env = _accepted_workflow_case(tmp_path)
+    # Complete the pinned observation build so only the manifest is under test.
+    checked = json.loads((root / 'health/latest.json').read_bytes())['checked_at']
+    for name in ('badges', 'data', 'deltas', 'record-evidence'):
+        (root / name).mkdir(exist_ok=True)
+        (root / name / 'pinned.txt').write_text('pinned\n')
+    for name in ('feed.xml', 'changelog.json', 'datapulse_summary.json'):
+        (root / name).write_text('{}\n')
+    _write(root / 'catalog-snapshot.json', {'generated_at': checked, 'health': {'checked_at': checked}})
+    _write(root / 'catalog-graph.json', {'generated_at': checked})
+    git(root, 'add', 'badges', 'data', 'deltas', 'record-evidence', 'feed.xml', 'changelog.json',
+        'datapulse_summary.json', 'catalog-snapshot.json', 'catalog-graph.json')
+    git(root, 'commit', '-m', 'complete pinned observation build')
+    revision = git(root, 'rev-parse', 'HEAD')
+    env['PROMOTION_SOURCE_SHA'] = revision
+    result = _run(root, env, _select_step()['run'])
+    assert result.returncode == 0, result.stdout + result.stderr
+    git(root, 'restore', '.')
+    # The deploy checkout's build manifest can cite a reference the served
+    # plane never received; the signed publication carries the resolvable set.
+    build = json.loads((root / 'datapulse.json').read_bytes())
+    build['datasets'][0]['attestation'] = 'attestations/2999-01-01/minted-at-deploy.json'
+    _write(root / 'datapulse.json', build)
+    return root, revision, Path(env['RUNNER_TEMP']) / 'sigstore-publication'
+
+
+def test_restore_serves_the_signed_publication_manifest_byte_for_byte(tmp_path: Path) -> None:
+    import hashlib
+
+    root, revision, publication = _restorable_publication(tmp_path)
+    signed = (publication / 'datapulse.json').read_bytes()
+    identity = json.loads((publication / 'publication-identity.json').read_bytes())
+    assert hashlib.sha256(signed).hexdigest() == identity['manifest_sha256']
+    assert (root / 'datapulse.json').read_bytes() != signed
+    assert restore_observation_build(root, revision, publication) == revision
+    assert (root / 'datapulse.json').read_bytes() == signed
+    assert b'minted-at-deploy' not in (root / 'datapulse.json').read_bytes()
+    restored = json.loads((publication / 'publication-identity.json').read_bytes())
+    assert restored['manifest_sha256'] == identity['manifest_sha256']
+
+
+def test_restore_refuses_a_publication_manifest_that_differs_from_the_signed_digest(tmp_path: Path) -> None:
+    import hashlib
+
+    root, revision, publication = _restorable_publication(tmp_path)
+    signed = json.loads((publication / 'publication-identity.json').read_bytes())['manifest_sha256']
+    tampered = (publication / 'datapulse.json').read_bytes() + b' '
+    (publication / 'datapulse.json').write_bytes(tampered)
+    before = {name: (root / name).read_bytes() for name in ('datapulse.json', 'health/latest.json')}
+    with pytest.raises(SelectionError, match='manifest digest mismatch') as refused:
+        restore_observation_build(root, revision, publication)
+    assert hashlib.sha256(tampered).hexdigest() in str(refused.value)
+    assert signed in str(refused.value)
+    # Refusal happens before any pinned data or manifest replaces the checkout.
+    for name, content in before.items():
+        assert (root / name).read_bytes() == content, name
+    assert 'accepted_observation_build_commit' not in json.loads(
+        (publication / 'publication-identity.json').read_bytes())
