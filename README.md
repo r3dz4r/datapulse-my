@@ -131,7 +131,7 @@ frozen at the last known content date. This is not a freshness failure — it's 
 publisher decision.
 
 <!-- BEGIN readme-health -->
-Current distribution (`_trust_summary`): [143 fresh](badges/status-fresh.svg) · [165 aging](badges/status-aging.svg) · [84 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [1 degraded](badges/status-degraded.svg) · [3 unreachable](badges/status-unreachable.svg) · [8 unknown-freshness](badges/status-unknown-freshness.svg) · [43 reference](badges/status-reference.svg)
+Current distribution (`_trust_summary`): [144 fresh](badges/status-fresh.svg) · [158 aging](badges/status-aging.svg) · [90 stale](badges/status-stale.svg) · [1 discontinued](badges/status-discontinued.svg) · [1 degraded](badges/status-degraded.svg) · [3 unreachable](badges/status-unreachable.svg) · [8 unknown-freshness](badges/status-unknown-freshness.svg) · [43 reference](badges/status-reference.svg)
 <!-- END readme-health -->
 
 **Subscribe:** [RSS feed](feed.xml) — get notified when dataset health changes.
@@ -185,7 +185,7 @@ Graded by [mcpgrade](https://www.npmjs.com/package/mcpgrade) — replay with `ba
 - 19 tools: `search_datasets`, `get_dataset`, `get_data_passport`, `find_stale`, `find_anomalies`, `find_deteriorating`, `find_recovering`, `find_unreliable`, `find_schema_drift`, `check_reconciliation`, `get_provenance`, `get_evidence`, `verify_dataset`, `get_freshness_summary`, `verify_evidence`, `trust_verdict`, `verify_attestation`, `find_by_licence`, `usage_summary`
 
 The public endpoint serves all 19 read-only tools over the
-whole dataset catalogue.
+448-dataset catalogue.
 <!-- END mcp-tools -->
 
 `get_evidence` exposes pipeline receipts; `verify_evidence` performs cached
