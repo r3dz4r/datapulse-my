@@ -60,6 +60,42 @@ jobs:
           else
             exit 0
           fi
+          if [[ "$GITHUB_EVENT_NAME" == "pull_request" ]]; then
+            # Use the base map: the introducing PR must bootstrap cleanly and
+            # a PR cannot remove its own ownership restrictions.
+            base_map_entry=$(git ls-tree "$BASE_SHA" -- config/surface-owners.json)
+            if [[ -n "$base_map_entry" ]]; then
+              git show "$BASE_SHA:config/surface-owners.json" > surface-owners-base.json
+              git diff --name-only -z "${diff_args[@]}" > surface-changes.bin
+              python3 -c '
+          import fnmatch, json, os, pathlib, sys
+          owners = json.loads(pathlib.Path("surface-owners-base.json").read_text())
+          if not isinstance(owners, list) or not owners:
+              raise ValueError("invalid surface ownership map")
+          patterns = []
+          for row in owners:
+              if not isinstance(row, dict) or not isinstance(row.get("command"), list) or len(row["command"]) < 2 or not all(isinstance(x, str) and x for x in row["command"]):
+                  raise ValueError("invalid owner command")
+              if type(row.get("derivable_in_ci")) is not bool or (not row["derivable_in_ci"] and (not isinstance(row.get("reason"), str) or not row["reason"].strip())):
+                  raise ValueError("invalid owner derivability")
+              paths = row.get("surfaces")
+              if not isinstance(paths, list) or not paths or not all(isinstance(x, str) and x and not x.startswith("/") and ".." not in pathlib.PurePosixPath(x).parts for x in paths):
+                  raise ValueError("invalid owned paths")
+              patterns.extend(paths)
+          event = json.loads(pathlib.Path(os.environ["GITHUB_EVENT_PATH"]).read_text())
+          pull_request = event.get("pull_request") or {}
+          user = pull_request.get("user") or {}
+          author = user.get("login", "")
+          bot = isinstance(author, str) and (author.endswith("[bot]") or author in ("datapulse-release", "app/datapulse-release"))
+          paths = pathlib.Path("surface-changes.bin").read_bytes().split(b"\0")
+          owned = [os.fsdecode(p) for p in paths if p and any(fnmatch.fnmatchcase(os.fsdecode(p), pattern) for pattern in patterns)]
+          if owned and not bot:
+              print("::error::Human pull request changes generated surfaces: " + ", ".join(owned), file=sys.stderr)
+              sys.exit(1)
+          '
+              rm surface-owners-base.json surface-changes.bin
+            fi
+          fi
           changed_paths=$(git diff --name-only "${diff_args[@]}")
           echo "changed_paths=${changed_paths//$'\n'/, }" >> "$GITHUB_OUTPUT"
           if printf '%s\n' "$changed_paths" | python3 scripts/classify_change.py --ci-artifact-profile; then
@@ -115,6 +151,11 @@ jobs:
       APPEND_ONLY_FAST_PATH: ${{ github.event_name == 'pull_request' && needs.classify.outputs.append_only == 'true' }}
       FULL_VERIFICATION: ${{ github.event_name != 'pull_request' || (needs.classify.outputs.health_only != 'true' && needs.classify.outputs.append_only != 'true') }}
     steps:
+      - name: Require successful pull request classification
+        if: github.event_name == 'pull_request' && needs.classify.result != 'success'
+        run: |
+          echo '::error::Pull request path classification failed.' >&2
+          exit 1
       - name: Check out repository
         uses: actions/checkout@v4
         with:

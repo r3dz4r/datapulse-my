@@ -1,0 +1,157 @@
+[
+  {
+    "command": [
+      "python3",
+      "scripts/gen_quality_profile.py"
+    ],
+    "surfaces": [
+      "health/latest.json"
+    ],
+    "derivable_in_ci": true
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_catalog_snapshot.py"
+    ],
+    "surfaces": [
+      "catalog-snapshot.json",
+      "changelog.json"
+    ],
+    "derivable_in_ci": true
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_catalog_graph.py"
+    ],
+    "surfaces": [
+      "catalog-graph.json"
+    ],
+    "derivable_in_ci": true
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_dataset_passports.py"
+    ],
+    "surfaces": [
+      "data/passports/**"
+    ],
+    "derivable_in_ci": true,
+    "clean_directory": "data/passports"
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_trends.py"
+    ],
+    "surfaces": [
+      "health/trends.json"
+    ],
+    "derivable_in_ci": false,
+    "reason": "Requires ignored runtime health history."
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_drift.py"
+    ],
+    "surfaces": [
+      "health/drift.json"
+    ],
+    "derivable_in_ci": false,
+    "reason": "Requires ignored runtime health history for full fidelity."
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_evidence_coverage.py"
+    ],
+    "surfaces": [
+      "health/evidence-coverage.json"
+    ],
+    "derivable_in_ci": false,
+    "reason": "Requires ignored runtime health history as well as trends and drift."
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_public_summary.py"
+    ],
+    "surfaces": [
+      "datapulse_summary.json"
+    ],
+    "derivable_in_ci": true
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_readme.py"
+    ],
+    "surfaces": [
+      "README.md"
+    ],
+    "derivable_in_ci": true
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_ai_catalog.py"
+    ],
+    "surfaces": [
+      "docs/ai-catalog.json",
+      "docs/.well-known/ard.json",
+      "docs/.well-known/ai-catalog.json",
+      "docs/mcp/cards/**"
+    ],
+    "derivable_in_ci": true
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_mcp_reference.py"
+    ],
+    "surfaces": [
+      "mcp.json",
+      "agent.json",
+      "docs/mcp-reference.md",
+      "README.md",
+      "llms.txt",
+      "docs/mcp-deploy.md"
+    ],
+    "derivable_in_ci": true
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_llms_summary.py"
+    ],
+    "surfaces": [
+      "llms.txt"
+    ],
+    "derivable_in_ci": true
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_jsonld_catalog.py"
+    ],
+    "surfaces": [
+      "data/jsonld/**",
+      "docs/index.html"
+    ],
+    "derivable_in_ci": true,
+    "note": "Rewrites per-dataset JSON-LD files using current health data."
+  },
+  {
+    "command": [
+      "python3",
+      "scripts/gen_reconciliation.py"
+    ],
+    "surfaces": [
+      "health/reconciliation.json"
+    ],
+    "derivable_in_ci": true
+  }
+]
