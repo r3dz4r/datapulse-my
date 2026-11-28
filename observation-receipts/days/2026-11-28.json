@@ -1,0 +1,89 @@
+{
+  "schema": "datapulse/v1/observation-day",
+  "cycle_date": "2026-11-28",
+  "receipts": [
+    {
+      "payload": {
+        "schema": "datapulse/v1/observation-receipt",
+        "observed_at": "2026-11-28T00:52:27Z",
+        "cycle_date": "2026-11-28",
+        "health_artifact_sha256": "983e8ff2001193eda20a4eac6f7b3d676b8e9c293c7d32d84f41848ed9f30f1b",
+        "artifact_path": "health/latest.json",
+        "artifact_commit": "3290fc995c816184421d3c6df291739e20b3149f",
+        "normalization": "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing",
+        "dataset_count": 448,
+        "freshness_status_counts": {
+          "fresh": 143,
+          "stale": 96,
+          "aging": 153,
+          "unknown-freshness": 8,
+          "degraded": 1,
+          "discontinued": 1,
+          "reference": 43,
+          "unreachable": 3
+        },
+        "verification_profile_version": "257494e9163a37cf68e0c91dc86c81888d61c43ddd9d603c74d8ae421dd361b0",
+        "policy_version": null,
+        "key_id": "ed25519-e075218fa8086893",
+        "sequence_number": 4893,
+        "previous_receipt_id": "39b99c4437d3e7151b10cb112fc8dfff5fd631ff8258cfbb19d7fbb5aca66405",
+        "valid_until": "2026-11-29T02:52:27Z",
+        "limitations": [
+          "operator-produced evidence: the observing host signs its own observation at execution time",
+          "timestamps rely on the host clock and are not independently witnessed",
+          "upstream truth is not asserted; freshness statuses reflect this observation only"
+        ],
+        "observer_attestation": {
+          "key_id": "ed25519-a4ac279ec3354508",
+          "signature_base64": "KrviVIhJbNAD0N9ddnJJljenLm7BSQcQajjr60/ktcmGr8VFfBRwiB8nHcwK+FWGqyqhOmE2kYJjFCI0dG2tAw==",
+          "signed_at": "2026-11-28T00:52:27Z",
+          "statement_sha256": "c70ad889ed5cda184cc6b1bd47d8d64ca37c132f73c4f7766e8d4bc21d3ab1af"
+        }
+      },
+      "receipt_id": "a39e42a2768999a05cfaec67e47e23089b879c2fb35602cfe5e4f8b69d1a05dd",
+      "signature_base64": "DMuBEMZg9ZbIiycXaa5RWzW6EDQR6ehQD0ZplqhqQojWhobZYIt5Moyge9VDWVb0kWlQe2GGIFVd4sRgsTz/AQ=="
+    },
+    {
+      "payload": {
+        "schema": "datapulse/v1/observation-receipt",
+        "observed_at": "2026-11-28T01:12:23Z",
+        "cycle_date": "2026-11-28",
+        "health_artifact_sha256": "80f4e30dad95d5bb2fbdce5eab41ab1b1f314605ec64114c172968ee3321a669",
+        "artifact_path": "health/latest.json",
+        "artifact_commit": "bb4013d49e205f768a540c82ad649ee79d5e0262",
+        "normalization": "excluded _trust_summary.pipeline_heartbeat_at before canonical hashing",
+        "dataset_count": 448,
+        "freshness_status_counts": {
+          "fresh": 143,
+          "degraded": 2,
+          "aging": 153,
+          "unknown-freshness": 8,
+          "stale": 95,
+          "discontinued": 1,
+          "reference": 43,
+          "unreachable": 3
+        },
+        "verification_profile_version": "257494e9163a37cf68e0c91dc86c81888d61c43ddd9d603c74d8ae421dd361b0",
+        "policy_version": null,
+        "key_id": "ed25519-e075218fa8086893",
+        "sequence_number": 4894,
+        "previous_receipt_id": "a39e42a2768999a05cfaec67e47e23089b879c2fb35602cfe5e4f8b69d1a05dd",
+        "valid_until": "2026-11-29T03:12:23Z",
+        "limitations": [
+          "operator-produced evidence: the observing host signs its own observation at execution time",
+          "timestamps rely on the host clock and are not independently witnessed",
+          "upstream truth is not asserted; freshness statuses reflect this observation only"
+        ],
+        "observer_attestation": {
+          "key_id": "ed25519-a4ac279ec3354508",
+          "signature_base64": "e3cF1BieFWkZYm0/6XW8H3s/XttqB2eGHt+8T78N/Qk+zeV8QAHJHsgjsL0kYRDEvlLeWk9DWZTOiDdG9GpLBw==",
+          "signed_at": "2026-11-28T01:12:23Z",
+          "statement_sha256": "442d8a6f07edd83f1e77e27be9947992ab833e7bf89fdb7209171ef8febb5029"
+        }
+      },
+      "receipt_id": "a2664e8a5f486cdd923f584f616bb293bfa41d3ae4c5f4a9073119d6fe315270",
+      "signature_base64": "69l03OT0wF3NWmh0kLkvIP9w6FQqj0uj3Azks1F9oI5IJztKJU+rF2EvHiI8D5YHWLU64kddrfrxCXptjhUlCw=="
+    }
+  ],
+  "updated_at": "2026-11-28T01:12:23Z"
+}
